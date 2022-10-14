@@ -1,0 +1,17 @@
+name: Test Server
+seed: 6969420 #32 bit
+port: 27277 #default: 27277
+maxplayers: 500
+chunkloadingrange: 3 #recommended: 3
+#possible gamemodes: survival, creative
+gamemode: survival
+
+ban_appeal_info: #info displayed on the banned notice screen
+
+motd:
+  - _2B2T_
+
+generators:
+  overworld: default
+  nether: default
+  end: default
