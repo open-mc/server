@@ -9,7 +9,6 @@ export class Chunk{
 		this.y = y << 6 >> 6
 		this.tiles = []
 		this.entities = new Set()
-		if(buffer.left < 1)throw 1
 		//read buffer palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
 		let entitylen = buffer.short()
@@ -129,10 +128,7 @@ export class Chunk{
 		return buf
 	}
 	static of(block, x, y){
-		const chunk = new Chunk(new DataReader(new Uint8Array(Uint32Array.of(369098774, x, y).buffer, 3)))
-		let i = 4096;
-		while(i--)chunk.tiles.push(block)
-		return chunk
+		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, block.id >> 8, block.id)))
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
 }
