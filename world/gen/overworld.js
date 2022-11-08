@@ -1,5 +1,5 @@
-import { biomes } from "./util/biomes.js"
-import { fill } from "./util/perlin.js"
+import { biomes } from './util/biomes.js'
+import { fill } from './util/perlin.js'
 
 export const flat = function(cx, cy){
 	const filler = cy > -1 ? Blocks.air() : Blocks.stone()

@@ -1,8 +1,8 @@
-import { GAMERULES } from "../config.js"
-import { players } from "../index.js"
-import { Dimensions } from "../world/dimensions.js"
-import { chat, LIGHT_GREY, ITALIC, prefix } from "./chat.js"
-import { MOD, OP } from "../config.js"
+import { GAMERULES } from '../config.js'
+import { players } from '../index.js'
+import { Dimensions } from '../world/dimensions.js'
+import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
+import { MOD, OP } from '../config.js'
 function log(who, msg){
 	if(!GAMERULES.commandlogs)return
 	chat(prefix(who, 1)+msg, LIGHT_GREY + ITALIC)

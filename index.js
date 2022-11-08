@@ -1,4 +1,4 @@
-import { util } from './internals.js'
+import { stats, util } from './internals.js'
 import { WebSocketServer } from 'ws'
 import { Dimensions } from './world/dimensions.js'
 import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
@@ -7,10 +7,11 @@ import './utils/prototypes.js'
 import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
 import { codes, string, types } from './misc/incomingPacket.js'
-import { CONFIG, HANDLERS, PERMISSIONS } from './config.js'
+import { CONFIG, HANDLERS, PERMISSIONS, TPS } from './config.js'
 import { ItemIDs } from './items/item.js'
 import { BlockIDs } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
+import { setTPS } from './world/tick.js'
 
 export const players = new Map()
 let total = 5, loaded = -1, p = null
@@ -110,17 +111,19 @@ server.on('connection', async function(sock, {url}){
 		other.sock.send('-119You are logged in from another session')
 		other.sock.player = null
 		other.sock.close()
-		other.died()
+		other.remove()
 		player = other
 		let buffer = new DataWriter()
 		buffer.byte(1)
 		buffer.double(player.x)
 		buffer.double(player.y)
+		buffer.string(player.world.id)
+		buffer.int(player._id | 0)
+		buffer.short(player._id / 4294967296 | 0)
 		buffer.float(player.dx)
 		buffer.float(player.dy)
 		buffer.float(player.f)
-		buffer.string(player.world.id)
-		buffer.write(Entities.player._._savedata, player)
+		buffer.write(Entities.player._.savedata, player)
 		buffer.pipe(sock)
 	}else if(playersConnecting.has(username)){
 		sock.send('-119You are still logging in/out from another session')
@@ -132,24 +135,27 @@ server.on('connection', async function(sock, {url}){
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
 		if(buffer.byte() != 1)throw 'Invalid/Corrupt playerdata!'
-		let dx, dy, f
-		player = Entities.player(buffer.double(), buffer.double(), (dx = buffer.float(), dy = buffer.float(), f = buffer.float(), Dimensions[buffer.string()]))
-		player.dx = dx; player.dy = dy; player.f = f
-		buffer.read(Entities.player._._savedata, player)
+		player = Entities.player(buffer.double(), buffer.double(), Dimensions[buffer.string()])
+		buffer.setUint32(buffer.i, player._id), buffer.setUint16((buffer.i += 6) - 2, player._id / 4294967296 | 0)
+		player.dx = buffer.float(); player.dy = buffer.float(); player.f = buffer.float()
+		buffer.read(Entities.player._.savedata, player)
 		buffer.pipe(sock)
 	}catch(e){
-		player = Entities.player(0, 0, Dimensions.overworld, {inv: [], health: 20})
+		player = Entities.player(0, 0, Dimensions.overworld)
+		player.inv = [], player.health = 20
 		let i = 41
 		while(i--)player.inv.push(null)
 		let buffer = new DataWriter()
 		buffer.byte(1)
 		buffer.double(player.x)
 		buffer.double(player.y)
+		buffer.string(player.world.id)
+		buffer.int(player._id | 0)
+		buffer.short(player._id / 4294967296 | 0)
 		buffer.float(player.dx)
 		buffer.float(player.dy)
 		buffer.float(player.f)
-		buffer.string(player.world.id)
-		buffer.write(Entities.player._._savedata, player)
+		buffer.write(Entities.player._.savedata, player)
 		buffer.pipe(sock)
 	}
 	player.r = 0
@@ -176,14 +182,16 @@ const close = async function(){
 	buf.byte(1)
 	buf.double(player.x)
 	buf.double(player.y)
+	buf.string(player.world.id)
+	buf.int(0)
+	buf.short(0)
 	buf.float(player.dx)
 	buf.float(player.dy)
 	buf.float(player.f)
-	buf.string(player.world.id)
-	buf.write(Entities.player._._savedata, player)
+	buf.write(Entities.player._.savedata, player)
 	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
 	playersConnecting.delete(player.name)
-	player.died()
+	player.remove()
 }
 
 const message = function(_buf, isBinary){
@@ -199,3 +207,4 @@ const message = function(_buf, isBinary){
 		console.log(e)
 	}
 }
+setTPS(TPS)

@@ -1,16 +1,16 @@
-import { CONFIG } from "../config.js"
-import { DropChunk } from "../misc/packet.js"
+import { CONFIG } from '../config.js'
+import { DropChunk } from '../misc/packet.js'
 
 export const CHUNKLOADER = {
 	init(){
 		this.radius = CONFIG.chunkloadingrange
-		this.load(Math.floor(this.x / 64), Math.floor(this.y / 64))
+		this.load(Math.floor(this.x) >> 6, Math.floor(this.y) >> 6)
 	},
 	moved(ox, oy, ow){
-		let ocx = Math.floor(ox / 64)
-		let ocy = Math.floor(oy / 64)
-		let cx = Math.floor(this.x / 64)
-		let cy = Math.floor(this.y / 64)
+		let ocx = Math.floor(ox) >> 6
+		let ocy = Math.floor(oy) >> 6
+		let cx = Math.floor(this.x) >> 6
+		let cy = Math.floor(this.y) >> 6
 		if(ocx == cx && ocy == cy)return
 		if(ow != this.world || Math.max(Math.abs(cx-ocx << 6 >> 6),Math.abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
 			//teleport
@@ -39,7 +39,7 @@ export const CHUNKLOADER = {
 		for(let y = y0; y < y1; y++){
 			for(let x=cx-this.radius+1;x<XT;x++){
 				this.world.load(x, y, this)
-				this.world.save(tx-x, ty-y, this)
+				this.world.unlink(tx-x, ty-y, this)
 				trashed.push(tx-x)
 				trashed.push(ty-y)
 				trashed.i += 8
@@ -49,7 +49,7 @@ export const CHUNKLOADER = {
 		for(let x = x0; x < x1; x++){
 			for(let y=Math.max(cy,ocy)-this.radius+1;y<YT;y++){
 				this.world.load(x, y, this)
-				this.world.save(tx-x, ty-y, this)
+				this.world.unlink(tx-x, ty-y, this)
 				trashed.push(tx-x)
 				trashed.push(ty-y)
 				trashed.i += 8
@@ -68,7 +68,7 @@ export const CHUNKLOADER = {
 		if(!send){
 			for(let x = cx-this.radius+1;x<cx+this.radius;x++){
 				for(let y=cy-this.radius+1;y<cy+this.radius;y++){
-					this.world.save(x, y, this)
+					this.world.unlink(x, y, this)
 				}
 			}
 			return
@@ -78,7 +78,7 @@ export const CHUNKLOADER = {
 		let trashed = []
 		for(let x = cx-this.radius+1;x<cx+this.radius;x++){
 			for(let y=cy-this.radius+1;y<cy+this.radius;y++){
-				this.world.save(x, y, this)
+				this.world.unlink(x, y, this)
 				trashed.push(x)
 				trashed.push(y)
 				trashed.i += 8
@@ -87,8 +87,8 @@ export const CHUNKLOADER = {
 		DropChunk(this.sock, trashed)
 	},
 	died(){
-		let cx = Math.floor(this.x / 64)
-		let cy = Math.floor(this.y / 64)
+		let cx = Math.floor(this.x) >> 6
+		let cy = Math.floor(this.y) >> 6
 		this.chunk && this.chunk.entities.delete(this)
 		this.unload(cx, cy, false)
 	}

@@ -1,4 +1,4 @@
-import { DataWriter } from "../utils/data.js"
+import { DataWriter } from '../utils/data.js'
 
 const packet = (type, c) => (sock, data) => {
 	const d = new DataWriter()

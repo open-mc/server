@@ -1,7 +1,7 @@
-import { Blocks } from "../../blocks/block.js";
-import { Item, Items } from "../item.js"
+import { Blocks } from '../../blocks/block.js'
+import { Item, Items } from '../item.js'
 
-Items.stone = new Item({
+Items.stone = Item.define({
 	place(){
 		return Blocks.stone()
 	}

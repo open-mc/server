@@ -1,6 +1,6 @@
-import { imxs32 } from "./random.js"
-import {PNG} from 'pngjs'
-import {promises as fs} from "fs"
+import { imxs32 } from './random.js'
+import { PNG } from 'pngjs'
+import fs from 'fs/promises'
 const biomemap = []
 biomemap.buffer = new DataView(await new Promise(async r => new PNG().parse(await fs.readFile(PATH + '/util/biomes.png'), (_,a)=>r(a.data.buffer))))
 globalThis.Biomes = {}

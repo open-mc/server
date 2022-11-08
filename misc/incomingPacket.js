@@ -1,15 +1,17 @@
-import { BlockIDs } from "../blocks/block.js"
-import { chat, prefix } from "./chat.js"
-import { anyone_help, commands, mod_help } from "./commands.js"
-import { MOD } from "../config.js"
-function playerMovePacket(player, {x, y, r}){
+import { BlockIDs } from '../blocks/block.js'
+import { chat, prefix } from './chat.js'
+import { anyone_help, commands, mod_help } from './commands.js'
+import { MOD } from '../config.js'
+function playerMovePacket(player, {x, y, r, dx, dy, f}){
 	if(r != player.r)return
 	player.tp(x, y)
+	player.dx = dx; player.dy = dy; player.f = f
 }
 playerMovePacket.type = {
 	r: Byte,
 	x: Double, y: Double,
-	dx: Float, dy: Float
+	dx: Float, dy: Float,
+	f: Float
 }
 
 function setBlockPacket(player, {x, y, id}){

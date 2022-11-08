@@ -3,7 +3,5 @@ export default {
 	burns: false,
 	place(){
 		return Blocks[this._.name] || null
-	},
-	_savedatahistory: [],
-	_savedata: null
+	}
 }

@@ -1,73 +1,85 @@
-import { Block, BlockIDs } from "../blocks/block.js";
-import { DataReader } from "../utils/data.js";
+import { Block, BlockIDs } from '../blocks/block.js'
+import { EntityIDs } from '../entities/entity.js'
+import { DataReader } from '../utils/data.js'
 
 export class Chunk{
-	constructor(buffer){
-		if(!buffer.left || buffer.byte() != 16)throw new TypeError("Corrupt / Invalid chunk data")
+	constructor(buffer, world){
+		if(!buffer.left || buffer.byte() != 16)throw new TypeError("Invalid chunk data")
 		const x = buffer.int(), y = buffer.int()
 		this.x = x << 6 >> 6
 		this.y = y << 6 >> 6
+		this.world = world
 		this.tiles = []
 		this.entities = new Set()
 		//read buffer palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
-		let entitylen = buffer.short()
+		let id = buffer.short()
+		while(id){
+			const e = EntityIDs[id]()
+			Object.setPrototypeOf(e, Entity.prototype)
+			(buffer.short() / 1024 + (this.x << 6), buffer.short() / 1024 + (this.y << 6), this.world)
+			buffer.setUint32(buffer.i, e._id)
+			buffer.setUint16((buffer.i += 6) - 2, e._id / 4294967296)
+			e.dx = buffer.float()
+			e.dy = buffer.float()
+			e.f = buffer.float()
+			if(e._.savedata)buffer.read(e._.savedata, e)
+			this.entities.add(e)
+			id = buffer.short()
+		}
 		let palette = []
 		let i = 0
 		for(;i<palettelen;i++){
-			palette.push(BlockIDs[buffer.short()].original)
+			palette.push(BlockIDs[buffer.short()])
 		}
 		let j = 0; i = 11 + i * 2
 		if(palettelen<2){
-			for(;j<4096;j++)this.tiles.push(palette[0])
+			for(;j<4096;j++)this.tiles.push(palette[0]())
 		}else if(palettelen == 2){
 			for(;j<512;j++){
 				const byte = buffer.byte()
-				this.tiles.push(palette[byte&1])
-				this.tiles.push(palette[(byte>>1)&1])
-				this.tiles.push(palette[(byte>>2)&1])
-				this.tiles.push(palette[(byte>>3)&1])
-				this.tiles.push(palette[(byte>>4)&1])
-				this.tiles.push(palette[(byte>>5)&1])
-				this.tiles.push(palette[(byte>>6)&1])
-				this.tiles.push(palette[byte>>7])
+				this.tiles.push(palette[byte&1]())
+				this.tiles.push(palette[(byte>>1)&1]())
+				this.tiles.push(palette[(byte>>2)&1]())
+				this.tiles.push(palette[(byte>>3)&1]())
+				this.tiles.push(palette[(byte>>4)&1]())
+				this.tiles.push(palette[(byte>>5)&1]())
+				this.tiles.push(palette[(byte>>6)&1]())
+				this.tiles.push(palette[byte>>7]())
 			}
 		}else if(palettelen <= 4){
 			for(;j<1024;j++){
 				const byte = buffer.byte()
-				this.tiles.push(palette[byte&3])
-				this.tiles.push(palette[(byte>>2)&3])
-				this.tiles.push(palette[(byte>>4)&3])
-				this.tiles.push(palette[byte>>6])
+				this.tiles.push(palette[byte&3]())
+				this.tiles.push(palette[(byte>>2)&3]())
+				this.tiles.push(palette[(byte>>4)&3]())
+				this.tiles.push(palette[byte>>6]())
 			}
 		}else if(palettelen <= 16){
 			for(;j<2048;j++){
 				const byte = buffer.byte()
-				this.tiles.push(palette[byte&15])
-				this.tiles.push(palette[(byte>>4)])
+				this.tiles.push(palette[byte&15]())
+				this.tiles.push(palette[(byte>>4)]())
 			}
 		}else if(palettelen <= 256){
 			for(;j<4096;j++){
-				this.tiles.push(palette[buffer.byte()])
+				this.tiles.push(palette[buffer.byte()]())
 			}
 		}else{
 			for(;j<6144;j+=3){
 				let byte2
-				this.tiles.push(palette[buffer.byte() + (((byte2 = buffer.byte())&0x0F)<<8)])
-				this.tiles.push(palette[buffer.byte() + ((byte2&0xF0)<<4)])
+				this.tiles.push(palette[buffer.byte() + (((byte2 = buffer.byte())&0x0F)<<8)]())
+				this.tiles.push(palette[buffer.byte() + ((byte2&0xF0)<<4)]())
 			}
 		}
 		//parse block entities
 		for(j=0;j<4096;j++){
 			const block = this.tiles[j]._
-			if(!block._savedata)continue
-			//decode data
-			let data = Object.create(Block.prototype)
-			data._ = block
-			this.tiles[j] = data
+			if(!block.savedata)continue
+			buffer.read(block.savedata, block)
 		}
 	}
-	toPacket(buf){
+	toBuf(buf){
 		let palette = [], palette2 = Object.create(null)
 		for(let i = 0; i < 4096; i++){
 			let id = this.tiles[i].id
@@ -77,8 +89,20 @@ export class Chunk{
 			}
 		}
 		buf.byte(16)
-		buf.int((this.x & 0x3ffffff) + ((palette.length-1) << 26))
-		buf.int((this.y & 0x3ffffff) + ((palette.length-1) >> 6 << 26))
+		buf.int((this.x & 0x3ffffff) + (palette.length-1 << 26))
+		buf.int((this.y & 0x3ffffff) + (palette.length-1 >> 6 << 26))
+		for(const e of this.entities){
+			if(!e.id)continue
+			buf.short(e.id)
+			buf.short((e.x % 64 + 64) * 1024)
+			buf.short((e.y % 64 + 64) * 1024)
+			buf.int(e._id | 0)
+			buf.short(e._id / 4294967296 | 0)
+			buf.float(e.dx)
+			buf.float(e.dy)
+			buf.float(e.f)
+			if(e._.savedata)buf.write(e._.savedata, e)
+		}
 		buf.short(0)
 		for(let i = 0; i < palette.length; i++){
 			buf.short(palette[i])
@@ -122,13 +146,14 @@ export class Chunk{
 		}
 		//save block entities
 		for(let i = 0; i < 4096; i++){
-			let type = this.tiles[i]._._savedata
+			let type = this.tiles[i]._.savedata
 			if(!type)continue
 		}
 		return buf
 	}
-	static of(block, x, y){
-		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, block.id >> 8, block.id)))
+	static of(block, x, y, w){
+		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, block.id >> 8, block.id)), w)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
+	
 }

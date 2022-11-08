@@ -1,5 +1,5 @@
-import { fs } from "./internals.js"
-import { parse } from "yaml"
+import { fs } from './internals.js'
+import { parse } from 'yaml'
 const perms = {op: 4, mod: 3, normal: 2, spectate: 1, deny: 0}
 export const OP = 4, MOD = 3, NORMAL = 2, SPECTATE = 1
 export const CONFIG = parse(await fs.readFile(WORLD + 'properties.yaml').then(a => a.toString()))
@@ -15,5 +15,6 @@ export const HANDLERS = {
 	LOADFILE: p => fs.readFile(WORLD + p).reader(),
 	SAVEFILE: (p, data) => fs.writeFile(WORLD + p, data)
 }
+export const TPS = 20
 
 export const GAMERULES = JSON.parse(''+await fs.readFile(WORLD + 'gamerules.json'))

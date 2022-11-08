@@ -1,5 +1,4 @@
-import { WebSocket, WebSocketServer, Sender } from "ws"
-import { encoder } from "./data.js"
+import { WebSocket, WebSocketServer, Sender } from 'ws'
 
 Object.defineProperties(Array.prototype, {
 	winner: {enumerable: false, value(pred){
@@ -14,6 +13,15 @@ Object.defineProperties(Array.prototype, {
 			}
 		}
 		return winner
+	}},
+	remove: {enumerable: false, value(a){
+		let i = 0, j = 0
+		for(; j < this.length; j++){
+			if(j > i)this[i] = this[j]
+			if(this[i] != a)i++
+		}
+		while(i < j)this.pop(),i++
+		return this
 	}}
 })
 WebSocket.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){return '<WebSocket \x1b[33m'+this._socket.remoteAddress+'\x1b[m>'}

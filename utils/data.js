@@ -1,4 +1,4 @@
-import { Item, ItemIDs } from "../items/item.js"
+import { Item, ItemIDs } from '../items/item.js'
 
 Promise.prototype.reader = function(){return this.then(CONSTRUCT)}
 const CONSTRUCT = a => a ? new DataReader(a) : null
@@ -79,12 +79,10 @@ export class DataReader extends DataView{
 		const item = ItemIDs[this.getUint16(this.i)]
 		this.i += 2
 		if(!item)return null
-		if(target){
-			target.count = count
-			target._ = item._
-			if(item._._savedata)this.read(item._._savedata, target)
-			return target
-		}else return item(count, item._._savedata ? this.read(item._._savedata) : undefined)
+		if(!target)target = item(count)
+		else target.count = count, target._ = item._
+		if(item._.savedata)this.read(item._.savedata, target)
+		return target
 	}
 	pipe(sock){
 		sock.send(this)
@@ -147,7 +145,7 @@ export class DataWriter extends Array{
 				if(!v){buf.setUint8(this.i++, 0); return}
 				buf.setUint8(this.i++, v.count)
 				buf.setUint16(this.i, v.id); this.i += 2
-				if(v._._savedata)this.write(v._._savedata, v)
+				if(v._.savedata)this.write(v._.savedata, v)
 				return
 		}
 		if(Array.isArray(type)){
@@ -212,7 +210,7 @@ export class DataWriter extends Array{
 		if(!v){this.cur.setUint8(this.i++, 0); return}
 		this.cur.setUint8(this.i++, v.count)
 		this.cur.setUint16(this.i, v.id); this.i += 2
-		if(v._._savedata)this.write(v._._savedata, v)
+		if(v._.savedata)this.write(v._.savedata, v)
 	}
 	pipe(sock){
 		for(const b of this) sock.send(b, {fin: false})

@@ -1,5 +1,5 @@
-import { Block, Blocks } from "../block.js";
+import { Block, Blocks } from '../block.js'
 
-Blocks.water = new Block({
+Blocks.water = Block.define({
 	solid: false
 })

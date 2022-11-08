@@ -1,8 +1,9 @@
-import { Item } from "../../items/item.js";
-import { DataWriter } from "../../utils/data.js";
-import { CHUNKLOADER } from "../chunkloader.js";
-import { Entities, Entity } from "../entity.js";
-Entities.player = new Entity({
+import { Item } from '../../items/item.js'
+import { DataWriter } from '../../utils/data.js'
+import { CHUNKLOADER } from '../chunkloader.js'
+import { Entities, Entity } from '../entity.js'
+
+Entities.player = Entity.define({
 	...CHUNKLOADER,
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
@@ -17,10 +18,10 @@ Entities.player = new Entity({
 		buf.byte(this.r)
 		buf.double(this.x)
 		buf.double(this.y)
+		buf.string(this.world.id)
 		buf.float(this.dx)
 		buf.float(this.dy)
 		buf.float(this.f)
-		buf.string(this.world.id)
 		buf.pipe(this.sock)
 	}
 }, {

@@ -1,38 +1,42 @@
-import { Dimensions } from '../world/dimensions.js'
-import { World } from '../world/world.js';
+import { Chunk } from '../world/chunk.js'
+import { World } from '../world/world.js'
 import DEFAULTS from './entitydefaults.js'
-
-let new_entity = function(x, y, world, data = {}){
-	if(x !== x || y !== y)throw new TypeError('x and y must be a number')
-	if(!world || world.constructor !== World)throw new TypeError("'world' must be a world")
-	data._ = this
-	Object.setPrototypeOf(data, Entity.prototype)
-	data._x = x
-	data._y = y
-	data.dx = data.dy = data.f = 0
-	data._w = world || Dimensions.overworld
-	data.chunk = null
-	world.fetchonce(Math.floor(x) >> 6, Math.floor(y) >> 6).then(data._setchunk.bind(data))
-	return data
-}
+export let entityMap = new Map(), i = -1
 export class Entity{
+	constructor(def, x, y, world){
+		this._ = def
+		if(x !== x || y !== y)throw new TypeError('x and y must be a number')
+		if(!world || world.constructor !== World)throw new TypeError("'world' must be a world")
+		this._x = x
+		this._y = y
+		this.dx = this.dy = this.f = 0
+		if(world instanceof Chunk){
+			this.chunk = world
+			this._w = world.world
+			world.entities.add(this)
+		}else{
+			this._w = world
+			this.chunk = null
+			if(!world.putEntity(this, x, y) && this.id)
+				console.warn('\x1b[33m[WARN] Entity created in unloaded chunk! This is a bad idea as the entity will likely never be ticked or saved to disk!')
+		}
+		this._id = ++i
+		entityMap.set(i, this)
+	}
 	/**
 	 * define a new entity definition
 	 * @param {Object} obj Properties of the entity
 	 * @param {Object} [savedata] Entity data format
 	 * @return {Function} constructor for that entity
 	 */
-	constructor(obj = {}, savedata = null){
-		this._ = Object.assign(Object.create(null), DEFAULTS)
+	static define(obj = {}, savedata = null){
+		let _ = Object.assign(Object.create(null, {savedata:{value:savedata,enumerable:false}, savedatahistory:{value:[],enumerable:false}}), DEFAULTS)
 		for(let i in obj){
-			if(!(i in Entity.prototype))
-				Object.defineProperty(Entity.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
-			this._[i] = obj[i]
+			if(!(i in Entity.prototype))Object.defineProperty(Entity.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
+			_[i] = obj[i]
 		}
-		let f = new_entity.bind(this._)
-		f.original = this
-		f._ = this._
-		this._._savedata = savedata
+		let f = (a, b, c) => new Entity(_, a, b, c)
+		f._ = _
 		return f
 	}
 	get x(){return this._x}
@@ -40,57 +44,49 @@ export class Entity{
 	get world(){return this._w}
 	set world(_){throw new Error('use entity.transport() to change dimension')}
 	transport(x, y, w){
-		this.chunk && this.chunk.entities.delete(this)
-		this.chunk = null
-		const _w = this._w
-		const _x = this._x, _y = this._y
 		let f = Math.floor(x)
-		this._x = (f >> 0) + (x - f)
+		x = (f >> 0) + (x - f)
 		f = Math.floor(y)
-		this._y = (f >> 0) + (y - f)
-		this.moved(_x, _y, _w)
-		w.fetchonce(Math.floor(x) >> 6, Math.floor(y) >> 6).then(this._setchunk.bind(this))
-	}
-	_setchunk(chunk){
-		if(Math.floor(this._x / 64) !== chunk.x || Math.floor(this._y / 64) !== chunk.y)return
-		this.chunk = chunk
-		chunk.entities.add(this)
+		y = (f >> 0) + (y - f)
+		if(w.putEntity(this, x, y)){
+			let oldw = this._w
+			this._w = w
+			this.moved(this._x, this._y, (this._x = x, this._y = y, oldw))
+		}
 	}
 	set x(x){
-		if(Math.floor(this._x)>>6 === Math.floor(x)>>6)return void (this._x = x)
-		this.chunk && this.chunk.entities.delete(this)
-		this.chunk = null
-		const _x = this._x
 		const f = Math.floor(x)
-		this._x = (f >> 0) + (x - f)
-		this.moved(_x, this._y, this._w)
-		this._w.fetchonce(Math.floor(this._x) >> 6, Math.floor(this._y) >> 6).then(this._setchunk.bind(this))
+		x = (f >> 0) + (x - f)
+		if(Math.floor(this._x)>>6 === Math.floor(x)>>6)return void (this._x = x)
+		if(this._w.putEntity(this, x, this._y)){
+			this.moved(this._x, this._y, (this._x = x, this._w))
+		}
 	}
 	set y(y){
-		if(Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._y = y)
-		this.chunk && this.chunk.entities.delete(this)
-		this.chunk = null
-		const _y = this._y
 		const f = Math.floor(y)
-		this._y = (f >> 0) + (y - f)
-		this.moved(this._x, _y, this._w)
-		this._w.fetchonce(Math.floor(this._x) >> 6, Math.floor(this._y) >> 6).then(this._setchunk.bind(this))
+		y = (f >> 0) + (y - f)
+		if(Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._y = y)
+		if(this._w.putEntity(this, this._x, y)){
+			this.moved(this._x, this._y, (this._y = y, this._w))
+		}
 	}
 	tp(x, y){
-		if(Math.floor(this._x)>>6 === Math.floor(x)>>6 && Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._x = x, this._y = y)
-		this.chunk && this.chunk.entities.delete(this)
-		this.chunk = null
-		const _x = this._x
-		const _y = this._y
 		let f = Math.floor(x)
-		this._x = (f >> 0) + (x - f)
+		x = (f >> 0) + (x - f)
 		f = Math.floor(y)
-		this._y = (f >> 0) + (y - f)
-		this.moved(_x, _y, this._w)
-		this._w.fetchonce(Math.floor(this._x) >> 6, Math.floor(this._y) >> 6).then(this._setchunk.bind(this))
+		y = (f >> 0) + (y - f)
+		if(Math.floor(this._x)>>6 === Math.floor(x)>>6 && Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._x = x, this._y = y)
+		if(this._w.putEntity(this, x, y)){
+			this.moved(this._x, this._y, (this._x = x, this._y = y, this._w))
+		}
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
 		return `Entities.${this._.name}({ x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32mDimensions.${this.world.id}\x1b[m${Object.hasOwn(this, 'name') ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} })`
+	}
+	remove(){
+		if(this.chunk)this.chunk.entities.delete(this)
+		entityMap.delete(this._id)
+		//._.died() is only used for when the entity dies naturally (i.e not despawned / unloaded)
 	}
 }
 Entity.prototype.name = ''

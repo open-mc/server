@@ -6,6 +6,13 @@ export default {
 	},
 	moved(oldx, oldy, oldw){},
 	rubber(){},
-	_savedatahistory: [],
-	_savedata: null
+	damage(amount){
+		this.health -= amount
+		if(this.health < 0){
+			this.died()
+			this.remove()
+		}else if(this.health > this.maxhealth){
+			this.health = this.maxhealth
+		}
+	}
 }

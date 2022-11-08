@@ -4,101 +4,74 @@ import { generator } from './gendelegator.js'
 import { Blocks } from '../blocks/block.js'
 import { BlockSet } from '../misc/packet.js'
 import { DataWriter } from '../utils/data.js'
-const NULL = e => null
 export class World extends Map{
 	constructor(id){
 		super()
 		this.id = id
 	}
-	async fetchonce(cx, cy){
-		let k = (cx&=67108863)+(cy&=67108863)*67108864
-		let i = super.get(k)
-		if(i instanceof Promise){
-			return i
-		}
-		if(i){
-			return i
-		}
-		let pr = HANDLERS.LOADFILE('chunks/'+this.id+'/'+k).catch(NULL).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
-			let i = new Chunk(buf)
-			super.set(k, i)
-			i.players = pr.players
-			this.save(cx, cy)
-			for(let p of pr.players){
-				if(p.sock){
-					p.sock.send(buf)
-					if(cx == Math.floor(p.x) >>> 6 && cy == Math.floor(p.y) >>> 6){
-						i.entities.add(p)
-					}
-				}
-			}
-			i.saving = 0
-			return i
-		})
-		pr.players = new Set()
-		super.set(k, pr)
-		return pr
-	}
-	load(cx, cy, p){
+	load(cx, cy, p = null){
 		let k = (cx&67108863)+(cy&67108863)*67108864
 		let i = super.get(k)
 		if(i instanceof Promise){
-			i.players.add(p)
-			return i
+			if(p)i.players.push(p)
+			return Promise.resolve(i)
 		}
 		if(i){
-			i.players.add(p)
-			if(p.sock)i.toPacket(new DataWriter()).pipe(p.sock)
-			return i
-		}
-		let pr = HANDLERS.LOADFILE('chunks/'+this.id+'/'+k).catch(NULL).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
-			if(pr.players.size < 1){
-				super.delete(k)
-				return
+			if(p && p.sock){
+				i.players.push(p)
+				const buf = new DataWriter()
+				i.toBuf(buf)
+				for(const e of i.entities)if(!e.id && e != p){
+					buf.double(e.x)
+					buf.double(e.y)
+					buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+					buf.float(e.dx)
+					buf.float(e.dy)
+					buf.float(e.f)
+					buf.write(e._.savedata, e)
+				}
+				buf.pipe(p.sock)
 			}
-			let i = new Chunk(buf)
+			return Promise.resolve(i)
+		}
+		let pr = HANDLERS.LOADFILE('chunks/'+this.id+'/'+k).catch(Function.prototype).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
+			let i = new Chunk(buf, this)
 			super.set(k, i)
 			i.players = pr.players
-			for(let p of i.players){
-				if(p.sock){
-					p.sock.send(buf)
-					if(cx == Math.floor(p.x / 64) && cy == Math.floor(p.y / 64)){
-						i.entities.add(p)
-					}
-				}
-			}
-			i.saving = 0
+			for(const p of i.players)if(p.sock)p.sock.send(buf)
+			i.t = 20
 			return i
 		})
-		pr.players = new Set([p])
+		pr.players = p ? [p] : []
 		super.set(k, pr)
 		return pr
 	}
-	async save(cx, cy, p){
-		let k = (cx&67108863)+(cy&67108863)*67108864
-		let i = super.get(k)
-		if(!i)return
-		i.players.delete(p)
-		if(i instanceof Promise)return
-		if(!i.players.size){
-			if(i.saving){
-				i.saving = 2 //needs saving again
-				return
-			}
-			i.saving = 2
-			while(i.saving == 2 && !i.players.size){
-				i.saving = 1
-				const b = i.toPacket(new DataWriter()).build()
-				await HANDLERS.SAVEFILE('chunks/'+this.id+'/'+k, b)
-			}
-			i.saving = 0
-			if(!i.players.size)super.delete(k)
-		}
-	}
-	chunk(cx, cy){
+	unlink(cx, cy, p){
 		let i = super.get((cx&67108863)+(cy&67108863)*67108864)
-		if(!i || (i instanceof Promise))return undefined
-		return i
+		if(i)i.players.remove(p)
+	}
+	async check(i){
+		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
+		if(i.players.length){
+			if(i.t <= 0)i.t = -1 //-1 == chunk has had a player loading it and the chunk will need saving again
+			else i.t = 20 //Reset the timer
+			return
+		}
+		if(i.t <= 0)return
+		if(--i.t)return //Count down timer
+		let k = (i.x&67108863)+(i.y&67108863)*67108864
+		const b = i.toBuf(new DataWriter()).build()
+		await HANDLERS.SAVEFILE('chunks/'+this.id+'/'+k, b)
+		if(i.t == -1)i.t = 5 //If player has been in chunk, re-save chunk in 5 ticks
+		else super.delete(k) //Completely unloaded with no re-loads, delete chunk
+	}
+	putEntity(e, x, y){
+		let i = super.get((Math.floor(x)>>>6)+(Math.floor(y)>>>6)*67108864)
+		if(!i || (i instanceof Promise))return false
+		i.entities.add(e)
+		if(e.chunk)e.chunk.entities.delete(e)
+		e.chunk = i
+		return true
 	}
 	at(x, y){
 		let ch = super.get((x>>>6)+(y>>>6)*67108864)

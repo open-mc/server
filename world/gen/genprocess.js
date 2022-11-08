@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs'
-import { parentPort } from 'worker_threads';
-import { jsonToType } from '../../utils/data.js';
+import fs from 'fs/promises'
+import { parentPort } from 'worker_threads'
+import { jsonToType } from '../../utils/data.js'
 parentPort?.on('message', async function({x, y, d, seed, name = 'default'}){
 	globalThis.seed = seed ^ 0xC0FFEBAD
 	await (GENERATORS[d]?.[name]||dfgen)(x, y)

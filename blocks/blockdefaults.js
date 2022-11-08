@@ -1,4 +1,4 @@
-import { Items } from "../items/item.js";
+import { Items } from '../items/item.js'
 
 export default {
 	id: -1, name: "",
@@ -9,7 +9,5 @@ export default {
 		return Items[this._.name] ? [Items[this._.name](1)] : []
 	},
 	solid: true,
-	tool: '',
-	_savedatahistory: [],
-	_savedata: null
+	tool: ''
 }

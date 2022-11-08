@@ -1,7 +1,7 @@
-import { Worker } from 'worker_threads';
-import { CONFIG } from '../config.js';
-import { gotStats } from '../internals.js';
-import { DataReader } from '../utils/data.js';
+import { Worker } from 'worker_threads'
+import { CONFIG } from '../config.js'
+import { gotStats } from '../internals.js'
+import { DataReader } from '../utils/data.js'
 let gen = new Worker(PATH + 'world/gen/genprocess.js', {argv: process.argv.slice(2)})
 const waiting = new Map()
 gen.on('message', function({key, buf}){

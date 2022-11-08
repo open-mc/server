@@ -1,7 +1,7 @@
-import { Block, Blocks } from "../block.js";
-import { Item } from "../../items/item.js";
+import { Block, Blocks } from '../block.js'
+import { Item } from '../../items/item.js'
 
-Blocks.chest = new Block({
+Blocks.chest = Block.define({
 	tool: 'axe',
 	slots: 27,
 }, {

@@ -1,5 +1,5 @@
-import { Block, Blocks } from "../block.js";
+import { Block, Blocks } from '../block.js'
 
-Blocks.stone = new Block({
+Blocks.stone = Block.define({
 	breaktime: 10
 })

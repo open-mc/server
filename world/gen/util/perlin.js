@@ -1,4 +1,4 @@
-import { imxs32_2 } from "./random.js"
+import { imxs32_2 } from './random.js'
 
 const low = new Float64Array(4160)
 const high = new Float64Array(4160)

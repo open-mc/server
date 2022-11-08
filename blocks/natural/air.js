@@ -1,5 +1,5 @@
-import { Block, Blocks } from "../block.js";
+import { Block, Blocks } from '../block.js'
 
-Blocks.air = new Block({
+Blocks.air = Block.define({
 	solid: false
 })

@@ -1,5 +1,5 @@
-import { Block, Blocks } from "../block.js";
+import { Block, Blocks } from '../block.js'
 
-Blocks.bedrock = new Block({
+Blocks.bedrock = Block.define({
 	breaktime: Infinity
 })

@@ -1,5 +1,5 @@
-import { Block, Blocks } from "../block.js";
+import { Block, Blocks } from '../block.js'
 
-Blocks.dirt = new Block({
+Blocks.dirt = Block.define({
 	tool: 'shovel',
 })
