@@ -38,7 +38,23 @@ export class World extends Map{
 			let i = new Chunk(buf, this)
 			super.set(k, i)
 			i.players = pr.players
-			for(const p of i.players)if(p.sock)p.sock.send(buf)
+			let buf2 = null
+			for(const p of i.players){
+				if(Math.floor(p._x) >> 6 == cx && Math.floor(p._y) >> 6 == cy){
+					p.chunk = p.ochunk = i
+					if(!buf2)buf2 = new DataWriter()
+					buf2.double(p.x)
+					buf2.double(p.y)
+					buf2.int(p._id | 0), buf2.short(p._id / 4294967296 | 0)
+					buf2.float(p.dx)
+					buf2.float(p.dy)
+					buf2.float(p.f)
+					buf2.write(p._.savedata, p)
+					i.entities.add(p)
+				}
+				if(buf2 && p.sock)p.sock.send(buf,{fin:false}),buf2.pipe(p.sock)
+				else p.sock.send(buf)
+			}
 			i.t = 20
 			return i
 		})

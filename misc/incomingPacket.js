@@ -4,7 +4,7 @@ import { anyone_help, commands, mod_help } from './commands.js'
 import { MOD } from '../config.js'
 function playerMovePacket(player, {x, y, r, dx, dy, f}){
 	if(r != player.r)return
-	player.tp(x, y)
+	player.move(x, y)
 	player.dx = dx; player.dy = dy; player.f = f
 }
 playerMovePacket.type = {

@@ -1,9 +1,7 @@
 export default {
 	id: -1, name: "",
 	maxhealth: 20,
-	died(){
-		this.chunk && this.chunk.entities.delete(this)
-	},
+	died(){},
 	moved(oldx, oldy, oldw){},
 	rubber(){},
 	damage(amount){

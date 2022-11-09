@@ -111,58 +111,39 @@ server.on('connection', async function(sock, {url}){
 		other.sock.send('-119You are logged in from another session')
 		other.sock.player = null
 		other.sock.close()
+		other.sock = null
 		other.remove()
 		player = other
-		let buffer = new DataWriter()
-		buffer.byte(1)
-		buffer.double(player.x)
-		buffer.double(player.y)
-		buffer.string(player.world.id)
-		buffer.int(player._id | 0)
-		buffer.short(player._id / 4294967296 | 0)
-		buffer.float(player.dx)
-		buffer.float(player.dy)
-		buffer.float(player.f)
-		buffer.write(Entities.player._.savedata, player)
-		buffer.pipe(sock)
 	}else if(playersConnecting.has(username)){
 		sock.send('-119You are still logging in/out from another session')
 		sock.close()
 		return
 	}else try{
 		playersConnecting.add(username)
-		let buffer = await HANDLERS.LOADFILE('players/'+username).reader()
+		const buf = await HANDLERS.LOADFILE('players/'+username).reader()
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
-		if(buffer.byte() != 1)throw 'Invalid/Corrupt playerdata!'
-		player = Entities.player(buffer.double(), buffer.double(), Dimensions[buffer.string()])
-		buffer.setUint32(buffer.i, player._id), buffer.setUint16((buffer.i += 6) - 2, player._id / 4294967296 | 0)
-		player.dx = buffer.float(); player.dy = buffer.float(); player.f = buffer.float()
-		buffer.read(Entities.player._.savedata, player)
-		buffer.pipe(sock)
+		player = Entities.player(buf.double(), buf.double(), Dimensions[buf.string()])
+		buf.setUint32(buf.i, player._id)
+		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
+		buf.read(Entities.player._.savedata, player)
 	}catch(e){
 		player = Entities.player(0, 0, Dimensions.overworld)
 		player.inv = [], player.health = 20
-		let i = 41
-		while(i--)player.inv.push(null)
-		let buffer = new DataWriter()
-		buffer.byte(1)
-		buffer.double(player.x)
-		buffer.double(player.y)
-		buffer.string(player.world.id)
-		buffer.int(player._id | 0)
-		buffer.short(player._id / 4294967296 | 0)
-		buffer.float(player.dx)
-		buffer.float(player.dy)
-		buffer.float(player.f)
-		buffer.write(Entities.player._.savedata, player)
-		buffer.pipe(sock)
+		let i = 41; while(i--)player.inv.push(null)
 	}
 	player.r = 0
 	player.sock = sock
+	player.ebuf = null
 	player.name = username
 	player.permissions = permissions
+	let buffer = new DataWriter()
+	buffer.byte(1)
+	buffer.int(player._id | 0)
+	buffer.short(player._id / 4294967296 | 0)
+	buffer.pipe(sock)
 	player.init()
+	player.place()
 	players.set(username, player)
 	sock.player = player
 	sock.on('close', close)
@@ -178,18 +159,15 @@ const close = async function(){
 	if(!player)return
 	players.delete(player.name)
 	playersConnecting.add(player.name)
-	const buf = new DataWriter()
-	buf.byte(1)
-	buf.double(player.x)
-	buf.double(player.y)
-	buf.string(player.world.id)
-	buf.int(0)
-	buf.short(0)
-	buf.float(player.dx)
-	buf.float(player.dy)
-	buf.float(player.f)
-	buf.write(Entities.player._.savedata, player)
-	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
+	const buffer = new DataWriter()
+	buffer.double(player.x)
+	buffer.double(player.y)
+	buffer.string(player.world.id)
+	buffer.float(player.dx)
+	buffer.float(player.dy)
+	buffer.float(player.f)
+	buffer.write(Entities.player._.savedata, player)
+	await HANDLERS.SAVEFILE('players/' + player.name, buffer.build())
 	playersConnecting.delete(player.name)
 	player.remove()
 }

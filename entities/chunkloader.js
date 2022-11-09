@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js'
 import { DropChunk } from '../misc/packet.js'
+import { entityMap } from './entity.js'
 
 export const CHUNKLOADER = {
 	init(){
@@ -86,10 +87,9 @@ export const CHUNKLOADER = {
 		}
 		DropChunk(this.sock, trashed)
 	},
-	died(){
+	removed(){
 		let cx = Math.floor(this.x) >> 6
 		let cy = Math.floor(this.y) >> 6
-		this.chunk && this.chunk.entities.delete(this)
 		this.unload(cx, cy, false)
 	}
 }

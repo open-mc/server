@@ -1,6 +1,6 @@
 import { Block, BlockIDs } from '../blocks/block.js'
 import { EntityIDs } from '../entities/entity.js'
-import { DataReader } from '../utils/data.js'
+import { DataReader, DataWriter } from '../utils/data.js'
 
 export class Chunk{
 	constructor(buffer, world){
@@ -15,9 +15,8 @@ export class Chunk{
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
 		let id = buffer.short()
 		while(id){
-			const e = EntityIDs[id]()
-			Object.setPrototypeOf(e, Entity.prototype)
-			(buffer.short() / 1024 + (this.x << 6), buffer.short() / 1024 + (this.y << 6), this.world)
+			const e = EntityIDs[id](buffer.short() / 1024 + (this.x << 6), buffer.short() / 1024 + (this.y << 6), this.world)
+			e.chunk = this
 			buffer.setUint32(buffer.i, e._id)
 			buffer.setUint16((buffer.i += 6) - 2, e._id / 4294967296)
 			e.dx = buffer.float()
@@ -155,5 +154,4 @@ export class Chunk{
 		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, block.id >> 8, block.id)), w)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
-	
 }
