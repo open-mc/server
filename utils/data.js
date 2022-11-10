@@ -34,9 +34,9 @@ export class DataReader extends DataView{
 				len = type[1] >>> 0
 			}else{
 				len = this.getUint8(this.i)
-				if(len > 64 && buf.length > 1){
-					if(len > 128 && buf.length > 3)len = buf.getUint32(this.i) & 0x7FFFFFFF, this.i += 4
-					else len = buf.getUint16(this.i) & 0x3FFF, this.i += 2
+				if(len > 64){
+					if(len > 128)len = this.getUint32(this.i) & 0x7FFFFFFF, this.i += 4
+					else len = this.getUint16(this.i) & 0x3FFF, this.i += 2
 				}else len &= 0x3F, this.i++
 			}
 			while(len--)target.push(this.read(type[0]))

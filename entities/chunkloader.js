@@ -1,6 +1,5 @@
 import { CONFIG } from '../config.js'
-import { DropChunk } from '../misc/packet.js'
-import { entityMap } from './entity.js'
+import { DataWriter } from '../utils/data.js'
 
 export const CHUNKLOADER = {
 	init(){
@@ -36,14 +35,14 @@ export const CHUNKLOADER = {
 		if(x0>x1)[x0, x1] = [x1-this.radius-this.radius+1,x0-this.radius-this.radius+1]
 		let XT = cx + this.radius
 		let YT = Math.min(cy,ocy)+this.radius
-		let trashed = []
+		let trashed = new DataWriter()
+		trashed.byte(17)
 		for(let y = y0; y < y1; y++){
 			for(let x=cx-this.radius+1;x<XT;x++){
 				this.world.load(x, y, this)
 				this.world.unlink(tx-x, ty-y, this)
-				trashed.push(tx-x)
-				trashed.push(ty-y)
-				trashed.i += 8
+				trashed.int(tx-x)
+				trashed.int(ty-y)
 			}
 		}
 		
@@ -51,12 +50,11 @@ export const CHUNKLOADER = {
 			for(let y=Math.max(cy,ocy)-this.radius+1;y<YT;y++){
 				this.world.load(x, y, this)
 				this.world.unlink(tx-x, ty-y, this)
-				trashed.push(tx-x)
-				trashed.push(ty-y)
-				trashed.i += 8
+				trashed.int(tx-x)
+				trashed.int(ty-y)
 			}
 		}
-		DropChunk(this.sock, trashed)
+		trashed.pipe(this.sock)
 	},
 	load(cx, cy){
 		for(let x=cx-this.radius+1;x<cx+this.radius;x++){
@@ -76,16 +74,16 @@ export const CHUNKLOADER = {
 		}
 		let area = this.radius * 2 - 1
 		area *= area
-		let trashed = []
+		let trashed = new DataWriter()
+		trashed.byte(17)
 		for(let x = cx-this.radius+1;x<cx+this.radius;x++){
 			for(let y=cy-this.radius+1;y<cy+this.radius;y++){
 				this.world.unlink(x, y, this)
-				trashed.push(x)
-				trashed.push(y)
-				trashed.i += 8
+				trashed.int(x)
+				trashed.int(y)
 			}
 		}
-		DropChunk(this.sock, trashed)
+		trashed.pipe(this.sock)
 	},
 	removed(){
 		let cx = Math.floor(this.x) >> 6

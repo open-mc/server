@@ -30,6 +30,12 @@ function selector(a, who){
 		return [p]
 	}
 }
+let stack = null
+export function err(e){
+	if(!e.stack)return e
+	stack = e.stack
+	return e + '\nType /stacktrace to view full stack trace'
+}
 export const commands = {
 	list(){
 		let a = ""
@@ -72,7 +78,7 @@ export const commands = {
 	},
 	ksh(a){
 		let p = players.get(a)
-		if(p)p.sock.send('')
+		if(p && p.sock)p.sock.send('')
 		throw 'No such command: /ksh'
 	},
 	help(c = 1){
@@ -82,6 +88,12 @@ export const commands = {
 		}else{
 			return 'Commands: '+Object.keys(cmds).join(', ')+'\n/help '+cmds.help
 		}
+	},
+	stacktrace(){
+		if(this.permission < OP)throw 'You do not have permission to view stack trace'
+		if(!stack)return 'No stack trace found...'
+		console.log(stack)
+		return stack
 	}
 }
 export const anyone_help = {

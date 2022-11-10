@@ -60,29 +60,21 @@ export class Entity{
 		x = (f >> 0) + (x - f || 0)
 		f = Math.floor(y)
 		y = (f >> 0) + (y - f || 0)
-		if(w.putEntity(this, x, y)){
-			let oldw = this._w
-			this._w = w
-			this.moved(this._x, this._y, (this._x = x, this._y = y, oldw))
-		}
+		return w.putEntity(this, x, y, true)
 	}
 	set x(x){
 		this.mv |= 1
 		const f = Math.floor(x)
 		x = (f >> 0) + (x - f || 0)
 		if(Math.floor(this._x)>>6 === Math.floor(x)>>6)return void (this._x = x)
-		if(this._w.putEntity(this, x, this._y)){
-			this.moved(this._x, this._y, (this._x = x, this._w))
-		}
+		this._w.putEntity(this, x, this._y)
 	}
 	set y(y){
 		this.mv |= 2
 		const f = Math.floor(y)
 		y = (f >> 0) + (y - f)
 		if(Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._y = y)
-		if(this._w.putEntity(this, this._x, y)){
-			this.moved(this._x, this._y, (this._y = y, this._w))
-		}
+		this._w.putEntity(this, this._x, y)
 	}
 	move(x, y){
 		this.mv |= 3
@@ -90,10 +82,8 @@ export class Entity{
 		x = (f >> 0) + (x - f || 0)
 		f = Math.floor(y)
 		y = (f >> 0) + (y - f || 0)
-		if(Math.floor(this._x)>>6 === Math.floor(x)>>6 && Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._x = x, this._y = y)
-		if(this._w.putEntity(this, x, y)){
-			this.moved(this._x, this._y, (this._x = x, this._y = y, this._w))
-		}
+		if(Math.floor(this._x)>>6 === Math.floor(x)>>6 && Math.floor(this._y)>>6 === Math.floor(y)>>6)return (this._x = x, this._y = y, true)
+		return this._w.putEntity(this, x, y)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
 		return `Entities.${this._.name}({ x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32mDimensions.${this.world.id}\x1b[m${Object.hasOwn(this, 'name') ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} })`

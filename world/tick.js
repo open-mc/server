@@ -17,8 +17,17 @@ function encodeMove(e, pl){
 function moved(e){
 	const {chunk, ochunk} = e
 	if(chunk != ochunk){
+		if(ochunk){
+			for(const pl of ochunk.players){
+				if(chunk.players.includes(pl))continue
+				let buf = pl.ebuf
+				if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
+				buf.byte(0)
+				buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+			}
+		}
 		for(const pl of chunk.players){
-			if(ochunk && ochunk.players.includes(pl)){encodeMove(e, pl);continue}
+			if(ochunk && ochunk.players.includes(pl)){if(e != pl)encodeMove(e, pl);continue}
 			let buf = pl.ebuf
 			if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
 			buf.byte(255)
@@ -30,13 +39,6 @@ function moved(e){
 			buf.float(e.dy)
 			buf.float(e.f)
 			buf.write(e._.savedata, e)
-		}
-		if(ochunk)for(const pl of ochunk.players){
-			if(chunk.players.includes(pl))continue
-			let buf = pl.ebuf
-			if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
-			buf.byte(0)
-			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 		}
 		e.ochunk = chunk
 	}else for(const pl of chunk.players)if(e != pl)encodeMove(e, pl)

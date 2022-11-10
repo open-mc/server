@@ -6,7 +6,7 @@ import { commands } from './misc/commands.js'
 import './utils/prototypes.js'
 import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
-import { codes, string, types } from './misc/incomingPacket.js'
+import { codes, string } from './misc/incomingPacket.js'
 import { CONFIG, HANDLERS, PERMISSIONS, TPS } from './config.js'
 import { ItemIDs } from './items/item.js'
 import { BlockIDs } from './blocks/block.js'
@@ -29,9 +29,9 @@ import('./items/index.js').then(()=>progress(`${ItemIDs.length} Items loaded`))
 import('./blocks/index.js').then(()=>progress(`${BlockIDs.length} Blocks loaded`))
 function err(e){
 	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n')
+	process.stdout.write('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n')
 	console.log(e)
-	console.log('\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
+	process.stdout.write('\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf\n')
 	process.exit(0)
 }
 process.on('uncaughtException', err)
@@ -55,8 +55,8 @@ server.on('listening', () => {
 				})
 				if(!(args[0] in commands))throw 'no such command: /'+args[0]
 				let res = commands[args[0]].apply(server, args.slice(1))
-				res && console.log(res)
-			}catch(e){ console.log('\x1b[31m'+e+'\x1b[m'); return}
+				if(res)console.log(res)
+			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
 		}else{
 			process.stdout.write('\x1b[A')
 			input(false)
@@ -141,6 +141,7 @@ server.on('connection', async function(sock, {url}){
 	buffer.byte(1)
 	buffer.int(player._id | 0)
 	buffer.short(player._id / 4294967296 | 0)
+	buffer.string(player.world.id)
 	buffer.pipe(sock)
 	player.init()
 	player.place()
@@ -180,9 +181,7 @@ const message = function(_buf, isBinary){
 	const code = buf.byte()
 	if(!codes[code])return
 	try{
-		codes[code](player, types[code] ? buf.read(types[code]) : buf)
-	}catch(e){
-		console.log(e)
-	}
+		codes[code](player, buf)
+	}catch(e){console.log(e)}
 }
 setTPS(TPS)

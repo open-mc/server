@@ -1,38 +1,24 @@
 import { BlockIDs } from '../blocks/block.js'
 import { chat, prefix } from './chat.js'
-import { anyone_help, commands, mod_help } from './commands.js'
+import { anyone_help, commands, err, mod_help } from './commands.js'
 import { MOD } from '../config.js'
-function playerMovePacket(player, {x, y, r, dx, dy, f}){
-	if(r != player.r)return
-	player.move(x, y)
-	player.dx = dx; player.dy = dy; player.f = f
-}
-playerMovePacket.type = {
-	r: Byte,
-	x: Double, y: Double,
-	dx: Float, dy: Float,
-	f: Float
+function playerMovePacket(player, buf){
+	if(buf.byte() != player.r)return
+	player.move(buf.double(), buf.double())
+	player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 }
 
-function setBlockPacket(player, {x, y, id}){
-	const block = BlockIDs[id]
+function setBlockPacket(player, buf){
+	const x = buf.int(), y = buf.int()
+	const block = BlockIDs[buf.short()]
 	if(!block)return
 	player.world.put(x, y, block())
 }
-setBlockPacket.type = {
-	x: Int,
-	y: Int,
-	id: Short
-}
-
 
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	8: setBlockPacket
 })
-
-export const types = codes.map(a => a.type)
-
 export function string(player, text){
 	if(text[0] == '/'){
 		try{
@@ -46,7 +32,7 @@ export function string(player, text){
 			let res = commands[args[0]].apply(player, args.slice(1))
 			res && player.chat(res)
 		}catch(e){
-			player.chat(e, 9)
+			player.chat(err(e), 9)
 		}
 	}else chat(prefix(player)+text)
 }

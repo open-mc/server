@@ -2,7 +2,6 @@ import { HANDLERS } from '../config.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { Blocks } from '../blocks/block.js'
-import { BlockSet } from '../misc/packet.js'
 import { DataWriter } from '../utils/data.js'
 export class World extends Map{
 	constructor(id){
@@ -21,7 +20,7 @@ export class World extends Map{
 				i.players.push(p)
 				const buf = new DataWriter()
 				i.toBuf(buf)
-				for(const e of i.entities)if(!e.id && e != p){
+				for(const e of i.entities)if(!e.id){
 					buf.double(e.x)
 					buf.double(e.y)
 					buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
@@ -38,22 +37,13 @@ export class World extends Map{
 			let i = new Chunk(buf, this)
 			super.set(k, i)
 			i.players = pr.players
-			let buf2 = null
 			for(const p of i.players){
 				if(Math.floor(p._x) >> 6 == cx && Math.floor(p._y) >> 6 == cy){
-					p.chunk = p.ochunk = i
-					if(!buf2)buf2 = new DataWriter()
-					buf2.double(p.x)
-					buf2.double(p.y)
-					buf2.int(p._id | 0), buf2.short(p._id / 4294967296 | 0)
-					buf2.float(p.dx)
-					buf2.float(p.dy)
-					buf2.float(p.f)
-					buf2.write(p._.savedata, p)
+					p.chunk = i
 					i.entities.add(p)
+					p.mv = -1
 				}
-				if(buf2 && p.sock)p.sock.send(buf,{fin:false}),buf2.pipe(p.sock)
-				else p.sock.send(buf)
+				p.sock.send(buf)
 			}
 			i.t = 20
 			return i
@@ -81,12 +71,39 @@ export class World extends Map{
 		if(i.t == -1)i.t = 5 //If player has been in chunk, re-save chunk in 5 ticks
 		else super.delete(k) //Completely unloaded with no re-loads, delete chunk
 	}
-	putEntity(e, x, y){
+	putEntity(e, x, y, force = false){
 		let i = super.get((Math.floor(x)>>>6)+(Math.floor(y)>>>6)*67108864)
-		if(!i || (i instanceof Promise))return false
+		if(!i || i instanceof Promise){
+			if(!force)return false
+			if(!i)i = this.load(Math.floor(x)>>>6, Math.floor(y)>>>6)
+			if(e.chunk){
+				for(const pl of e.chunk.players){
+					if(!pl.sock)continue
+					let buf = pl.ebuf
+					if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
+					buf.byte(0)
+					buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+				}
+				e.chunk.entities.delete(e)
+				e.chunk = null
+			}
+			let oldw = e._w
+			e._w = this
+			e.moved(e._x, e._y, (e._x = x, e._y = y, oldw))
+			i.then(i => {
+				if(Math.floor(e._x) >> 6 != i.x || Math.floor(e._y) >> 6 != i.y)return
+				e.chunk = i
+				i.entities.add(e)
+				e.mv = -1
+			})
+			return
+		}
 		i.entities.add(e)
 		if(e.chunk)e.chunk.entities.delete(e)
 		e.chunk = i
+		let oldw = e._w
+		e._w = this
+		e.moved(e._x, e._y, (e._x = x, e._y = y, oldw))
 		return true
 	}
 	at(x, y){
@@ -98,14 +115,15 @@ export class World extends Map{
 		let ch = super.get((x>>>6)+(y>>>6)*67108864)
 		if(!ch)return
 		ch.tiles[(x & 63) + ((y & 63) << 6)] = b
-		blocksetobj.x = x
-		blocksetobj.y = y
-		blocksetobj.id = b.id
+		let buf = new DataWriter()
+		buf.byte(8)
+		buf.int(x)
+		buf.int(y)
+		buf.short(b.id)
 		for(const p of ch.players){
-			BlockSet(p.sock, blocksetobj)
+			buf.pipe(p.sock)
 		}
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<World '+this.id+'>'}
 	toString(){return this.id}
 }
-const blocksetobj = {x: 0, y: 0, id: 0}

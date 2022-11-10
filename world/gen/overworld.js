@@ -13,6 +13,13 @@ export default function(cx, cy){
 		return
 	}if(cy < -2){
 		chunk.fill(Blocks.stone())
+		if(cy == -33554432){
+			for(let y = 5; y >= 0; y--){
+				for(let x = 0; x < 64; x++){
+					if(Math.random() * 6 > y)chunk[x + y * 64] = Blocks.bedrock()
+				}
+			}
+		}
 	}else{
 		//PERLIN
 		fill(cx, cy, biome)
