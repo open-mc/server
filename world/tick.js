@@ -1,11 +1,11 @@
 import { entityMap } from '../entities/entity.js'
-import { players } from '../index.js'
+import { players } from '../world/index.js'
 import { DataWriter } from '../utils/data.js'
 import { Chunk } from './chunk.js'
-import { allDimensions, Dimensions } from './dimensions.js'
-function encodeMove(e, pl){
-	let buf = pl.ebuf
-	if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
+import { allDimensions, Dimensions } from './index.js'
+
+export function encodeMove(e, pl){
+	const buf = pl.ebuf
 	buf.byte(e.mv)
 	buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 	if(e.mv & 1)buf.double(e.x)
@@ -20,19 +20,16 @@ function moved(e){
 		if(ochunk){
 			for(const pl of ochunk.players){
 				if(chunk.players.includes(pl))continue
-				let buf = pl.ebuf
-				if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
-				buf.byte(0)
-				buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+				pl.ebuf.byte(0)
+				pl.ebuf.int(e._id | 0), pl.ebuf.short(e._id / 4294967296 | 0)
 			}
 		}
 		for(const pl of chunk.players){
 			if(ochunk && ochunk.players.includes(pl)){if(e != pl)encodeMove(e, pl);continue}
-			let buf = pl.ebuf
-			if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
+			const buf = pl.ebuf
 			buf.byte(255)
-			buf.short(e.id)
 			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+			buf.short(e.id)
 			buf.double(e.x)
 			buf.double(e.y)
 			buf.float(e.dx)
@@ -56,7 +53,10 @@ export function tick(){
 		if(e.mv)moved(e)
 	}
 	for(const pl of players.values()){
-		if(pl.ebuf)pl.ebuf.pipe(pl.sock), pl.ebuf = null
+		if(!pl.ebuf.length && pl.ebuf.i <= 1)continue
+		pl.ebuf.pipe(pl.sock)
+		pl.ebuf = new DataWriter()
+		pl.ebuf.byte(20)
 	}
 }
 

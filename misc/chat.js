@@ -1,4 +1,5 @@
-import { server, players } from '../index.js'
+import { server } from '../index.js'
+import { players } from '../world/index.js'
 
 export const BLACK = 0
 export const DARK_RED = 1

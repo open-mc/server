@@ -1,5 +1,3 @@
-import { DataWriter } from '../utils/data.js'
-import { Chunk } from '../world/chunk.js'
 import { World } from '../world/world.js'
 import DEFAULTS from './entitydefaults.js'
 export let entityMap = new Map(), i = -1
@@ -93,10 +91,8 @@ export class Entity{
 			this.chunk.entities.delete(this)
 			for(const pl of this.chunk.players){
 				if(!pl.sock)continue
-				let buf = pl.ebuf
-				if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
-				buf.byte(0)
-				buf.int(this._id | 0), buf.short(this._id / 4294967296 | 0)
+				pl.ebuf.byte(0)
+				pl.ebuf.int(this._id | 0), pl.ebuf.short(this._id / 4294967296 | 0)
 			}
 		}
 		entityMap.delete(this._id)

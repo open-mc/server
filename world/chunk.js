@@ -3,40 +3,40 @@ import { EntityIDs } from '../entities/entity.js'
 import { DataReader, DataWriter } from '../utils/data.js'
 
 export class Chunk{
-	constructor(buffer, world){
-		if(!buffer.left || buffer.byte() != 16)throw new TypeError("Invalid chunk data")
-		const x = buffer.int(), y = buffer.int()
+	constructor(buf, world){
+		if(!buf.left || buf.byte() != 16)throw new TypeError("Invalid chunk data")
+		const x = buf.int(), y = buf.int()
 		this.x = x << 6 >> 6
 		this.y = y << 6 >> 6
 		this.world = world
 		this.tiles = []
 		this.entities = new Set()
-		//read buffer palette
+		//read buf palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
-		let id = buffer.short()
+		let id = buf.short()
 		while(id){
-			const e = EntityIDs[id](buffer.short() / 1024 + (this.x << 6), buffer.short() / 1024 + (this.y << 6), this.world)
+			const e = EntityIDs[id](buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6), this.world)
 			e.chunk = this
-			buffer.setUint32(buffer.i, e._id)
-			buffer.setUint16((buffer.i += 6) - 2, e._id / 4294967296)
-			e.dx = buffer.float()
-			e.dy = buffer.float()
-			e.f = buffer.float()
-			if(e._.savedata)buffer.read(e._.savedata, e)
+			buf.setUint32(buf.i, e._id)
+			buf.setUint16((buf.i += 6) - 2, e._id / 4294967296)
+			e.dx = buf.float()
+			e.dy = buf.float()
+			e.f = buf.float()
+			if(e._.savedata)buf.read(e._.savedata, e)
 			this.entities.add(e)
-			id = buffer.short()
+			id = buf.short()
 		}
 		let palette = []
 		let i = 0
 		for(;i<palettelen;i++){
-			palette.push(BlockIDs[buffer.short()])
+			palette.push(BlockIDs[buf.short()])
 		}
 		let j = 0; i = 11 + i * 2
 		if(palettelen<2){
 			for(;j<4096;j++)this.tiles.push(palette[0]())
 		}else if(palettelen == 2){
 			for(;j<512;j++){
-				const byte = buffer.byte()
+				const byte = buf.byte()
 				this.tiles.push(palette[byte&1]())
 				this.tiles.push(palette[(byte>>1)&1]())
 				this.tiles.push(palette[(byte>>2)&1]())
@@ -48,7 +48,7 @@ export class Chunk{
 			}
 		}else if(palettelen <= 4){
 			for(;j<1024;j++){
-				const byte = buffer.byte()
+				const byte = buf.byte()
 				this.tiles.push(palette[byte&3]())
 				this.tiles.push(palette[(byte>>2)&3]())
 				this.tiles.push(palette[(byte>>4)&3]())
@@ -56,26 +56,26 @@ export class Chunk{
 			}
 		}else if(palettelen <= 16){
 			for(;j<2048;j++){
-				const byte = buffer.byte()
+				const byte = buf.byte()
 				this.tiles.push(palette[byte&15]())
 				this.tiles.push(palette[(byte>>4)]())
 			}
 		}else if(palettelen <= 256){
 			for(;j<4096;j++){
-				this.tiles.push(palette[buffer.byte()]())
+				this.tiles.push(palette[buf.byte()]())
 			}
 		}else{
 			for(;j<6144;j+=3){
 				let byte2
-				this.tiles.push(palette[buffer.byte() + (((byte2 = buffer.byte())&0x0F)<<8)]())
-				this.tiles.push(palette[buffer.byte() + ((byte2&0xF0)<<4)]())
+				this.tiles.push(palette[buf.byte() + (((byte2 = buf.byte())&0x0F)<<8)]())
+				this.tiles.push(palette[buf.byte() + ((byte2&0xF0)<<4)]())
 			}
 		}
 		//parse block entities
 		for(j=0;j<4096;j++){
 			const block = this.tiles[j]._
 			if(!block.savedata)continue
-			buffer.read(block.savedata, block)
+			buf.read(block.savedata, block)
 		}
 	}
 	toBuf(buf){

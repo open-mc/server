@@ -1,8 +1,8 @@
 import { stats, util } from './internals.js'
 import { WebSocketServer } from 'ws'
-import { Dimensions } from './world/dimensions.js'
+import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
-import { commands } from './misc/commands.js'
+import { commands, err } from './misc/commands.js'
 import './utils/prototypes.js'
 import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
@@ -12,32 +12,30 @@ import { ItemIDs } from './items/item.js'
 import { BlockIDs } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
+import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
 
-export const players = new Map()
-let total = 5, loaded = -1, p = null
+let total = 5, loaded = -1, promise = null
 let started = Math.round(Date.now() - performance.now())
-console.edit = function(...a){process.stdout.write('\x1b[1A\x1b[9999D\x1b[2K'); console.log(...a) }
 globalThis.progress = function(desc){
 	loaded++
-	console.edit(`\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total-loaded)}] (${formatTime(Date.now()-started)}) ${desc}`)
-	if(total == loaded + 1)p()
+	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total-loaded)}] (${formatTime(Date.now()-started)}) ${desc}`)
+	if(total == loaded + 1)promise()
 }
 process.stdout.write('\x1bc\x1b[3J')
 progress('Modules loaded')
 import('./entities/index.js').then(()=>progress(`${EntityIDs.length} Entities loaded`))
 import('./items/index.js').then(()=>progress(`${ItemIDs.length} Items loaded`))
 import('./blocks/index.js').then(()=>progress(`${BlockIDs.length} Blocks loaded`))
-function err(e){
+function uncaughtErr(e){
 	const l = process.stdout.columns
-	process.stdout.write('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n')
-	console.log(e)
-	process.stdout.write('\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf\n')
-	process.exit(0)
+	console.log('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n' + (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
+	//process.exit(0)
 }
-process.on('uncaughtException', err)
-process.on('unhandledRejection', err)
+process.on('uncaughtException', uncaughtErr)
+process.on('unhandledRejection', uncaughtErr)
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
-await new Promise(r=>p=r)
+await new Promise(r=>promise=r)
+
 export const server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
 server.on('listening', () => {
 	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m`)
@@ -64,14 +62,6 @@ server.on('listening', () => {
 		}
 	})
 })
-
-players[Symbol.for('nodejs.util.inspect.custom')] = function(){
-	let a = '\x1b[32m' + this.size + '\x1b[m player'+(this.size==1?'':'s')+':'
-	for(let p of this){
-		a += '\n' + p[1]
-	}
-	return a
-}
 function formatTime(a){
 	a /= 1000
 	if(a < 3600){
@@ -90,8 +80,12 @@ server.on('connection', async function(sock, {url}){
 	let [, username, token] = url.split('/').map(decodeURI)
 	//verify token
 	//for now, allow
-
-	let permissions = (PERMISSIONS[username]||PERMISSIONS.default)
+	if(players.size + playersConnecting.size >= CONFIG.maxplayers){
+		sock.on('close', playerLeftQueue)
+		if(await queue(sock))return sock.close()
+		sock.removeListener('close', playerLeftQueue)
+	}
+	let permissions = PERMISSIONS[username] || PERMISSIONS.default
 	if(permissions*1000 > Date.now()){
 		sock.send(permissions==2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '+formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
 		sock.close()
@@ -132,17 +126,18 @@ server.on('connection', async function(sock, {url}){
 		player.inv = [], player.health = 20
 		let i = 41; while(i--)player.inv.push(null)
 	}
-	player.r = 0
 	player.sock = sock
-	player.ebuf = null
+	player.ebuf = new DataWriter()
+	player.ebuf.byte(20)
 	player.name = username
 	player.permissions = permissions
-	let buffer = new DataWriter()
-	buffer.byte(1)
-	buffer.int(player._id | 0)
-	buffer.short(player._id / 4294967296 | 0)
-	buffer.string(player.world.id)
-	buffer.pipe(sock)
+	let buf = new DataWriter()
+	buf.byte(1)
+	buf.int(player._id | 0)
+	buf.short(player._id / 4294967296 | 0)
+	buf.byte(player.r = 0)
+	buf.string(player.world.id)
+	buf.pipe(sock)
 	player.init()
 	player.place()
 	players.set(username, player)
@@ -160,16 +155,17 @@ const close = async function(){
 	if(!player)return
 	players.delete(player.name)
 	playersConnecting.add(player.name)
-	const buffer = new DataWriter()
-	buffer.double(player.x)
-	buffer.double(player.y)
-	buffer.string(player.world.id)
-	buffer.float(player.dx)
-	buffer.float(player.dy)
-	buffer.float(player.f)
-	buffer.write(Entities.player._.savedata, player)
-	await HANDLERS.SAVEFILE('players/' + player.name, buffer.build())
+	const buf = new DataWriter()
+	buf.double(player.x)
+	buf.double(player.y)
+	buf.string(player.world.id)
+	buf.float(player.dx)
+	buf.float(player.dy)
+	buf.float(player.f)
+	buf.write(Entities.player._.savedata, player)
+	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
 	playersConnecting.delete(player.name)
+	playerLeft()
 	player.remove()
 }
 

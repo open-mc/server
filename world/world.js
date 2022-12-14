@@ -8,16 +8,16 @@ export class World extends Map{
 		super()
 		this.id = id
 	}
-	load(cx, cy, p = null){
+	load(cx, cy, pl = null){
 		let k = (cx&67108863)+(cy&67108863)*67108864
 		let i = super.get(k)
 		if(i instanceof Promise){
-			if(p)i.players.push(p)
-			return Promise.resolve(i)
+			if(pl)i.players.push(pl)
+			return i
 		}
 		if(i){
-			if(p && p.sock){
-				i.players.push(p)
+			if(pl && pl.sock){
+				i.players.push(pl)
 				const buf = new DataWriter()
 				i.toBuf(buf)
 				for(const e of i.entities)if(!e.id){
@@ -29,7 +29,7 @@ export class World extends Map{
 					buf.float(e.f)
 					buf.write(e._.savedata, e)
 				}
-				buf.pipe(p.sock)
+				buf.pipe(pl.sock)
 			}
 			return Promise.resolve(i)
 		}
@@ -37,24 +37,31 @@ export class World extends Map{
 			let i = new Chunk(buf, this)
 			super.set(k, i)
 			i.players = pr.players
-			for(const p of i.players){
-				if(Math.floor(p._x) >> 6 == cx && Math.floor(p._y) >> 6 == cy){
-					p.chunk = i
-					i.entities.add(p)
-					p.mv = -1
+			for(const pl of i.players){
+				if(Math.floor(pl._x) >> 6 == cx && Math.floor(pl._y) >> 6 == cy){
+					pl.chunk = i
+					i.entities.add(pl)
+					pl.mv = -1
 				}
-				p.sock.send(buf)
+				pl.sock.send(buf)
 			}
 			i.t = 20
 			return i
 		})
-		pr.players = p ? [p] : []
+		pr.players = pl ? [pl] : []
 		super.set(k, pr)
 		return pr
 	}
-	unlink(cx, cy, p){
+	unlink(cx, cy, pl){
 		let i = super.get((cx&67108863)+(cy&67108863)*67108864)
-		if(i)i.players.remove(p)
+		if(!i)return
+		i.players.remove(pl)
+		if(!pl.sock)return
+		const buf = pl.ebuf
+		for(let e of i.entities){
+			buf.byte(0)
+			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+		}
 	}
 	async check(i){
 		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
@@ -79,8 +86,7 @@ export class World extends Map{
 			if(e.chunk){
 				for(const pl of e.chunk.players){
 					if(!pl.sock)continue
-					let buf = pl.ebuf
-					if(!buf){buf = pl.ebuf = new DataWriter(); buf.byte(20)}
+					const buf = pl.ebuf
 					buf.byte(0)
 					buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 				}
@@ -120,8 +126,8 @@ export class World extends Map{
 		buf.int(x)
 		buf.int(y)
 		buf.short(b.id)
-		for(const p of ch.players){
-			buf.pipe(p.sock)
+		for(const pl of ch.players){
+			buf.pipe(pl.sock)
 		}
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<World '+this.id+'>'}

@@ -1,5 +1,6 @@
 import { Item } from '../../items/item.js'
 import { DataWriter } from '../../utils/data.js'
+import { encodeMove } from '../../world/tick.js'
 import { CHUNKLOADER } from '../chunkloader.js'
 import { Entities, Entity } from '../entity.js'
 
@@ -11,18 +12,17 @@ Entities.player = Entity.define({
 	chat(msg, style = 15){
 		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
 	},
-	rubber(){
+	rubber(mv = 255){
 		this.r = (this.r + 1) & 0xff
 		let buf = new DataWriter()
-		buf.byte(4)
+		buf.byte(1)
+		buf.int(this._id | 0)
+		buf.short(this._id / 4294967296 | 0)
 		buf.byte(this.r)
-		buf.double(this.x)
-		buf.double(this.y)
 		buf.string(this.world.id)
-		buf.float(this.dx)
-		buf.float(this.dy)
-		buf.float(this.f)
 		buf.pipe(this.sock)
+		this.mv = mv
+		encodeMove(this, this)
 	}
 }, {
 	health: Byte,
