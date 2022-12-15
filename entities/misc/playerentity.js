@@ -12,7 +12,7 @@ Entities.player = Entity.define({
 	chat(msg, style = 15){
 		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
 	},
-	rubber(mv = 255){
+	rubber(mv = 31){
 		this.r = (this.r + 1) & 0xff
 		let buf = new DataWriter()
 		buf.byte(1)
@@ -20,9 +20,11 @@ Entities.player = Entity.define({
 		buf.short(this._id / 4294967296 | 0)
 		buf.byte(this.r)
 		buf.string(this.world.id)
-		buf.pipe(this.sock)
-		this.mv = mv
-		encodeMove(this, this)
+		this.sock.packets.push(buf)
+		if(mv){
+			this.mv |= mv
+			encodeMove(this, this)
+		}
 	}
 }, {
 	health: Byte,

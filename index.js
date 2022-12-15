@@ -38,7 +38,7 @@ await new Promise(r=>promise=r)
 
 export const server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
 server.on('listening', () => {
-	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m`)
+	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m\nPress Tab to switch between Chat and Repl`)
 	started = Date.now()
 	process.stdin.setRawMode(true)
 	process.stdin.resume()
@@ -131,6 +131,7 @@ server.on('connection', async function(sock, {url}){
 	player.ebuf.byte(20)
 	player.name = username
 	player.permissions = permissions
+	sock.packets = []
 	let buf = new DataWriter()
 	buf.byte(1)
 	buf.int(player._id | 0)
@@ -178,6 +179,6 @@ const message = function(_buf, isBinary){
 	if(!codes[code])return
 	try{
 		codes[code](player, buf)
-	}catch(e){console.log(e)}
+	}catch(e){console.warn(e)}
 }
 setTPS(TPS)

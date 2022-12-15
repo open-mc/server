@@ -1,8 +1,12 @@
 import { Block, Blocks } from '../block.js'
 
-Blocks.grass = Block.define({
+const GRASS = {
 	tool: 'shovel',
 	drops(silk){
 		return silk ? [Items.grass()] : [Items.dirt()]
 	}
-})
+}
+
+Blocks.grass = Block.define(GRASS)
+
+Blocks.snowy_grass = Block.define(GRASS)

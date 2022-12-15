@@ -20,7 +20,7 @@ Object.defineProperties(Array.prototype, {
 			if(j > i)this[i] = this[j]
 			if(this[i] != a)i++
 		}
-		while(i < j)this.pop(),i++
+		this.length = i
 		return this
 	}}
 })

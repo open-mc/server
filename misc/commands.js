@@ -4,6 +4,7 @@ import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { MOD, OP } from '../config.js'
 import { Entity } from '../entities/entity.js'
+import { World } from '../world/world.js'
 function log(who, msg){
 	if(!GAMERULES.commandlogs)return
 	chat(prefix(who, 1)+msg, LIGHT_GREY + ITALIC)
@@ -52,6 +53,7 @@ export const commands = {
 	},
 	tp(a, ax = '~', ay = '~', d = this.world || 'overworld'){
 		if(typeof d == 'string')d = Dimensions[d]
+		if(!(d instanceof World))throw 'Invalid dimension'
 		let x = ax, y = ay
 		let players = selector(a, this)
     if(x[0] == "^" && y[0] == "^"){
@@ -98,7 +100,7 @@ export const commands = {
 	stacktrace(){
 		if(this.permission < OP)throw 'You do not have permission to view stack trace'
 		if(!stack)return 'No stack trace found...'
-		console.log(stack)
+		console.warn(stack)
 		return stack
 	}
 }

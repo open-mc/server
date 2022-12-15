@@ -16,7 +16,6 @@ export function playerLeft(){
 }
 
 export function playerLeftQueue(){
-	console.log(this)
 	let i = 0
 	while(i < queueLength && queued[i].ws != this)i++
 	if(i == queueLength)return

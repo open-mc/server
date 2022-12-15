@@ -1,5 +1,5 @@
 Biomes.snowy = {
-	surface: Blocks.snow_block(),//Blocks.snow(), Blocks.snowygrass()]
+	surface: Blocks.snowy_grass(),
 	terrain: {
 		offset: 16,
 		height: 8

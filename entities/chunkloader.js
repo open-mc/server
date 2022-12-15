@@ -2,9 +2,9 @@ import { CONFIG } from '../config.js'
 import { DataWriter } from '../utils/data.js'
 
 export const CHUNKLOADER = {
-	init(){
-		this.radius = CONFIG.chunkloadingrange
-		this.load(Math.floor(this.x) >> 6, Math.floor(this.y) >> 6)
+	init(rad = CONFIG.chunkloadingrange){
+		this.radius = rad
+		this.load(Math.floor(this.x) >> 6, Math.floor(this.y) >> 6, this._w)
 	},
 	moved(ox, oy, ow){
 		let ocx = Math.floor(ox) >> 6
@@ -14,17 +14,14 @@ export const CHUNKLOADER = {
 		if(ocx == cx && ocy == cy)return
 		if(ow != this.world || Math.max(Math.abs(cx-ocx << 6 >> 6),Math.abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
 			//teleport
-			const _w = this._w
-			this._w = ow
-			this.unload(ocx, ocy)
-			this._w = _w
-			this.load(cx, cy)
+			this.unload(ocx, ocy, ow)
+			this.load(cx, cy, this._w)
 			return
 		}
-		if(cx>99999&&ocx<-99999)cx-=0x4000000
-		if(cx<-99999&&ocx>99999)cx+=0x4000000
-		if(cy>99999&&ocy<-99999)cy-=0x4000000
-		if(cy<-99999&&ocy>99999)cy+=0x4000000
+		if(cx>999999&&ocx<-999999)cx-=0x4000000
+		if(cx<-999999&&ocx>999999)cx+=0x4000000
+		if(cy>999999&&ocy<-999999)cy-=0x4000000
+		if(cy<-999999&&ocy>999999)cy+=0x4000000
 		let tx = cx + ocx
 		let ty = cy + ocy
 		let y0 = ocy + this.radius
@@ -56,29 +53,29 @@ export const CHUNKLOADER = {
 		}
 		trashed.pipe(this.sock)
 	},
-	load(cx, cy){
+	load(cx, cy, world){
 		for(let x=cx-this.radius+1;x<cx+this.radius;x++){
 			for(let y=cy-this.radius+1;y<cy+this.radius;y++){
-				this.world.load(x, y, this)
+				world.load(x, y, this)
 			}
 		}
 	},
-	unload(cx, cy, send = true){
+	unload(cx, cy, world, send = true){
 		if(!send){
 			for(let x = cx-this.radius+1;x<cx+this.radius;x++){
 				for(let y=cy-this.radius+1;y<cy+this.radius;y++){
-					this.world.unlink(x, y, this)
+					world.unlink(x, y, this)
 				}
 			}
 			return
 		}
 		let area = this.radius * 2 - 1
 		area *= area
-		let trashed = new DataWriter()
+		const trashed = new DataWriter()
 		trashed.byte(17)
 		for(let x = cx-this.radius+1;x<cx+this.radius;x++){
 			for(let y=cy-this.radius+1;y<cy+this.radius;y++){
-				this.world.unlink(x, y, this)
+				world.unlink(x, y, this)
 				trashed.int(x)
 				trashed.int(y)
 			}
@@ -86,8 +83,8 @@ export const CHUNKLOADER = {
 		trashed.pipe(this.sock)
 	},
 	removed(){
-		let cx = Math.floor(this.x) >> 6
-		let cy = Math.floor(this.y) >> 6
-		this.unload(cx, cy, false)
+		const cx = Math.floor(this.x) >> 6
+		const cy = Math.floor(this.y) >> 6
+		this.unload(cx, cy, this.world, false)
 	}
 }

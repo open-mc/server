@@ -23,7 +23,7 @@ export class Entity{
 	}
 	place(){
 		if(this._w.putEntity(this, this._x, this._y)){
-			this.mv = -1
+			this.mv = 255
 		}else if(this.id)console.warn('\x1b[33m[WARN] Entity placed in unloaded chunk! This is a bad idea as the entity will likely never be ticked or saved to disk!')
 	}
 	/**

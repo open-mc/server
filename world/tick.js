@@ -8,34 +8,38 @@ export function encodeMove(e, pl){
 	const buf = pl.ebuf
 	buf.byte(e.mv)
 	buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+	if(e.mv & 128)buf.short(e.id)
 	if(e.mv & 1)buf.double(e.x)
 	if(e.mv & 2)buf.double(e.y)
 	if(e.mv & 4)buf.float(e.dx)
 	if(e.mv & 8)buf.float(e.dy)
 	if(e.mv & 16)buf.float(e.f)
+	if(e.mv & 32)buf.write(e._.savedata, e)
 }
 function moved(e){
 	const {chunk, ochunk} = e
 	if(chunk != ochunk){
 		if(ochunk){
 			for(const pl of ochunk.players){
-				if(chunk.players.includes(pl))continue
+				if(chunk && chunk.players.includes(pl))continue
 				pl.ebuf.byte(0)
 				pl.ebuf.int(e._id | 0), pl.ebuf.short(e._id / 4294967296 | 0)
 			}
 		}
-		for(const pl of chunk.players){
-			if(ochunk && ochunk.players.includes(pl)){if(e != pl)encodeMove(e, pl);continue}
-			const buf = pl.ebuf
-			buf.byte(255)
-			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
-			buf.short(e.id)
-			buf.double(e.x)
-			buf.double(e.y)
-			buf.float(e.dx)
-			buf.float(e.dy)
-			buf.float(e.f)
-			buf.write(e._.savedata, e)
+		if(chunk){
+			for(const pl of chunk.players){
+				if(ochunk && ochunk.players.includes(pl)){if(e != pl)encodeMove(e, pl);continue}
+				const buf = pl.ebuf
+				buf.byte(255)
+				buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+				buf.short(e.id)
+				buf.double(e.x)
+				buf.double(e.y)
+				buf.float(e.dx)
+				buf.float(e.dy)
+				buf.float(e.f)
+				buf.write(e._.savedata, e)
+			}
 		}
 		e.ochunk = chunk
 	}else for(const pl of chunk.players)if(e != pl)encodeMove(e, pl)
@@ -53,10 +57,16 @@ export function tick(){
 		if(e.mv)moved(e)
 	}
 	for(const pl of players.values()){
-		if(!pl.ebuf.length && pl.ebuf.i <= 1)continue
-		pl.ebuf.pipe(pl.sock)
-		pl.ebuf = new DataWriter()
-		pl.ebuf.byte(20)
+		if(pl.ebuf.length || pl.ebuf.i > 1){
+			pl.ebuf.pipe(pl.sock)
+			pl.ebuf = new DataWriter()
+			pl.ebuf.byte(20)
+			const length = pl.sock.packets.length
+			for(let i = 0; i < length; i++){
+				pl.sock.packets[i].pipe(pl.sock)
+			}
+		}
+		
 	}
 }
 
