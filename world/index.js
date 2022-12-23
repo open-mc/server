@@ -7,9 +7,9 @@ export const Dimensions = {
 }
 
 for(let i in Dimensions){
-	let {id} = Dimensions[i]
-	if(existsSync(WORLD + 'chunks/' + id))continue
-	fs.mkdir(WORLD + 'chunks/' + id)
+	let d = Dimensions[i]
+	if(existsSync(WORLD + 'dimensions/' + d.id))Object.assign(d, (await fs.readFile(WORLD + 'dimensions/' + d.id + '.json').then(a => JSON.parse(a.toString())).catch(e=>({}))))
+	else fs.mkdir(WORLD + 'dimensions/' + d.id)
 }
 export const allDimensions = Object.values(Dimensions)
 

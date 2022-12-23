@@ -1,6 +1,7 @@
 ```sh
 git clone https://github.com/openmc2d/server
-node server
+cd server
+npm start
 ```
 Will create 2 folders where the command is run:
 - `world` containing world data as well as config files

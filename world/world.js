@@ -38,7 +38,7 @@ export class World extends Map{
 			}
 			return ch
 		}
-		let pr = HANDLERS.LOADFILE('chunks/'+this.id+'/'+k).catch(Function.prototype).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
+		let pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(Function.prototype).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
 			let ch = new Chunk(buf, this)
 			super.set(k, ch)
 			ch.players = pr.players
@@ -79,7 +79,7 @@ export class World extends Map{
 		if(--ch.t)return //Count down timer
 		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
 		const b = ch.toBuf(new DataWriter()).build()
-		await HANDLERS.SAVEFILE('chunks/'+this.id+'/'+k, b)
+		await HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b)
 		if(ch.t == -1)ch.t = 5 //If player has been in chunk, re-save chunk in 5 ticks
 		else super.delete(k) //Completely unloaded with no re-loads, delete chunk
 	}

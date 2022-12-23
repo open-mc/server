@@ -179,7 +179,22 @@ const message = function(_buf, isBinary){
 }
 setTPS(TPS)
 
-
-process.on('beforeExit', () => {
-	//Sav stuff here
+let exiting = false
+process.on('SIGINT', (e) => {
+	//Save stuff here
+	
+	if(exiting)return console.log('\x1b[33mEvaluate \x1b[30mprocess.exit(0)\x1b[33m in the Repl to force shut down the server\x1b[m')
+	console.log('\x1b[33mShutting down gracefully...\x1b[m')
+	exiting = true
+	saveAll().then(process.exit)
 })
+
+function saveAll(){
+	const promises = []
+	for(const name in Dimensions){
+		const d = Dimensions[name]
+		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'.json', JSON.stringify({tick: d.tick})))
+	}
+	return Promise.all(promises)
+}
+setInterval(saveAll, 60e3)
