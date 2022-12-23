@@ -1,7 +1,8 @@
 {
 	"type": "module",
+	"version": "0.0.2",
 	"scripts": {
-		"start": "node ."
+		"start": "[ -d node_modules ] || npm i; node ."
 	},
 	"dependencies": {
 		"basic-repl": "^2.1.1",

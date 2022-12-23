@@ -1,3 +1,4 @@
+import { biomesheet } from './biomes.js'
 import { imxs32_2 } from './random.js'
 
 const low = new Float64Array(4160)
@@ -45,9 +46,18 @@ function makeVector(i, int){
 		xdep[i] = (int & 0x3F) / 32 - (int & 0x40 ? 0.96875 : 1)
 	}
 }
+//3x^2 - 2x^3 polynomial lerp lookup table for i=0..<16 => x=0..<1
+const lerpLookup = [
+	      0, 0.01123046875, 0.04296875, 0.09228515625,
+	0.15625, 0.23193359375, 0.31640625, 0.40673828125,
+	    0.5, 0.59326171875, 0.68359375, 0.76806640625,
+	0.84375, 0.90771484375, 0.95703125, 0.98876953125
+]
 const facs = new Float64Array(64)
 const heights = new Float64Array(64)
-export function fill(cx, cy, biomes){
+export function fill(cx, cy){
+	const biomes = biomesheet(cx >> 5)
+	const biomes_i = (cx & 31) << 2
 	const g = imxs32_2(cx, cy)
 	makeVector(0, g)
 	const g_up = imxs32_2(cx, cy + 1)
@@ -69,23 +79,24 @@ export function fill(cx, cy, biomes){
 	
 	for(let i = 0; i < 4160;){
 		if(i < 64){
-			let {terrain: {offset, height}} = biomes[(i >> 3) & 7]
-			const {terrain: {offset: o2, height: h2}} = biomes[((i >> 3) & 7) + 1]
-			offset = (offset * (~i & 7) + o2 * (i & 7)) / 7
-			height = 7 / (height * (~i & 7) + h2 * (i & 7))
-			facs[i] = ((cy << 6) - offset) * height
+			let {terrain: {offset, height}} = biomes[biomes_i + (i >> 4 & 3)]
+			const {terrain: {offset: o2, height: h2}} = biomes[biomes_i + (i >> 4 & 3) + 1]
+			const lerp = lerpLookup[i & 15]
+			offset = (1 - lerp) * offset + lerp * o2
+			height = (1 - lerp) * height + lerp * h2
+			facs[i] = ((cy << 6) - offset) / height
 			heights[i] = height
 		}
 		const height = heights[i & 63]
 		const fac = facs[i & 63]
-		const {deepsurface, surface} = biomes[((i >> 3) & 7) + (i >> 2 & 1)]
-		const u = sel[i] = (sel[i] * low[i] + (1-sel[i]) * high[i]) + fac + (i >> 6) * height
+		const {deepsurface, surface} = biomes[biomes_i + (i >> 4 & 3) + (i >> 3 & 1)]
+		const u = sel[i] = (sel[i] * low[i] + (1-sel[i]) * high[i]) + fac + (i >> 6) / height
 		if(i < 64){i++;continue}
 		const s = sel[i -= 64]
 		chunk[i] = s < 0 ?
 			u >= 0 && surface ?
 				surface
-			: s > -5*height && deepsurface ?
+			: s > -5/height && deepsurface ?
 				deepsurface
 			: Blocks.stone()
 		: cy < 0 ? Blocks.water() : Blocks.air()

@@ -1,8 +1,8 @@
 Biomes.ocean = {
 	surface: null,
 	terrain: {
-		offset: -32,
-		height: 12
+		offset: -24,
+		height: 8
 	},
 	deepsurface: Blocks.sand()
 }

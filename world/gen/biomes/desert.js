@@ -1,7 +1,7 @@
 Biomes.desert = {
 	surface: null,
 	terrain: {
-		offset: 16,
+		offset: 8,
 		height: 16
 	},
 	deepsurface: Blocks.sand()

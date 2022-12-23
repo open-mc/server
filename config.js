@@ -25,3 +25,5 @@ export const HANDLERS = {
 export const TPS = 20
 
 export const GAMERULES = JSON.parse(''+await fs.readFile(WORLD + 'gamerules.json'))
+
+export const { version } = await fs.readFile('./package.json').then(a=>JSON.parse(''+a))

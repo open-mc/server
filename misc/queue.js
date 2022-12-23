@@ -3,7 +3,6 @@ export function queue(ws){
 	if(queued.length >= 1e5)return ws.send('-119What the heck!!? Queue is full (100000 players)'), true
 	let pr = new Promise(r => (r.ws = ws, queued.push(r), queueLength++))
 	ws.send('-21fPosition in queue: ' + queueLength)
-	console.log(queued, queueLength)
 	return pr
 }
 

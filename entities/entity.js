@@ -2,29 +2,31 @@ import { World } from '../world/world.js'
 import DEFAULTS from './entitydefaults.js'
 export let entityMap = new Map(), i = -1
 export class Entity{
-	constructor(def, x, y, world){
+	constructor(def, x, y){
 		this._ = def
 		if(x !== x || y !== y)throw new TypeError('x and y must be a number')
-		if(!world || world.constructor !== World)throw new TypeError("'world' must be a world")
 		let f = Math.floor(x)
 		x = (f >> 0) + (x - f || 0)
 		f = Math.floor(y)
 		y = (f >> 0) + (y - f || 0)
 		this._x = x
 		this._y = y
-		this._w = world
+		this._w = null
 		this._dx = this._dy = this._f = 0
-		this._id = -1
 		this.chunk = null
 		this.ochunk = null
 		this.mv = 0
-		this._id = ++i
-		entityMap.set(i, this)
+		this._id = -1
+		this.name = ''
 	}
-	place(){
-		if(this._w.putEntity(this, this._x, this._y)){
+	place(world){
+		if(this._id < 0){
+			this._id = ++i
+			entityMap.set(i, this)
+		}
+		if(world.putEntity(this, this._x, this._y, this.id == 0)){
 			this.mv = 255
-		}else if(this.id)console.warn('\x1b[33m[WARN] Entity placed in unloaded chunk! This is a bad idea as the entity will likely never be ticked or saved to disk!')
+		}else console.warn('\x1b[33m[WARN] Entity placed in unloaded chunk! This is a bad idea as the entity will likely never be ticked or saved to disk!')
 	}
 	/**
 	 * define a new entity definition
@@ -95,8 +97,10 @@ export class Entity{
 				pl.ebuf.int(this._id | 0), pl.ebuf.short(this._id / 4294967296 | 0)
 			}
 		}
-		entityMap.delete(this._id)
 		this.removed()
+		this._w = this.chunk = this.ochunk = null
+		entityMap.delete(this._id)
+		this._id = -1
 		//._.died() is only used for when the entity dies naturally (i.e not despawned / unloaded)
 	}
 }

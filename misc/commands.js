@@ -1,4 +1,4 @@
-import { GAMERULES } from '../config.js'
+import { GAMERULES, version } from '../config.js'
 import { players } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
@@ -45,6 +45,7 @@ export const commands = {
 		return a.slice(0,-1)
 	},
 	say(s, ...l){
+		if(this.permissions < MOD)throw 'You do not have permission to /say'
 		if(!l.length)throw 'Command usage: /say <style> <text...>\nExample: /say lime-bold Hello!'
 		let col = 0, txt = s.includes('raw') ? l.join(' ') : prefix(this, 1) + l.join(' ')
 		for(let [m] of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
@@ -52,6 +53,7 @@ export const commands = {
 		chat(txt, col)
 	},
 	tp(a, ax = '~', ay = '~', d = this.world || 'overworld'){
+		if(this.permissions < MOD)throw 'You do not have permission to /tp'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!(d instanceof World))throw 'Invalid dimension'
 		let x = ax, y = ay
@@ -71,6 +73,7 @@ export const commands = {
 		else log(this, `Teleported ${players[0].name} to (${x}, ${y})`)
 	},
 	kick(a, ...r){
+		if(this.permissions < MOD)throw 'You do not have permission to /kick players'
 		const reason = r.join(' ')
 		let players = selector(a, this)
 		if(players.length > 1 && this.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
@@ -102,8 +105,50 @@ export const commands = {
 		if(!stack)return 'No stack trace found...'
 		console.warn(stack)
 		return stack
+	},
+	time(time, d = this.world || 'overworld'){
+		if(this.permission < MOD)throw 'You do not have permission to change dimension time!'
+		if(typeof d == 'string')d = Dimensions[d]
+		if(!time){
+			return `This dimension is on tick ${d.tick}\nThe day is ${Math.floor((d.tick + 7000) / 24000)} and the time is ${Math.floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(Math.floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
+		}else if(time[0] == '+' || time[0] == '-'){
+			let t = d.tick + +time
+			if(t < 0)t = (t % 24000 + 24000) % 24000
+			if(t != t)throw `'${time}' is not a valid number`
+			d.tick = t
+			return 'Set the time to '+t
+		}else if(time[0] >= '0' && time[0] <= '9'){
+			const t = +time
+			if(!(t >= 0))throw `'${time}' is not a valid number`
+			d.tick = t
+			return 'Set the time to '+t
+		}
+		let t;
+		switch(time){
+			case 'day': t = 1800; break
+			case 'noon': t = 6000; break
+			case 'afternoon': t = 9000; break
+			case 'sunset': t = 13800; break
+			case 'night': t = 15600; break
+			case 'midnight': t = 18000; break
+			case 'dark': t = 22000; break
+			case 'sunrise': t = 0; break
+			default:
+			throw "'invalid option: '"+time+"'"
+		}
+		t = (d.tick - t) % 24000
+		if(t >= 12000)d.tick += (24000 - t)
+		else d.tick -= t
+		return 'Set the time to '+time
+	},
+	info(){
+		return `Vanilla server software ${version}\n`
 	}
 }
+
+//Aliases
+commands.i = commands.info
+
 export const anyone_help = {
 	help: '<cmd> -- Help for a command',
 	list: '-- List online players'

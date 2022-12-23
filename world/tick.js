@@ -47,11 +47,13 @@ function moved(e){
 }
 
 export function tick(){
-	for(const d of allDimensions)
-		for(const v of Dimensions[d].values()){
-			if(!(v instanceof Chunk))continue
-			d.check(v)
+	for(const w of allDimensions){
+		w.tick++
+		for(const ch of Dimensions[w].values()){
+			if(!(ch instanceof Chunk))continue
+			w.check(ch)
 		}
+	}
 	for(const e of entityMap.values()){
 		if(!e.chunk)continue
 		if(e.mv)moved(e)
@@ -70,8 +72,19 @@ export function tick(){
 	}
 }
 
-let tickTimer = null
+function everySecond(){
+	for(const pl of players.values()){
+		const buf = new DataWriter()
+		buf.byte(3)
+		buf.double(pl.world ? pl.world.tick : 0)
+		buf.pipe(pl.sock)
+	}
+}
+
+let tickTimer = null, timer2 = null
 export function setTPS(a){
 	clearInterval(tickTimer)
 	tickTimer = setInterval(tick, 1000 / a - 1)
+	clearInterval(timer2)
+	timer2 = setInterval(everySecond, 1000)
 }

@@ -81,6 +81,7 @@ export class DataReader extends DataView{
 		if(!item)return null
 		if(!target)target = item(count)
 		else target.count = count, target._ = item._
+		item.name = this.string()
 		if(item._.savedata)this.read(item._.savedata, target)
 		return target
 	}
@@ -145,6 +146,7 @@ export class DataWriter extends Array{
 				if(!v){buf.setUint8(this.i++, 0); return}
 				buf.setUint8(this.i++, v.count)
 				buf.setUint16(this.i, v.id); this.i += 2
+				this.string(v.name)
 				if(v._.savedata)this.write(v._.savedata, v)
 				return
 		}
@@ -210,6 +212,7 @@ export class DataWriter extends Array{
 		if(!v){this.cur.setUint8(this.i++, 0); return}
 		this.cur.setUint8(this.i++, v.count)
 		this.cur.setUint16(this.i, v.id); this.i += 2
+		this.string(v.name)
 		if(v._.savedata)this.write(v._.savedata, v)
 	}
 	pipe(sock){

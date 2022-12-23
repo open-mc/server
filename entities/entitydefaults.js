@@ -2,7 +2,9 @@ export default {
 	id: -1, name: "",
 	maxhealth: 20,
 	died(){},
+	placed(){},
 	moved(oldx, oldy, oldw){},
+	removed(){},
 	rubber(){},
 	damage(amount){
 		this.health -= amount

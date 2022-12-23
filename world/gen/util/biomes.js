@@ -21,7 +21,7 @@ for(let i = 0; i < biomemap.buffer.byteLength; i+=4){
 const maps = new Map()
 const t = new Float32Array(22)
 const sheet = new Float32Array(258)
-function biomesheet(x){
+export function biomesheet(x){
 	const s = maps.get(x) || []
 	if(s.length)return s
 	let g0 = imxs32(x, -994417718), g1 = imxs32(x, 65013760)
@@ -67,5 +67,3 @@ function biomesheet(x){
 	maps.set(x, s)
 	return s
 }
-
-export const biomes = cx => biomesheet(cx >> 4).slice((cx & 15) << 3, ((cx & 15) << 3) + 9)

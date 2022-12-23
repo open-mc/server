@@ -5,6 +5,7 @@ export class Item{
 	constructor(def, count = 1){
 		this._ = def
 		this.count = count
+		this.name = ''
 	}
 	/**
 	 * define a new item definition

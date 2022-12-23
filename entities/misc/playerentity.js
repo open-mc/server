@@ -1,3 +1,4 @@
+import { TPS } from '../../config.js'
 import { Item } from '../../items/item.js'
 import { DataWriter } from '../../utils/data.js'
 import { encodeMove } from '../../world/tick.js'
@@ -19,7 +20,7 @@ Entities.player = Entity.define({
 		buf.int(this._id | 0)
 		buf.short(this._id / 4294967296 | 0)
 		buf.byte(this.r)
-		buf.string(this.world.id)
+		buf.float(TPS)
 		this.sock.packets.push(buf)
 		if(mv){
 			this.mv |= mv

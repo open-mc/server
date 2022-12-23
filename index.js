@@ -18,7 +18,7 @@ let total = 5, loaded = -1, promise = null
 let started = Math.round(Date.now() - performance.now())
 globalThis.progress = function(desc){
 	loaded++
-	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total-loaded)}] (${formatTime(Date.now()-started)}) ${desc}`)
+	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${formatTime(Date.now() - started)}) ${desc}`)
 	if(total == loaded + 1)promise()
 }
 process.stdout.write('\x1bc\x1b[3J')
@@ -80,7 +80,7 @@ server.on('connection', async function(sock, {url}){
 	let [, username, token] = url.split('/').map(decodeURI)
 	//verify token
 	//for now, allow
-	if(players.size + playersConnecting.size >= CONFIG.maxplayers){
+	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
 		sock.on('close', playerLeftQueue)
 		if(await queue(sock))return sock.close()
 		sock.removeListener('close', playerLeftQueue)
@@ -99,13 +99,14 @@ server.on('connection', async function(sock, {url}){
 		sock.close()
 		return
 	}
-	let player
+	let player, dim
 	let other = players.get(username)
 	if(other){
 		other.sock.send('-119You are logged in from another session')
 		other.sock.player = null
 		other.sock.close()
 		other.sock = null
+		dim = other.world
 		other.remove()
 		player = other
 	}else if(playersConnecting.has(username)){
@@ -117,12 +118,13 @@ server.on('connection', async function(sock, {url}){
 		const buf = await HANDLERS.LOADFILE('players/'+username).reader()
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
-		player = Entities.player(buf.double(), buf.double(), Dimensions[buf.string()])
-		buf.setUint32(buf.i, player._id)
+		player = Entities.player(buf.double(), buf.double())
+		dim = Dimensions[buf.string()]
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 		buf.read(Entities.player._.savedata, player)
 	}catch(e){
-		player = Entities.player(0, 0, Dimensions.overworld)
+		player = Entities.player(0, 0)
+		dim = Dimensions.overworld
 		player.inv = [], player.health = 20
 		let i = 41; while(i--)player.inv.push(null)
 	}
@@ -132,16 +134,10 @@ server.on('connection', async function(sock, {url}){
 	player.name = username
 	player.permissions = permissions
 	sock.packets = []
-	let buf = new DataWriter()
-	buf.byte(1)
-	buf.int(player._id | 0)
-	buf.short(player._id / 4294967296 | 0)
-	buf.byte(player.r = 0)
-	buf.string(player.world.id)
-	buf.pipe(sock)
-	player.init()
-	player.place()
+	player.place(dim)
 	players.set(username, player)
+	player.r = 255
+	player.rubber(0)
 	sock.player = player
 	sock.on('close', close)
 	sock.on('message', message)
@@ -182,3 +178,8 @@ const message = function(_buf, isBinary){
 	}catch(e){console.warn(e)}
 }
 setTPS(TPS)
+
+
+process.on('beforeExit', () => {
+	//Sav stuff here
+})

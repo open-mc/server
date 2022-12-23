@@ -2,8 +2,8 @@ import { CONFIG } from '../config.js'
 import { DataWriter } from '../utils/data.js'
 
 export const CHUNKLOADER = {
-	init(rad = CONFIG.chunkloadingrange){
-		this.radius = rad
+	placed(){
+		this.radius = CONFIG.chunkloadingrange
 		this.load(Math.floor(this.x) >> 6, Math.floor(this.y) >> 6, this._w)
 	},
 	moved(ox, oy, ow){

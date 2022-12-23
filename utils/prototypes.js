@@ -29,8 +29,8 @@ WebSocketServer.prototype[Symbol.for('nodejs.util.inspect.custom')] = function()
 
 
 /*//PERF!!!
-WebSocket.prototype.send = function(data, cb) {
-	if (this.readyState !== WebSocket.OPEN) {
+WebSocket.prototype.send = function(data, cb){
+	if (this.readyState !== WebSocket.OPEN){
 		throw new Error('WebSocket is not open: readyState '+this.readyState)
 	}
 	const {_sender, _socket} = this
@@ -44,19 +44,19 @@ WebSocket.prototype.send = function(data, cb) {
 	else opcode = 0
 	_sender._firstFragment = true
 	let offset = 2, payloadLength = byteLength
-	if (byteLength >= 65536) {
+	if (byteLength >= 65536){
 		offset += 8
 		payloadLength = 127
-	} else if (byteLength > 125) {
+	} else if (byteLength > 125){
 		offset += 2
 		payloadLength = 126
 	}
 	const target = Buffer.allocUnsafe(offset)
 	target[0] = opcode | 0x80
 	target[1] = payloadLength
-	if (payloadLength === 126) {
+	if (payloadLength === 126){
 		target.writeUInt16BE(byteLength, 2)
-	} else if (payloadLength === 127) {
+	} else if (payloadLength === 127){
 		target[2] = target[3] = 0
 		target.writeUIntBE(byteLength, 4, 6)
 	}
