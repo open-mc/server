@@ -240,7 +240,7 @@ export class DataWriter extends Array{
 		return buf
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
-		let len = this.i, b = Uint8Array.of()
+		let len = this.i, b
 		for(b of this)len += b.byteLength
 		return `DataWriter(${len}) [ ${len>50?'... ':''}\x1b[33m${[...b.slice(this.i-50 || b.length), ...new Uint8Array(this.cur.buffer, this.cur.byteOffset, this.cur.byteLength).slice(Math.max(0, this.i-50),this.i)].map(a=>CHARSET[a>>4]+CHARSET[a&15]).join(' ')}\x1b[m ]`
 	}

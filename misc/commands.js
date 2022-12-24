@@ -40,9 +40,9 @@ export function err(e){
 }
 export const commands = {
 	list(){
-		let a = ""
-		for(let pl of players.values())a += pl.name + ' ('+pl.health+')\n'
-		return a.slice(0,-1)
+		let a = "Online players"
+		for(let pl of players.values())a += '\n' + pl.name + ' ('+pl.health+')'
+		return a
 	},
 	say(s, ...l){
 		if(this.permissions < MOD)throw 'You do not have permission to /say'
@@ -52,7 +52,8 @@ export const commands = {
 		col += s.match(/()black|()dark[-_]?red|()dark[-_]?green|()(?:gold|dark[-_]?yellow)|()dark[-_]?blue|()dark[-_]?purple|()dark[-_]?(?:aqua|cyan)|()(?:light[-_]?)?gr[ea]y|()dark[-_]?gr[ea]y|()red|()(?:green|lime)|()yellow|()blue|()purple|()(?:aqua|cyan)|$/).slice(1).indexOf('') & 15
 		chat(txt, col)
 	},
-	tp(a, ax = '~', ay = '~', d = this.world || 'overworld'){
+	tp(a, ax, ay, d = this.world || 'overworld'){
+		if(!ay)ay=ax,ax=a,a='@s'
 		if(this.permissions < MOD)throw 'You do not have permission to /tp'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!(d instanceof World))throw 'Invalid dimension'

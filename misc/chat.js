@@ -33,7 +33,8 @@ export function chat(msg, style = 15){
 	if(style&BOLD)a+='1;'
 	if(style&ITALIC)a+='3;'
 	if(style&UNDERLINE)a+='4;'
-	a += (style>7?90:30) + (style&7)
+	style &= 15
+	a += (style > 7 ? 82 : 30) + style //30-37, 90-97
 	console.log('\x1b[' + a + 'm' + (style&STRIKETHROUGH?msg.replace(/[\x20-\uffff]/g,'$&\u0336'):msg).replace(/[\x00-\x1f\x7f]/g, a => a == '\x7f' ? '\u2421' : String.fromCharCode(0x2400 + a.charCodeAt())) + '\x1b[m')
 	msg = (style<16?'0'+style.toString(16):style.toString(16)) + msg
 	for(const sock of server.clients)sock.send(msg)

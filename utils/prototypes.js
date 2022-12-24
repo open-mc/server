@@ -27,7 +27,6 @@ Object.defineProperties(Array.prototype, {
 WebSocket.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){return '<WebSocket \x1b[33m'+this._socket.remoteAddress+'\x1b[m>'}
 WebSocketServer.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){return '<WebSocketServer clients: \x1b[33m'+this.clients.size+'\x1b[m>'}
 
-
 /*//PERF!!!
 WebSocket.prototype.send = function(data, cb){
 	if (this.readyState !== WebSocket.OPEN){

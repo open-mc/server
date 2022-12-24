@@ -1,4 +1,4 @@
-import { biomesheet } from './biomes.js'
+import { biomesFor, biomesheet } from './biomes.js'
 import { imxs32_2 } from './random.js'
 
 const low = new Float64Array(4160)
@@ -56,8 +56,7 @@ const lerpLookup = [
 const facs = new Float64Array(64)
 const heights = new Float64Array(64)
 export function fill(cx, cy){
-	const biomes = biomesheet(cx >> 5)
-	const biomes_i = (cx & 31) << 2
+	const biomes = biomesFor(cx)
 	const g = imxs32_2(cx, cy)
 	makeVector(0, g)
 	const g_up = imxs32_2(cx, cy + 1)
@@ -79,8 +78,8 @@ export function fill(cx, cy){
 	
 	for(let i = 0; i < 4160;){
 		if(i < 64){
-			let {terrain: {offset, height}} = biomes[biomes_i + (i >> 4 & 3)]
-			const {terrain: {offset: o2, height: h2}} = biomes[biomes_i + (i >> 4 & 3) + 1]
+			let {offset, height} = biomes[i >> 4 & 3]
+			const {offset: o2, height: h2} = biomes[(i >> 4 & 3) + 1]
 			const lerp = lerpLookup[i & 15]
 			offset = (1 - lerp) * offset + lerp * o2
 			height = (1 - lerp) * height + lerp * h2
@@ -89,7 +88,7 @@ export function fill(cx, cy){
 		}
 		const height = heights[i & 63]
 		const fac = facs[i & 63]
-		const {deepsurface, surface} = biomes[biomes_i + (i >> 4 & 3) + (i >> 3 & 1)]
+		const {deepsurface, surface} = biomes[(i >> 4 & 3) + (i >> 3 & 1)]
 		const u = sel[i] = (sel[i] * low[i] + (1-sel[i]) * high[i]) + fac + (i >> 6) / height
 		if(i < 64){i++;continue}
 		const s = sel[i -= 64]

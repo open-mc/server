@@ -68,7 +68,8 @@ export class World extends Map{
 			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 		}
 	}
-	async check(ch){
+	check(ch){
+		if(ch instanceof Promise)return
 		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
 		if(ch.players.length){
 			if(ch.t <= 0)ch.t = -1 //-1 == chunk has had a player loading it and the chunk will need saving again
@@ -78,11 +79,22 @@ export class World extends Map{
 		if(ch.t <= 0)return
 		if(--ch.t)return //Count down timer
 		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
-		const b = ch.toBuf(new DataWriter()).build()
-		await HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b)
-		if(ch.t == -1)ch.t = 5 //If player has been in chunk, re-save chunk in 5 ticks
-		else super.delete(k) //Completely unloaded with no re-loads, delete chunk
+		const b = ch.toBuf(new DataWriter).build()
+		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
+			if(ch.t == -1)ch.t = 5 //If player has been in chunk, re-save chunk in 5 ticks
+			else super.delete(k) //Completely unloaded with no re-loads, delete chunk
+		})
 	}
+	save(ch){
+		if(ch instanceof Promise)return
+		//Save a chunk to disk, but don't unload it
+		if(ch.t <= 0)return //Already saving
+		ch.t = 0 //Whoops, chunk timer "ended"
+		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
+		const b = ch.toBuf(new DataWriter).build()
+		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
+	}
+	
 	putEntity(e, x, y, force = false){
 		let ch = super.get((Math.floor(x)>>>6)+(Math.floor(y)>>>6)*67108864)
 		const oldw = e._w

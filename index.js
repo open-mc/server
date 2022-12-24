@@ -78,6 +78,7 @@ function formatTime(a){
 const playersConnecting = new Set()
 server.on('connection', async function(sock, {url}){
 	let [, username, token] = url.split('/').map(decodeURI)
+	if(!username || !token)return sock.close()
 	//verify token
 	//for now, allow
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
@@ -182,8 +183,7 @@ setTPS(TPS)
 let exiting = false
 process.on('SIGINT', (e) => {
 	//Save stuff here
-	
-	if(exiting)return console.log('\x1b[33mEvaluate \x1b[30mprocess.exit(0)\x1b[33m in the Repl to force shut down the server\x1b[m')
+	if(exiting)return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')
 	exiting = true
 	saveAll().then(process.exit)
@@ -194,7 +194,8 @@ function saveAll(){
 	for(const name in Dimensions){
 		const d = Dimensions[name]
 		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'.json', JSON.stringify({tick: d.tick})))
+		for(const ch of d.values())d.save(ch)
 	}
 	return Promise.all(promises)
 }
-setInterval(saveAll, 60e3)
+setInterval(saveAll, 120e3) //Every 2min

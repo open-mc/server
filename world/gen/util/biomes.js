@@ -19,23 +19,23 @@ for(let i = 0; i < biomemap.buffer.byteLength; i+=4){
 	biomemap.push(b)
 }
 const maps = new Map()
-const t = new Float32Array(22)
-const sheet = new Float32Array(258)
+const t = new Float32Array(18)
 export function biomesheet(x){
-	const s = maps.get(x) || []
-	if(s.length)return s
+	let sheet = maps.get(x)
+	if(sheet)return sheet
+	sheet = new Uint8ClampedArray(258)
 	let g0 = imxs32(x, -994417718), g1 = imxs32(x, 65013760)
 	let g2 = imxs32(x + 1, -994417718)
-	t[18] = (g0 & 255) / 42.5 - 3
-	t[19] = (g2 & 255) / 42.5 - 3
-	t[20] = (g0 & 65280) / 10880 - 3
-	t[21] = (g2 & 65280) / 10880 - 3
+	const tl1 = (g0 << 1 & 510) - 255
+	const tr1 = (g2 << 1 & 510) - 255
+	const tl2 = (g0 >> 7 & 510) - 255
+	const tr2 = (g2 >> 7 & 510) - 255
 	g0 >>= 16
 	let i = 0, j = 0
-	for(;i<128;i++,j+=0.0078125){
-		sheet[i] = j * (j - 1) * (j - 1) * t[18] + (j - 1) * j * j * t[19]
-	}for(j=0;i<256;i++,j+=0.0078125){
-		sheet[i+1] = j * (j - 1) * (j - 1) * t[20] + (j - 1) * j * j * t[21]
+	for(;i<129;i++,j+=0.0078125){
+		sheet[i] = j * (1-j) * (1-j) * tl1 - (1-j) * j * j * tr1 + 128
+	}for(j=0;i<258;i++,j+=0.0078125){
+		sheet[i] = j * (1-j) * (1-j) * tl2 - (1-j) * j * j * tr2 + 128
 	}
 	t[0] = (g0 & 57344) / 28672 - 1
 	t[1] = (g0 & 7168) / 3584 - 1
@@ -53,17 +53,28 @@ export function biomesheet(x){
 	t[13] = (g1 & 3584) / 1792 - 1
 	t[14] = (g1 & 448) / 224 - 1
 	t[15] = (g1 & 56) / 28 - 1
-	t[16] = (g1 & 7) / 3 - 1
+	t[16] = (g1 & 7) / 3.5 - 1
 	t[17] = (g2 & 14) / 7 - 1
-	for(i=0,j=0;i<128;i++,j=(j+0.0625)%1){
-		sheet[i] += j * (j - 1) * (j - 1) * t[i >> 4] + (j - 1) * j * j * t[(i >> 4) + 1]
-	}for(j=0;i<256;i++,j=(j+0.0625)%1){
-		sheet[i+1] += j * (j - 1) * (j - 1) * t[(i >> 4) + 1] + (j - 1) * j * j * t[(i >> 4) + 2]
+	for(i=0,j=0;i<129;i++,j=(j+0.0625)%1){
+		sheet[i] += (j * (1-j) * (1-j) * t[i >> 4] - (1-j) * j * j * t[(i >> 4) + 1]) * 256
+	}for(j=0;i<258;i++,j=(j+0.0625)%1){
+		sheet[i] += (j * (1-j) * (1-j) * t[(i + 15) >> 4] - (1-j) * j * j * t[(i + 31) >> 4]) * 256
 	}
 	if(maps.size>50)for(const k of maps.keys()){maps.delete(k);break}
-	for(let i = 0; i <= 128; i++){
+	/*for(let i = 0; i <= 128; i++){
 		s.push(biomemap[(sheet[i] * 15.99 + 15.99 << 5) | (sheet[i+129] * 15.99 + 15.99 << 0)])
-	}
-	maps.set(x, s)
-	return s
+	}*/
+	maps.set(x, sheet)
+	return sheet
+}
+const biomes = [Biomes.void, Biomes.void, Biomes.void, Biomes.void, Biomes.void]
+export const biomesFor = (cx) => {
+	const b = biomesheet(cx >> 5)
+	let i = (cx & 31) << 2
+	biomes[0] = biomemap[(chunkBiomes[0] = b[  i]) >> 3 | (chunkBiomes[1] = b[i + 129]) >> 3 << 5]
+	biomes[1] = biomemap[(chunkBiomes[2] = b[++i]) >> 3 | (chunkBiomes[3] = b[i + 129]) >> 3 << 5]
+	biomes[2] = biomemap[(chunkBiomes[4] = b[++i]) >> 3 | (chunkBiomes[5] = b[i + 129]) >> 3 << 5]
+	biomes[3] = biomemap[(chunkBiomes[6] = b[++i]) >> 3 | (chunkBiomes[7] = b[i + 129]) >> 3 << 5]
+	biomes[4] = biomemap[(chunkBiomes[8] = b[++i]) >> 3 | (chunkBiomes[9] = b[i + 129]) >> 3 << 5]
+	return biomes
 }

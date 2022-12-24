@@ -10,6 +10,7 @@ export class Chunk{
 		this.y = y << 6 >> 6
 		this.world = world
 		this.tiles = []
+		
 		this.entities = new Set()
 		//read buf palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
@@ -26,14 +27,13 @@ export class Chunk{
 			this.entities.add(e)
 			id = buf.short()
 		}
+		this.biomes = [buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte()]
 		let palette = []
-		let i = 0
-		for(;i<palettelen;i++){
-			palette.push(BlockIDs[buf.short()])
-		}
-		let j = 0; i = 11 + i * 2
+		for(let i = 0;i<palettelen;i++) palette.push(BlockIDs[buf.short()])
+		let j = 0
 		if(palettelen<2){
-			for(;j<4096;j++)this.tiles.push(palette[0]())
+			const block = palette[0]()
+			for(;j<4096;j++)this.tiles.push(block)
 		}else if(palettelen == 2){
 			for(;j<512;j++){
 				const byte = buf.byte()
@@ -103,9 +103,10 @@ export class Chunk{
 			if(e._.savedata)buf.write(e._.savedata, e)
 		}
 		buf.short(0)
-		for(let i = 0; i < palette.length; i++){
-			buf.short(palette[i])
-		}
+		
+		for(const b of this.biomes)buf.byte(b)
+
+		for(const p of palette) buf.short(p)
 		//encode data
 		if(palette.length < 2);
 		else if(palette.length == 2){
@@ -151,7 +152,7 @@ export class Chunk{
 		return buf
 	}
 	static of(block, x, y, w){
-		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, block.id >> 8, block.id)), w)
+		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id)), w)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
 }

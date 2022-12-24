@@ -9,6 +9,7 @@ parentPort?.on('message', async function({x, y, d, seed, name = 'default'}){
 async function all(o){for(let i in o)o[i]=await o[i];return o}
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
 globalThis.chunk = []
+globalThis.chunkBiomes = new Uint8Array(10)
 const path = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
 globalThis.Blocks = Object.fromEntries((''+await fs.readFile(path + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
 globalThis.Items = Object.fromEntries((''+await fs.readFile(path + '../../../'+(process.argv[2]||'world')+'/defs/itemindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
@@ -17,9 +18,8 @@ const GENERATORS = await all({
 	overworld: import('./overworld.js'),
 	nether: import('./nether.js'),
 })
-let dfgen = (__, _)=>chunk.fill(Blocks.air())
+let dfgen = (cx,cy)=>chunk.fill(Blocks.air())
 Object.setPrototypeOf(GENERATORS, null)
-const alloc = a => new Uint8Array(a)
 parentPort && parentPort.postMessage({key: 'ready'})
 function toPacket(x, y, tiles){
 	let palette = [], palette2 = Object.create(null)
@@ -30,18 +30,17 @@ function toPacket(x, y, tiles){
 			palette.push(id)
 		}
 	}
-	let buf = alloc(11 + palette.length * 2), view = new DataView(buf.buffer)
+	let buf = new Uint8Array(21 + palette.length * 2), view = new DataView(buf.buffer)
 	let buffers = [buf]
 	buf[0] = 16
 	view.setInt32(1, (x & 0x3ffffff) + ((palette.length-1) << 26))
 	view.setInt32(5, (y & 0x3ffffff) + ((palette.length-1) >> 6 << 26))
-	for(let i = 0; i < palette.length; i++){
-		view.setUint16(11 + i * 2, palette[i])
-	}
+	buf.set(chunkBiomes, 11)
+	for(let i = 0; i < palette.length; i++) view.setUint16(21 + i * 2, palette[i])
 	//encode data
 	if(palette.length < 2);
 	else if(palette.length == 2){
-		buffers.push(buf = alloc(512))
+		buffers.push(buf = new Uint8Array(512))
 		for(let i = 0; i < 4096; i+=8){
 			buf[i>>3] = ((tiles[i].id == palette[1]) << 0)
 			| ((tiles[i + 1].id == palette[1]) << 1)
@@ -53,7 +52,7 @@ function toPacket(x, y, tiles){
 			| ((tiles[i + 7].id == palette[1]) << 7)
 		}
 	}else if(palette.length <= 4){
-		buffers.push(buf = alloc(1024))
+		buffers.push(buf = new Uint8Array(1024))
 		for(let i = 0; i < 4096; i+=4){
 			buf[i>>2] = palette2[tiles[i].id]
 			| (palette2[tiles[i + 1].id] << 2)
@@ -61,18 +60,18 @@ function toPacket(x, y, tiles){
 			| (palette2[tiles[i + 3].id] << 6)
 		}
 	}else if(palette.length <= 16){
-		buffers.push(buf = alloc(2048))
+		buffers.push(buf = new Uint8Array(2048))
 		for(let i = 0; i < 4096; i+=2){
 			buf[i>>1] = palette2[tiles[i].id]
 			| (palette2[tiles[i + 1].id] << 4)
 		}
 	}else if(palette.length <= 256){
-		buffers.push(buf = alloc(4096))
+		buffers.push(buf = new Uint8Array(4096))
 		for(let i = 0; i < 4096; i++){
 			buf[i] = palette2[tiles[i].id]
 		}
 	}else{
-		buffers.push(buf = alloc(6144))
+		buffers.push(buf = new Uint8Array(6144))
 		let j = 0
 		for(let i = 0; i < 6144; i+=3, j+=2){
 			buf[i] = palette2[tiles[j].id]
