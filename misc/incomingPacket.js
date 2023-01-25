@@ -19,7 +19,7 @@ export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	8: setBlockPacket
 })
-export function string(player, text){
+export function onstring(player, text){
 	if(text[0] == '/'){
 		try{
 			let args = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g).map((a,i)=>{

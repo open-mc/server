@@ -4,7 +4,7 @@ import { jsonToType, typeToJson } from '../utils/data.js'
 import { ItemIDs, Items } from './item.js'
 await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import(PATH + 'items/' + name + '/' + file))))))
 let modified = false
-export let itemindex
+let itemindex
 for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(itemindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
 	let item = Items[name]

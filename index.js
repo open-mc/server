@@ -1,12 +1,12 @@
 import { stats, util } from './internals.js'
 import { WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
-import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
+import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
 import { commands, err } from './misc/commands.js'
 import './utils/prototypes.js'
 import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
-import { codes, string } from './misc/incomingPacket.js'
+import { codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, HANDLERS, PERMISSIONS, TPS } from './config.js'
 import { ItemIDs } from './items/item.js'
 import { BlockIDs } from './blocks/block.js'
@@ -34,7 +34,7 @@ function uncaughtErr(e){
 process.on('uncaughtException', uncaughtErr)
 process.on('unhandledRejection', uncaughtErr)
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
-await new Promise(r=>promise=r)
+await new Promise(r => promise = r)
 
 export const server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
 server.on('listening', () => {
@@ -126,7 +126,7 @@ server.on('connection', async function(sock, {url}){
 	}catch(e){
 		player = Entities.player(0, 0)
 		dim = Dimensions.overworld
-		player.inv = [], player.health = 20
+		player.inv = [], player.health = 20, player.dragging = null
 		let i = 41; while(i--)player.inv.push(null)
 	}
 	player.sock = sock
@@ -140,6 +140,7 @@ server.on('connection', async function(sock, {url}){
 	player.r = 255
 	player.rubber(0)
 	sock.player = player
+	if(!other)chat(username + ' joined the game', YELLOW)
 	sock.on('close', close)
 	sock.on('message', message)
 	sock.on('error', console.error)
@@ -161,6 +162,7 @@ const close = async function(){
 	buf.float(player.dy)
 	buf.float(player.f)
 	buf.write(Entities.player._.savedata, player)
+	chat(player.name + ' left the game', YELLOW)
 	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
 	playersConnecting.delete(player.name)
 	playerLeft()
@@ -169,21 +171,23 @@ const close = async function(){
 
 const message = function(_buf, isBinary){
 	const {player} = this
-	if(!player)return
-	if(!isBinary)return void string(player, _buf.toString())
-	const buf = new DataReader(_buf)
+	if (!player) return
+	if (!isBinary) return void onstring(player, _buf.toString())
+	const buf = new DataReader(_buf) //let your code breathe
 	const code = buf.byte()
-	if(!codes[code])return
+	if(!codes[code]) return
 	try{
 		codes[code](player, buf)
-	}catch(e){console.warn(e)}
+	} catch(e){
+		console.warn(e)
+	}
 }
 setTPS(TPS)
 
 let exiting = false
 process.on('SIGINT', (e) => {
 	//Save stuff here
-	if(exiting)return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
+	if (exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')
 	exiting = true
 	saveAll().then(process.exit)
@@ -191,11 +195,12 @@ process.on('SIGINT', (e) => {
 
 function saveAll(){
 	const promises = []
-	for(const name in Dimensions){
+	for (const name in Dimensions) {
 		const d = Dimensions[name]
 		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'.json', JSON.stringify({tick: d.tick})))
-		for(const ch of d.values())d.save(ch)
+		for (const ch of d.values()) d.save(ch)
 	}
 	return Promise.all(promises)
 }
+
 setInterval(saveAll, 120e3) //Every 2min

@@ -29,5 +29,6 @@ Entities.player = Entity.define({
 	}
 }, {
 	health: Byte,
-	inv: [Item, 41]
+	inv: [Item, 41],
+	dragging: Item
 })

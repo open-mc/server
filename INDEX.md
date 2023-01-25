@@ -195,6 +195,7 @@ Coming soon
 - `i`, `j`: Indexes or counters
 - `k`: A key (for example, a key in a Map)
 - `t`: Time in ticks
+- `f`: Direction an entity is **f**acing (0 being up and pi/2 being right)
 </details>
 <details>
 <summary><h2 style="display:inline-block">Rubber</h2></summary>
