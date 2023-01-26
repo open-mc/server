@@ -19,6 +19,7 @@ async function loadPermissions(){
 }
 loadPermissions()
 
+
 const w2 = fs.watch(WORLD + 'properties.yaml')
 async function loadConfig(a){
 	if(a)console.log('Reloading config...')

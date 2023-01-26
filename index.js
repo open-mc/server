@@ -166,11 +166,13 @@ async function play(sock, username){
 		dim = Dimensions[buf.string()]
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 		buf.read(Entities.player._.savedata, player)
+		chat(username + ' joined the game', YELLOW)
 	}catch(e){
 		player = Entities.player(0, 0)
 		dim = Dimensions.overworld
 		player.inv = [], player.health = 20, player.dragging = null
 		let i = 41; while(i--)player.inv.push(null)
+		chat('Welcome ' + username + ' to the game', YELLOW)
 	}
 	player.sock = sock
 	player.ebuf = new DataWriter()
@@ -182,7 +184,6 @@ async function play(sock, username){
 	player.r = 255
 	player.rubber(0)
 	sock.player = player
-	if(!other)chat(username + ' joined the game', YELLOW)
 	sock.on('close', close)
 	sock.on('error', _ => {})
 }
