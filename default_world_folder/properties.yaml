@@ -7,7 +7,7 @@ chunkloadingrange: 3 #recommended: 3
 gamemode: survival
 
 
-# Key and certificate files for encrypted server (recommended)
+# Key and certificate files for encrypted server (recommended). Paths are relative to 
 key: 
 pem: 
 
