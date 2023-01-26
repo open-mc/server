@@ -179,7 +179,7 @@ async function play(sock, username){
 		dim = Dimensions.overworld
 		player.inv = [], player.health = 20, player.dragging = null
 		let i = 41; while(i--)player.inv.push(null)
-		chat('Welcome ' + username + ' to the game', YELLOW)
+		chat(username + ' joined the server', YELLOW)
 	}
 	player.sock = sock
 	player.ebuf = new DataWriter()
