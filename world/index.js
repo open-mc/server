@@ -1,4 +1,5 @@
 import { World } from './world.js'
+import '../internals.js'
 import { promises as fs, existsSync } from 'fs'
 export const Dimensions = {
 	overworld: new World('overworld'),
