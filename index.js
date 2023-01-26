@@ -101,12 +101,13 @@ SbbU6Nj00Jnd0Jqoz67TshD8P+6S4hxDD4vpkSc57zP40MzSf7H90Pl7xwsm1p9lGNNP0mWHqmfqpdaq
 const playersConnecting = new Set()
 server.on('connection', function(sock, {url}){
 	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
+	if(!username || !pubKey || !authSig)return sock.logMalicious('Malformed Connection'), sock.close()
 	sock.player = null
 	sock.username = username
 	sock.packets = []
 	sock.pubKey = pubKey
-	if(!username || !crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
-		return sock.logMalicious('Illegal connection request'), sock.close()
+	if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
+		return sock.logMalicious('Invalid public key signature'), sock.close()
 	crypto.randomBytes(32, (err, rnd) => {
 		if(err)return sock.close()
 		sock.challenge = rnd
@@ -126,7 +127,7 @@ async function play(sock, username){
 		if(await queue(sock))return sock.close()
 		sock.removeListener('close', playerLeftQueue)
 	}
-	let permissions = PERMISSIONS[username] || PERMISSIONS.default
+	let permissions = PERMISSIONS[username] || PERMISSIONS.default_permissions
 	if(permissions*1000 > Date.now()){
 		sock.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
 			+ formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
