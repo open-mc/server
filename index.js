@@ -1,4 +1,4 @@
-import { stats, util } from './internals.js'
+import { fs, stats, util } from './internals.js'
 import { WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
@@ -38,7 +38,7 @@ process.on('unhandledRejection', uncaughtErr)
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 await new Promise(r => promise = r)
 
-export const server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
+export const server = new WebSocketServer(CONFIG.key && CONFIG.pem ? {port: CONFIG.port || 27277, perMessageDeflate: false, key: await fs.readFile(CONFIG.key), pem: await fs.readFile(CONFIG.pem)} : {port: CONFIG.port || 27277, perMessageDeflate: false})
 server.on('listening', () => {
 	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m\nPress Tab to switch between Chat and Repl`)
 	started = Date.now()

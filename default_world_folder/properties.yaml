@@ -6,6 +6,11 @@ chunkloadingrange: 3 #recommended: 3
 #possible gamemodes: survival, creative
 gamemode: survival
 
+
+# Key and certificate files for encrypted server (recommended)
+key: 
+pem: 
+
 ban_appeal_info: #info displayed on the banned notice screen
 
 icon: https://static.wikia.nocookie.net/minecraft_gamepedia/images/b/b7/Crafting_Table_JE4_BE3.png
