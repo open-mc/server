@@ -41,7 +41,7 @@ await new Promise(r => promise = r)
 export let server
 if(CONFIG.key && CONFIG.pem){
 	const {createServer} = await import('https')
-	const httpsServer = createServer({key: await fs.readFile(CONFIG.key[0] == '/' || CONFIG.key[0] == '~' ? CONFIG.key : '../' + CONFIG.key), pem: await fs.readFile(CONFIG.pem[0] == '/' || CONFIG.pem[0] == '~' ? CONFIG.pem : '../' + CONFIG.pem)})
+	const httpsServer = createServer({key: await fs.readFile(CONFIG.key[0] == '/' || CONFIG.key[0] == '~' ? CONFIG.key : '../' + CONFIG.key), cert: await fs.readFile(CONFIG.pem[0] == '/' || CONFIG.pem[0] == '~' ? CONFIG.pem : '../' + CONFIG.pem)})
 	server = new WebSocketServer({server: httpsServer, perMessageDeflate: false})
 	httpsServer.listen(CONFIG.port || 27277)
 }else server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
