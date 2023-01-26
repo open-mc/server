@@ -38,7 +38,14 @@ process.on('unhandledRejection', uncaughtErr)
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 await new Promise(r => promise = r)
 
-export const server = new WebSocketServer(CONFIG.key && CONFIG.pem ? {port: CONFIG.port || 27277, perMessageDeflate: false, key: await fs.readFile(CONFIG.key[0] == '/' || CONFIG.key[0] == '~' ? CONFIG.key : '../' + CONFIG.key), pem: await fs.readFile(CONFIG.pem[0] == '/' || CONFIG.pem[0] == '~' ? CONFIG.pem : '../' + CONFIG.pem)} : {port: CONFIG.port || 27277, perMessageDeflate: false})
+export let server
+if(CONFIG.key && CONFIG.pem){
+	const {createServer} = await import('https')
+	const httpsServer = createServer({key: await fs.readFile(CONFIG.key[0] == '/' || CONFIG.key[0] == '~' ? CONFIG.key : '../' + CONFIG.key), pem: await fs.readFile(CONFIG.pem[0] == '/' || CONFIG.pem[0] == '~' ? CONFIG.pem : '../' + CONFIG.pem)})
+	server = new WebSocketServer({server: httpsServer, perMessageDeflate: false})
+	httpsServer.listen(CONFIG.port || 27277)
+}else server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
+
 server.on('listening', () => {
 	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m\nPress Tab to switch between Chat and Repl`)
 	started = Date.now()
