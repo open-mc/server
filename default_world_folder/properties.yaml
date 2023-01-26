@@ -8,6 +8,8 @@ gamemode: survival
 
 ban_appeal_info: #info displayed on the banned notice screen
 
+icon: https://static.wikia.nocookie.net/minecraft_gamepedia/images/b/b7/Crafting_Table_JE4_BE3.png
+
 motd:
   - _2B2T_
 

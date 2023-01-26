@@ -13,6 +13,7 @@ import { BlockIDs } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
+import crypto from 'crypto'
 
 let total = 5, loaded = -1, promise = null
 let started = Math.round(Date.now() - performance.now())
@@ -28,7 +29,8 @@ import('./items/index.js').then(()=>progress(`${ItemIDs.length} Items loaded`))
 import('./blocks/index.js').then(()=>progress(`${BlockIDs.length} Blocks loaded`))
 function uncaughtErr(e){
 	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n' + (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
+	console.log('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n' 
+		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
 	//process.exit(0)
 }
 process.on('uncaughtException', uncaughtErr)
@@ -49,7 +51,9 @@ server.on('listening', () => {
 		if(text[0] == '/'){
 			try{
 				let args = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g).map((a,i)=>{
-					try{return a[0]=='"'?JSON.parse(a):a}catch(e){throw 'failed parsing argument '+i}
+					try{
+						return a[0] == '"' ? JSON.parse(a) : a
+					}catch(e){ throw 'failed parsing argument '+i }
 				})
 				if(!(args[0] in commands))throw 'no such command: /'+args[0]
 				let res = commands[args[0]].apply(server, args.slice(1))
@@ -62,25 +66,61 @@ server.on('listening', () => {
 		}
 	})
 })
-function formatTime(a){
-	a /= 1000
-	if(a < 3600){
-		if(a >= 60)return Math.floor(a/60)+'m '+Math.floor(a%60)+'s'
-		else if(a >= 1)return Math.floor(a)+'s'
-		else return a*1000+'ms'
+function formatTime(t){
+	t /= 1000
+	if(t < 3600){
+		if(t >= 60)return Math.floor(t/60)+'m '+Math.floor(t%60)+'s'
+		else if(t >= 1)return Math.floor(t)+'s'
+		else return t*1000+'ms'
 	}else{
-		if(a < 86400)return Math.floor(a/3600)+'h '+Math.floor(a%3600/60)+'m'
-		else if(a < 864000)return Math.floor(a/86400)+'d '+Math.floor(a%86400/3600)+'h'
-		else return Math.floor(a/86400)+'d'
+		if(t < 86400)return Math.floor(t/3600)+'h '+Math.floor(t%3600/60)+'m'
+		else if(t < 864000)return Math.floor(t/86400)+'d '+Math.floor(t%86400/3600)+'h'
+		else return Math.floor(t/86400)+'d'
 	}
 }
+const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
+MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
+sXS9GkNjgfl3WATBJ33Q/cigpAi9svLoQgcgkIH+UlMTIJhvuuZ1JK7L6zLwPfyY
+s4slcfqVjjC3KsD4Neu2kI9DAw696yiDlSrGFlgVG2GHYjOx1N60CALkKm4oJh1w
+dAcg25lE9hao850GIDYqD44BkmbP6KAN1YN0lfyHRwCxmrkNPoFrg5dN1UkwEmnC
+gnhKtGgJDdv3MweRrgkyz0aethcpcCF17xlXwszJn/Nyvc+E7+8XIRSbFglij0ei
+KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
+-----END RSA PUBLIC KEY-----`
+
+
+/* test client credentials
+blobkat
+
+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
+*/
 
 const playersConnecting = new Set()
-server.on('connection', async function(sock, {url}){
-	let [, username, token] = url.split('/').map(decodeURI)
-	if(!username || !token)return sock.close()
-	//verify token
-	//for now, allow
+server.on('connection', function(sock, {url}){
+	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
+	sock.player = null
+	sock.username = username
+	sock.packets = []
+	sock.pubKey = pubKey
+	if(!username || !crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
+		return sock.logMalicious('Illegal connection request'), sock.close()
+	crypto.randomBytes(32, (err, rnd) => {
+		if(err)return sock.close()
+		sock.challenge = rnd
+		const buf = new DataWriter()
+		buf.string(CONFIG.name)
+		buf.string(CONFIG.motd[Math.floor(Math.random() * CONFIG.motd.length)])
+		buf.string(CONFIG.icon)
+		const packet = buf.build(0, rnd.byteLength)
+		packet.set(rnd, packet.length - rnd.byteLength)
+		sock.send(packet)
+		sock.on('message', message)
+	})
+})
+async function play(sock, username){
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
 		sock.on('close', playerLeftQueue)
 		if(await queue(sock))return sock.close()
@@ -88,7 +128,8 @@ server.on('connection', async function(sock, {url}){
 	}
 	let permissions = PERMISSIONS[username] || PERMISSIONS.default
 	if(permissions*1000 > Date.now()){
-		sock.send(permissions==2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '+formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
+		sock.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
+			+ formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
 		sock.close()
 		return
 	}else if(permissions == 0){
@@ -112,6 +153,7 @@ server.on('connection', async function(sock, {url}){
 		player = other
 	}else if(playersConnecting.has(username)){
 		sock.send('-119You are still logging in/out from another session')
+		sock.logMalicious('Connect / disconnect shamble')
 		sock.close()
 		return
 	}else try{
@@ -134,7 +176,6 @@ server.on('connection', async function(sock, {url}){
 	player.ebuf.byte(20)
 	player.name = username
 	player.permissions = permissions
-	sock.packets = []
 	player.place(dim)
 	players.set(username, player)
 	player.r = 255
@@ -142,9 +183,8 @@ server.on('connection', async function(sock, {url}){
 	sock.player = player
 	if(!other)chat(username + ' joined the game', YELLOW)
 	sock.on('close', close)
-	sock.on('message', message)
-	sock.on('error', console.error)
-})
+	sock.on('error', _ => {})
+}
 
 server.permissions = 3
 server.world = Dimensions.overworld
@@ -171,21 +211,30 @@ const close = async function(){
 
 const message = function(_buf, isBinary){
 	const {player} = this
-	if (!player) return
-	if (!isBinary) return void onstring(player, _buf.toString())
+	if(!player && this.challenge && isBinary){
+		if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf)){
+			play(this, this.username)
+		}else{
+			sock.send('-119Invalid signature')
+			sock.close()
+			sock.logMalicious('Invalid signature')
+			return
+		}
+	}else if(!player) return
+	if(!isBinary) return void onstring(player, _buf.toString())
 	const buf = new DataReader(_buf) //let your code breathe
 	const code = buf.byte()
 	if(!codes[code]) return
 	try{
 		codes[code](player, buf)
-	} catch(e){
+	}catch(e){
 		console.warn(e)
 	}
 }
 setTPS(TPS)
 
 let exiting = false
-process.on('SIGINT', (e) => {
+process.on('SIGINT', _ => {
 	//Save stuff here
 	if (exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')

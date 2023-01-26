@@ -34,8 +34,8 @@ export class DataReader extends DataView{
 				len = type[1] >>> 0
 			}else{
 				len = this.getUint8(this.i)
-				if(len > 64){
-					if(len > 128)len = this.getUint32(this.i) & 0x7FFFFFFF, this.i += 4
+				if(len >= 64){
+					if(len >= 128)len = this.getUint32(this.i) & 0x7FFFFFFF, this.i += 4
 					else len = this.getUint16(this.i) & 0x3FFF, this.i += 2
 				}else len &= 0x3F, this.i++
 			}
@@ -66,8 +66,8 @@ export class DataReader extends DataView{
 	string(){
 		let i = this.i
 		let len = this.getUint8(i)
-		if(len > 64){
-			if(len > 128)len = this.getUint32(i) & 0x7FFFFFFF, i += 4
+		if(len >= 64){
+			if(len >= 128)len = this.getUint32(i) & 0x7FFFFFFF, i += 4
 			else len = this.getUint16(i) & 0x3FFF, i += 2
 		}else len &= 0x3F, i++
 		this.i = i + len
