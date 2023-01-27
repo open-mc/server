@@ -1,13 +1,11 @@
 const get = typeof process == 'undefined' ? a => import('Zpolyfills/'+a+'.js') : a => import(a);
 
 import fse from 'fs-extra'
+import {promises as fs, exists} from 'fs'
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
 globalThis.WORLD = PATH + '../' + (process.argv[2] || 'world') + '/'
 
-await get('process')
-
-export const fs = (await get('fs')).promises
-export const util = (await get('util')).default
+fs.exists = a => new Promise(r => exists(a, r))
 
 await fs.readdir(WORLD).catch(e=>fse.copy(PATH + 'default_world_folder', WORLD))
 let idle2 = performance.nodeTiming.idleTime

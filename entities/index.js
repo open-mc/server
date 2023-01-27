@@ -1,4 +1,4 @@
-import { fs } from '../internals.js'
+import fs from 'fs/promises'
 import { jsonToType, typeToJson } from '../utils/data.js'
 //import all entity files
 import { Entities, EntityIDs } from './entity.js'

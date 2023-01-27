@@ -1,17 +1,18 @@
 import { World } from './world.js'
 import '../internals.js'
-import { promises as fs, existsSync } from 'fs'
+import fs from 'fs/promises'
 export const Dimensions = {
 	overworld: new World('overworld'),
 	nether: new World('nether'),
 	end: new World('end')
 }
-
+const dimCreate = []
 for(let i in Dimensions){
 	let d = Dimensions[i]
-	if(existsSync(WORLD + 'dimensions/' + d.id))Object.assign(d, (await fs.readFile(WORLD + 'dimensions/' + d.id + '.json').then(a => JSON.parse(a.toString())).catch(e=>({}))))
-	else fs.mkdir(WORLD + 'dimensions/' + d.id)
+	dimCreate.push(fs.readFile(WORLD + 'dimensions/' + d.id + '.json').then(a => Object.assign(d, JSON.parse(a.toString()))).catch(e => null))
+	dimCreate.push(fs.exists(WORLD + 'dimensions/' + d.id).then(a => a || fs.mkdir(WORLD + 'dimensions/' + d.id)))
 }
+await Promise.all(dimCreate)
 export const allDimensions = Object.values(Dimensions)
 
 export const players = new Map()

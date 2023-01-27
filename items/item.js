@@ -1,4 +1,4 @@
-import { util } from '../internals.js'
+import util from 'util'
 import DEFAULTS from './itemdefaults.js'
 
 export class Item{

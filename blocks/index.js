@@ -1,5 +1,5 @@
 //import all block files
-import { fs } from '../internals.js'
+import fs from 'fs/promises'
 import { jsonToType, typeToJson } from '../utils/data.js'
 import { BlockIDs, Blocks } from './block.js'
 await Promise.all((await fs.readdir(PATH + 'blocks/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'blocks/' + name).then(a => Promise.all(a.map(file => import(PATH + 'blocks/' + name + '/' + file))))))

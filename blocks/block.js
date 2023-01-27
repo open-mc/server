@@ -1,4 +1,4 @@
-import { util } from '../internals.js'
+import util from 'util'
 import DEFAULTS from './blockdefaults.js'
 const give = a => a
 
