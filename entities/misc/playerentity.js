@@ -13,7 +13,7 @@ Entities.player = Entity.define({
 	chat(msg, style = 15){
 		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
 	},
-	rubber(mv = 31){
+	rubber(mv = 63){
 		this.r = (this.r + 1) & 0xff
 		let buf = new DataWriter()
 		buf.byte(1)

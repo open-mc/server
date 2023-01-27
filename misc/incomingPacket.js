@@ -1,10 +1,11 @@
 import { BlockIDs } from '../blocks/block.js'
-import { chat, prefix } from './chat.js'
+import { chat, ITALIC, LIGHT_GREY, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
 import { MOD } from '../config.js'
 function playerMovePacket(player, buf){
 	if(buf.byte() != player.r)return
 	player.move(buf.double(), buf.double())
+	player.state = buf.short(); player.mv |= 4
 	player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 }
 

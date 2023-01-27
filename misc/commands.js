@@ -52,13 +52,24 @@ export const commands = {
 		col += s.match(/()black|()dark[-_]?red|()dark[-_]?green|()(?:gold|dark[-_]?yellow)|()dark[-_]?blue|()dark[-_]?purple|()dark[-_]?(?:aqua|cyan)|()(?:light[-_]?)?gr[ea]y|()dark[-_]?gr[ea]y|()red|()(?:green|lime)|()yellow|()blue|()purple|()(?:aqua|cyan)|$/).slice(1).indexOf('') & 15
 		chat(txt, col)
 	},
+	tpe(a, b){
+		if(!b)b = a, a = '@s'
+		if(this.permissions < MOD)throw 'You do not have permission to /tp'
+		const players = selector(a, this)
+		const [target, _] = selector(b, this)
+		if(_ || !target)throw 'Selector must return exactly 1 target'
+		const {x, y, world} = target
+		for(const pl of players)pl.transport(x, y, world), pl.rubber()
+		if(players.length>1)log(this, `Teleported ${players.length} entities to ${target.name}`)
+		else log(this, `Teleported ${players[0].name} to ${target.name}`)
+	},
 	tp(a, ax, ay, d = this.world || 'overworld'){
 		if(!ay)ay=ax,ax=a,a='@s'
 		if(this.permissions < MOD)throw 'You do not have permission to /tp'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!(d instanceof World))throw 'Invalid dimension'
 		let x = ax, y = ay
-		let players = selector(a, this)
+		const players = selector(a, this)
     if(x[0] == "^" && y[0] == "^"){
 			x = (+x.slice(1))/180*Math.PI - this.facing
 			y = +y.slice(1);
@@ -69,7 +80,7 @@ export const commands = {
 			if(y[0] == "~")y = this.y + +y.slice(1)
 			else y -= 0
 		}
-		for(let pl of players)pl.transport(x, y, d), pl.rubber()
+		for(const pl of players)pl.transport(x, y, d), pl.rubber()
 		if(players.length>1)log(this, `Teleported ${players.length} entities`)
 		else log(this, `Teleported ${players[0].name} to (${x}, ${y})`)
 	},
@@ -79,7 +90,7 @@ export const commands = {
 		let players = selector(a, this)
 		if(players.length > 1 && this.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
 		for(const pl of players){
-			pl.sock.send('-12fYou were kicked\n'+reason)
+			pl.sock.send('-12fYou were kicked for \n'+reason)
 			pl.sock.close()
 		}
 	},
@@ -94,21 +105,21 @@ export const commands = {
 		}
 	},
 	help(c = 1){
-		const cmds = this.permissions == MOD ? mod_help : this.permission == OP ? help : anyone_help
+		const cmds = this.permissions == MOD ? mod_help : this.permissions == OP ? help : anyone_help
 		if(c in cmds){
 			return '/' + c + ' ' + cmds[c]
 		}else{
-			return 'Commands: '+Object.keys(cmds).join(', ')+'\n/help '+cmds.help
+			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
 		}
 	},
 	stacktrace(){
-		if(this.permission < OP)throw 'You do not have permission to view stack trace'
+		if(this.permissions < OP)throw 'You do not have permission to view stack trace'
 		if(!stack)return 'No stack trace found...'
 		console.warn(stack)
 		return stack
 	},
 	time(time, d = this.world || 'overworld'){
-		if(this.permission < MOD)throw 'You do not have permission to change dimension time!'
+		if(this.permissions < MOD)throw 'You do not have permission to change dimension time!'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!time){
 			return `This dimension is on tick ${d.tick}\nThe day is ${Math.floor((d.tick + 7000) / 24000)} and the time is ${Math.floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(Math.floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
@@ -157,7 +168,8 @@ export const anyone_help = {
 	...anyone_help,
 	kick: '[player] -- Kick a player',
 	say: '[style] [msg] -- Send a message in chat',
-	tp: '[player] [x] [y] (dimension) -- teleport someone to a dimension'
+	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
+	tpe: '[targets] [destEntity]'
 }, help = {
 	...mod_help,
 }

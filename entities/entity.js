@@ -16,6 +16,7 @@ export class Entity{
 		this.chunk = null
 		this.ochunk = null
 		this.mv = 0
+		this.state = 0
 		this._id = -1
 		this.name = ''
 	}

@@ -20,6 +20,7 @@ export class Chunk{
 			e.chunk = this
 			buf.setUint32(buf.i, e._id)
 			buf.setUint16((buf.i += 6) - 2, e._id / 4294967296)
+			e.state = buf.short()
 			e.dx = buf.float()
 			e.dy = buf.float()
 			e.f = buf.float()
@@ -97,6 +98,7 @@ export class Chunk{
 			buf.short((e.y % 64 + 64) * 1024)
 			buf.int(e._id | 0)
 			buf.short(e._id / 4294967296 | 0)
+			buf.short(e.state)
 			buf.float(e.dx)
 			buf.float(e.dy)
 			buf.float(e.f)

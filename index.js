@@ -171,6 +171,7 @@ async function play(sock, username){
 		if(sock.readyState !== sock.OPEN)return
 		player = Entities.player(buf.double(), buf.double())
 		dim = Dimensions[buf.string()]
+		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 		buf.read(Entities.player._.savedata, player)
 		chat(username + ' joined the game', YELLOW)
@@ -207,6 +208,7 @@ const close = async function(){
 	buf.double(player.x)
 	buf.double(player.y)
 	buf.string(player.world.id)
+	buf.short(player.state)
 	buf.float(player.dx)
 	buf.float(player.dy)
 	buf.float(player.f)
@@ -227,8 +229,8 @@ const message = function(_buf, isBinary){
 			sock.send('-119Invalid signature')
 			sock.close()
 			sock.logMalicious('Invalid signature')
-			return
 		}
+		return
 	}else if(!player) return
 	if(!isBinary) return void onstring(player, _buf.toString())
 	const buf = new DataReader(_buf) //let your code breathe

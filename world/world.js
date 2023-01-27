@@ -28,6 +28,7 @@ export class World extends Map{
 						buf.double(e.x)
 						buf.double(e.y)
 						buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+						buf.short(e.state)
 						buf.float(e.dx)
 						buf.float(e.dy)
 						buf.float(e.f)
