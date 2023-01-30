@@ -10,7 +10,7 @@ for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entity
 	let entity = Entities[name]
 	if(!entity){EntityIDs.push(Entities.player);continue}
 	let sd = typeToJson(entity._.savedata)
-	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
+	if((history[history.length-1] || 'null') == sd){history.pop()}else{modified = true}
 	for(const h of history)entity._.savedatahistory.push(jsonToType(h))
 	EntityIDs.push(entity)
 }
@@ -25,5 +25,5 @@ for(let i in Entities){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(({_})=>_.name + (_.savedatahistory.length ? _.savedatahistory.slice(0,-1).map(a=>' '+typeToJson(a)).join('') : (_.savedata ? ' '+typeToJson(_.savedata) : ''))).join('\n'))
+	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(({_})=>_.name + ' ' + _.savedatahistory.map(a=>typeToJson(a)+' ').join('') + (_.savedata ? typeToJson(_.savedata) : '')).join('\n'))
 }

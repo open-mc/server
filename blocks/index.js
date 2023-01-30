@@ -24,5 +24,5 @@ for(let i in Blocks){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(({_})=>_.name + (_.savedatahistory.length ? _.savedatahistory.map(a=>' '+typeToJson(a)).join('') + ' '+typeToJson(_.savedata) : (_.savedata ? ' '+typeToJson(_.savedata) : ''))).join('\n'))
+	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(({_})=>_.name + ' ' + _.savedatahistory.map(a=>typeToJson(a)+' ').join('') + (_.savedata ? typeToJson(_.savedata) : '')).join('\n'))
 }

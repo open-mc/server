@@ -1,24 +1,31 @@
+# Everything after a # is a comment and ignored
+
+
+
+# Commonly used
+
 name: Test Server
-seed: 6969420 #32 bit
-port: 27277 #default: 27277
+seed: 6969420 # 32 bit
 maxplayers: 500
-chunkloadingrange: 3 #recommended: 3
-#possible gamemodes: survival, creative
-gamemode: survival
+chunkloadingrange: 3 # recommended: 3
+gamemode: survival # possible values: survival, creative
 
-
-# Key and certificate files for encrypted server (recommended). Paths are relative to 
-key: 
-pem: 
-
-ban_appeal_info: #info displayed on the banned notice screen
-
-icon: https://static.wikia.nocookie.net/minecraft_gamepedia/images/b/b7/Crafting_Table_JE4_BE3.png
-
-motd:
-  - A random server
-
-generators:
+generators: # Terrain generation
   overworld: default
   nether: default
   end: default
+
+# Related to network configuration
+
+port: 27277
+# Key and certificate files for encrypted server (recommended). Paths are relative to
+key: 
+pem: 
+
+# Related to server list and disconnect screen
+
+icon: https://static.wikia.nocookie.net/minecraft_gamepedia/images/b/b7/Crafting_Table_JE4_BE3.png
+motd:
+  - One of the servers of all time
+
+ban_appeal_info: # info displayed on the banned notice screen
