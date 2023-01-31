@@ -17,7 +17,6 @@ async function loadPermissions(){
 	}catch(e){}
 	w.next().then(loadPermissions)
 }
-loadPermissions()
 
 
 const w2 = fs.watch(WORLD + 'properties.yaml')
@@ -26,7 +25,6 @@ async function loadConfig(a){
 	try{ CONFIG = parse(await fs.readFile(WORLD + 'properties.yaml').then(a => a.toString())) }catch(e){}
 	w2.next().then(loadConfig)
 }
-loadConfig()
 
 export const HANDLERS = {
 	//settings for custom databases
@@ -35,6 +33,14 @@ export const HANDLERS = {
 }
 export const TPS = 20
 
-export const GAMERULES = JSON.parse(''+await fs.readFile(WORLD + 'gamerules.json'))
-
-export const { version } = await fs.readFile('./package.json').then(a=>JSON.parse(''+a))
+const json = a => JSON.parse(''+a)
+export const [
+	GAMERULES,
+	{ version },
+	packs
+] = await Promise.all([
+	fs.readFile(WORLD + 'gamerules.json').then(json),
+	fs.readFile('./package.json').then(json),
+	fs.readFile('./packs.json').then(json),
+	loadConfig(), loadPermissions()
+])

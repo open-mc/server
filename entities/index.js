@@ -4,7 +4,7 @@ import { jsonToType, typeToJson } from '../utils/data.js'
 import { Entities, EntityIDs } from './entity.js'
 await Promise.all((await fs.readdir(PATH + 'entities/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'entities/' + name).then(a => Promise.all(a.map(file => import(PATH + 'entities/' + name + '/' + file))))))
 let modified = false
-let entityindex
+export let entityindex
 for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entityindex = ''+a).split('\n'))){
 	let [name, ...history] = a.split(' ')
 	let entity = Entities[name]

@@ -2,9 +2,10 @@
 import fs from 'fs/promises'
 import { jsonToType, typeToJson } from '../utils/data.js'
 import { BlockIDs, Blocks } from './block.js'
+import { inflateSync } from 'zlib'
 await Promise.all((await fs.readdir(PATH + 'blocks/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'blocks/' + name).then(a => Promise.all(a.map(file => import(PATH + 'blocks/' + name + '/' + file))))))
 let modified = false
-let blockindex
+export let blockindex
 for(const a of await fs.readFile(WORLD + 'defs/blockindex.txt').then(a=>(blockindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
 	let block = Blocks[name]

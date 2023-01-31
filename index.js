@@ -9,13 +9,14 @@ import './utils/prototypes.js'
 import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
 import { codes, onstring } from './misc/incomingPacket.js'
-import { CONFIG, HANDLERS, PERMISSIONS, TPS } from './config.js'
+import { CONFIG, HANDLERS, packs, PERMISSIONS, TPS } from './config.js'
 import { ItemIDs } from './items/item.js'
 import { BlockIDs } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
 import crypto from 'crypto'
+import { deflateSync } from 'zlib'
 
 let total = 5, loaded = -1, promise = null
 let started = Math.round(Date.now() - performance.now())
@@ -26,9 +27,19 @@ globalThis.progress = function(desc){
 }
 process.stdout.write('\x1bc\x1b[3J')
 progress('Modules loaded')
-import('./entities/index.js').then(()=>progress(`${EntityIDs.length} Entities loaded`))
-import('./items/index.js').then(()=>progress(`${ItemIDs.length} Items loaded`))
-import('./blocks/index.js').then(()=>progress(`${BlockIDs.length} Blocks loaded`))
+let blockidx, itemidx, entityidx
+import('./blocks/index.js').then(({blockindex}) => {
+	blockidx = blockindex
+	progress(`${EntityIDs.length} Blocks loaded`)
+})
+import('./items/index.js').then(({itemindex}) => {
+	itemidx = itemindex
+	progress(`${ItemIDs.length} Items loaded`)
+})
+import('./entities/index.js').then(({entityindex}) => {
+	entityidx = entityindex
+	progress(`${BlockIDs.length} Entities loaded`)
+})
 function uncaughtErr(e){
 	const l = process.stdout.columns
 	console.log('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n' 
@@ -87,6 +98,8 @@ function formatTime(t){
 		else return Math.floor(t/86400)+'d'
 	}
 }
+packs.push('/cli/index.js')
+const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockidx + '\0' + itemidx + '\0' + entityidx + '\0' + packs.join('\0'))))
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
 sXS9GkNjgfl3WATBJ33Q/cigpAi9svLoQgcgkIH+UlMTIJhvuuZ1JK7L6zLwPfyY
@@ -113,9 +126,9 @@ server.on('connection', function(sock, {url}){
 		buf.string(CONFIG.name)
 		buf.string(CONFIG.motd[Math.floor(Math.random() * CONFIG.motd.length)])
 		buf.string(CONFIG.icon)
-		const packet = buf.build(0, rnd.byteLength)
-		packet.set(rnd, packet.length - rnd.byteLength)
-		sock.send(packet)
+		buf.uint8array(indexCompressed)
+		buf.uint8array(rnd)
+		buf.pipe(sock)
 		sock.on('message', message)
 	})
 })
@@ -215,7 +228,6 @@ const close = async function(){
 const message = function(_buf, isBinary){
 	const {player} = this
 	if(!player && this.challenge && isBinary){
-
 		if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf.subarray(1008))){
 			play(this, this.username, _buf.subarray(0, 1008))
 		}else{
