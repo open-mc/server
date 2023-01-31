@@ -16,7 +16,7 @@ export class Entity{
 		this.chunk = null
 		this.ochunk = null
 		this.mv = 0
-		this.state = 0
+		this._state = 0
 		this._id = -1
 		this.name = ''
 	}
@@ -48,9 +48,11 @@ export class Entity{
 	get dx(){return this._dx}
 	get dy(){return this._dy}
 	get f(){return this._f}
-	set dx(a){this._dx=a;this.mv|=4}
-	set dy(a){this._dy=a;this.mv|=8}
-	set f(a){this._f=a;this.mv|=16}
+	get state(){return this._state}
+	set dx(a){this._dx=a;this.mv|=8}
+	set dy(a){this._dy=a;this.mv|=16}
+	set f(a){this._f=a;this.mv|=32}
+	set state(a){this._state=a;this.mv|=4}
 	get x(){return this._x}
 	get y(){return this._y}
 	get world(){return this._w}

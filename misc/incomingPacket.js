@@ -5,7 +5,7 @@ import { MOD } from '../config.js'
 function playerMovePacket(player, buf){
 	if(buf.byte() != player.r)return
 	player.move(buf.double(), buf.double())
-	player.state = buf.short(); player.mv |= 4
+	player.state = buf.short()
 	player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 }
 
