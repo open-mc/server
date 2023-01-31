@@ -21,6 +21,7 @@ export const codes = Object.assign(new Array(256), {
 	8: setBlockPacket
 })
 export function onstring(player, text){
+	if(!(text = text.trimEnd())) return
 	if(text[0] == '/'){
 		try{
 			let args = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g).map((a,i)=>{

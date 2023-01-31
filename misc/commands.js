@@ -63,12 +63,12 @@ export const commands = {
 		if(players.length>1)log(this, `Teleported ${players.length} entities to ${target.name}`)
 		else log(this, `Teleported ${players[0].name} to ${target.name}`)
 	},
-	tp(a, ax, ay, d = this.world || 'overworld'){
-		if(!ay)ay=ax,ax=a,a='@s'
+	tp(a, x, y, d = this.world || 'overworld'){
+		if(!y)y=x,x=a,a='@s'
+		if(!x || !y)throw 'Invalid coordinates'
 		if(this.permissions < MOD)throw 'You do not have permission to /tp'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!(d instanceof World))throw 'Invalid dimension'
-		let x = ax, y = ay
 		const players = selector(a, this)
     if(x[0] == "^" && y[0] == "^"){
 			x = (+x.slice(1))/180*Math.PI - this.facing
@@ -80,6 +80,7 @@ export const commands = {
 			if(y[0] == "~")y = this.y + +y.slice(1)
 			else y -= 0
 		}
+		if(x != x || y != y)throw 'Invalid coordinates'
 		for(const pl of players)pl.transport(x, y, d), pl.rubber()
 		if(players.length>1)log(this, `Teleported ${players.length} entities`)
 		else log(this, `Teleported ${players[0].name} to (${x}, ${y})`)
