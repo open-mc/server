@@ -5,7 +5,8 @@
 # but cannot place, break or otherwise interact with the world.
 # They are also not visible to other players, but do show up /list
 
-BlobKat: op
-zekiahepic: mod
+# Example permissions (without the #):
+# cyarty: op
+# zekiah: mod
 
-default_permission: normal
+default_permissions: normal

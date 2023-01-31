@@ -138,7 +138,7 @@ async function play(sock, username, skin){
 		if(await queue(sock))return sock.close()
 		sock.removeListener('close', playerLeftQueue)
 	}
-	let permissions = PERMISSIONS[username] || PERMISSIONS.default_permissions
+	let permissions = PERMISSIONS[username] || PERMISSIONS.default_permissions || 2
 	if(permissions*1000 > Date.now()){
 		sock.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
 			+ formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
