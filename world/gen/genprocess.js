@@ -10,9 +10,8 @@ async function all(o){for(let i in o)o[i]=await o[i];return o}
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
 globalThis.chunk = []
 globalThis.chunkBiomes = new Uint8Array(10)
-const path = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
-globalThis.Blocks = Object.fromEntries((''+await fs.readFile(path + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
-globalThis.Items = Object.fromEntries((''+await fs.readFile(path + '../../../'+(process.argv[2]||'world')+'/defs/itemindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
+globalThis.Blocks = Object.fromEntries((''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
+globalThis.Items = Object.fromEntries((''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/itemindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
 for(let i = 0; i < 4096; i++)globalThis.chunk.push(Blocks.air())
 const GENERATORS = await all({
 	overworld: import('./overworld.js'),

@@ -1,5 +1,6 @@
 import fs from 'fs/promises'
 import { parse } from 'yaml'
+import './internals.js'
 const perms = {op: 4, mod: 3, normal: 2, spectate: 1, deny: 0}
 export const OP = 4, MOD = 3, NORMAL = 2, SPECTATE = 1
 export let CONFIG
@@ -40,7 +41,7 @@ export const [
 	packs
 ] = await Promise.all([
 	fs.readFile(WORLD + 'gamerules.json').then(json),
-	fs.readFile('./package.json').then(json),
-	fs.readFile('./packs.json').then(json),
+	fs.readFile(PATH + 'package.json').then(json),
+	fs.readFile(PATH + 'packs.json').then(json),
 	loadConfig(), loadPermissions()
 ])
