@@ -18,3 +18,20 @@ Once it has finished, it will show you where the certificate and private key are
 Enter those paths into the `key` and `pem` entries in the `world/properties.yaml` file respectively
 
 If you want to connect without HTTPS, you can run the [client](https://github.com/openmc2d/client) locally
+
+# Updating
+
+```sh
+cd server
+git pull
+```
+
+# Keeping alive
+
+You can use a tool like [tmux](https://linuxize.com/post/getting-started-with-tmux/) or systemd to keep your server running
+You can update the server while it is running, just remember to restart it for the updates to apply
+
+# Server management
+
+Starting the server will start a CLI, where you can chat or enter commands
+Press tab to switch to and back from javascript REPL (for debugging)

@@ -5,10 +5,26 @@ import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { MOD, OP } from '../config.js'
 import { Entity } from '../entities/entity.js'
 import { World } from '../world/world.js'
+import { stats } from '../internals.js'
+
+export function formatTime(t){
+	t /= 1000
+	if(t < 3600){
+		if(t >= 60)return Math.floor(t/60)+'m '+Math.floor(t%60)+'s'
+		else if(t >= 1)return Math.floor(t)+'s'
+		else return t*1000+'ms'
+	}else{
+		if(t < 86400)return Math.floor(t/3600)+'h '+Math.floor(t%3600/60)+'m'
+		else if(t < 864000)return Math.floor(t/86400)+'d '+Math.floor(t%86400/3600)+'h'
+		else return Math.floor(t/86400)+'d'
+	}
+}
+
 function log(who, msg){
 	if(!GAMERULES.commandlogs)return
 	chat(prefix(who, 1)+msg, LIGHT_GREY + ITALIC)
 }
+
 function selector(a, who){
 	if(a[0] == '@'){
 		if(a[1] == 's')return who instanceof Entity ? [who] : []
@@ -32,6 +48,7 @@ function selector(a, who){
 		return [player]
 	}
 }
+
 let stack = null
 export function err(e){
 	if(!e.stack)return e
@@ -155,7 +172,7 @@ export const commands = {
 		return 'Set the time to '+time
 	},
 	info(){
-		return `Vanilla server software ${version}\n`
+		return `Vanilla server software ${version}\nUptime: ${formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB`
 	}
 }
 

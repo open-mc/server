@@ -4,7 +4,7 @@ import util from 'util'
 import { WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
-import { commands, err } from './misc/commands.js'
+import { commands, err, formatTime } from './misc/commands.js'
 import './utils/prototypes.js'
 import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
@@ -19,7 +19,7 @@ import crypto from 'crypto'
 import { deflateSync } from 'zlib'
 
 let total = 5, loaded = -1, promise = null
-let started = Math.round(Date.now() - performance.now())
+globalThis.started = Math.round(Date.now() - performance.now())
 globalThis.progress = function(desc){
 	loaded++
 	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${formatTime(Date.now() - started)}) ${desc}`)
@@ -60,12 +60,11 @@ if(CONFIG.key && CONFIG.pem){
 }else server = new WebSocketServer({port: CONFIG.port || 27277, perMessageDeflate: false})
 
 server.on('listening', () => {
-	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m\nPress Tab to switch between Chat and Repl`)
+	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port}\x1b[m\nType /help for a list of commands, or press tab to switch to repl`)
 	started = Date.now()
 	process.stdin.setRawMode(true)
 	process.stdin.resume()
 	process.stdin.setEncoding('utf-8')
-	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
 	repl('[server] ', async text => {
 		if(text == 'clear')return clear()
 		if(text[0] == '/'){
@@ -85,19 +84,9 @@ server.on('listening', () => {
 			chat('[server] ' + text, LIGHT_GREY + ITALIC)
 		}
 	})
+	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
 })
-function formatTime(t){
-	t /= 1000
-	if(t < 3600){
-		if(t >= 60)return Math.floor(t/60)+'m '+Math.floor(t%60)+'s'
-		else if(t >= 1)return Math.floor(t)+'s'
-		else return t*1000+'ms'
-	}else{
-		if(t < 86400)return Math.floor(t/3600)+'h '+Math.floor(t%3600/60)+'m'
-		else if(t < 864000)return Math.floor(t/86400)+'d '+Math.floor(t%86400/3600)+'h'
-		else return Math.floor(t/86400)+'d'
-	}
-}
+
 packs.push('/cli/index.js')
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockidx + '\0' + itemidx + '\0' + entityidx + '\0' + packs.join('\0'))))
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
