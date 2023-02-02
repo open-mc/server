@@ -62,7 +62,6 @@ export const commands = {
 		return a
 	},
 	say(s, ...l){
-		if(this.permissions < MOD)throw 'You do not have permission to /say'
 		if(!l.length)throw 'Command usage: /say <style> <text...>\nExample: /say lime-bold Hello!'
 		let col = 0, txt = s.includes('raw') ? l.join(' ') : prefix(this, 1) + l.join(' ')
 		for(let [m] of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
@@ -103,7 +102,6 @@ export const commands = {
 		else log(this, `Teleported ${players[0].name} to (${x}, ${y})`)
 	},
 	kick(a, ...r){
-		if(this.permissions < MOD)throw 'You do not have permission to /kick players'
 		const reason = r.join(' ')
 		let players = selector(a, this)
 		if(players.length > 1 && this.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
@@ -113,7 +111,6 @@ export const commands = {
 		}
 	},
 	give(sel, item, count = '1'){
-		if(this.permissions < MOD)throw 'You do not have permission to /give items'
 		let itm = Items[item], c = Math.max(count | 0, 0)
 		if(!itm)throw 'No such item: '+item
 		for(const player of selector(sel)){
@@ -125,19 +122,17 @@ export const commands = {
 	help(c = 1){
 		const cmds = this.permissions == MOD ? mod_help : this.permissions == OP ? help : anyone_help
 		if(c in cmds){
-			return '/' + c + ' ' + cmds[c]
+			return Array.isArray(cmds[c]) ? cmds[c].map(a => '/' + c + ' ' + a).join('\n') : '/' + c + ' ' + cmds[c]
 		}else{
 			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
 		}
 	},
 	stacktrace(){
-		if(this.permissions < OP)throw 'You do not have permission to view stack trace'
 		if(!stack)return 'No stack trace found...'
 		console.warn(stack)
 		return stack
 	},
 	time(time, d = this.world || 'overworld'){
-		if(this.permissions < MOD)throw 'You do not have permission to change dimension time!'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!time){
 			return `This dimension is on tick ${d.tick}\nThe day is ${Math.floor((d.tick + 7000) / 24000)} and the time is ${Math.floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(Math.floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
@@ -187,7 +182,8 @@ export const anyone_help = {
 	kick: '[player] -- Kick a player',
 	say: '[style] [msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
-	tpe: '[targets] [destEntity]'
+	tpe: '[targets] [destEntity]',
+	time: ['+<amount> -- Add to time', '-<amount> -- Substract from time', '<value> -- Set time', '-- Get current time']
 }, help = {
 	...mod_help,
 }
