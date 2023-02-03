@@ -37,18 +37,20 @@ export const CHUNKLOADER = {
 		for(let y = y0; y < y1; y++){
 			for(let x=cx-this.radius+1;x<XT;x++){
 				this.world.load(x, y, this)
-				this.world.unlink(tx-x, ty-y, this)
-				trashed.int(tx-x)
-				trashed.int(ty-y)
+				if(this.world.unlink(tx-x, ty-y, this)){
+					trashed.int(tx-x)
+					trashed.int(ty-y)
+				}
 			}
 		}
 		
 		for(let x = x0; x < x1; x++){
 			for(let y=Math.max(cy,ocy)-this.radius+1;y<YT;y++){
 				this.world.load(x, y, this)
-				this.world.unlink(tx-x, ty-y, this)
-				trashed.int(tx-x)
-				trashed.int(ty-y)
+				if(this.world.unlink(tx-x, ty-y, this)){
+					trashed.int(tx-x)
+					trashed.int(ty-y)
+				}
 			}
 		}
 		trashed.pipe(this.sock)
@@ -75,9 +77,10 @@ export const CHUNKLOADER = {
 		trashed.byte(17)
 		for(let x = cx-this.radius+1;x<cx+this.radius;x++){
 			for(let y=cy-this.radius+1;y<cy+this.radius;y++){
-				world.unlink(x, y, this)
-				trashed.int(x)
-				trashed.int(y)
+				if(world.unlink(x, y, this)){
+					trashed.int(x)
+					trashed.int(y)
+				}
 			}
 		}
 		trashed.pipe(this.sock)

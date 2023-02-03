@@ -92,7 +92,7 @@ export class DataReader extends DataView{
 		if(!item)return null
 		if(!target)target = item(count)
 		else target.count = count, target._ = item._
-		item.name = this.string()
+		target.name = this.string()
 		if(item._.savedata)this.read(item._.savedata, target)
 		return target
 	}
@@ -189,6 +189,7 @@ export class DataWriter extends Array{
 			return
 		}
 		new Uint8Array(buf.buffer, buf.byteOffset).set(v.subarray(0, avail), this.i)
+		this.i += avail
 		this.allocnew()
 		const left = len - avail
 		if(left < avail && left < (this.cur.byteLength >> 1)){
@@ -214,6 +215,7 @@ export class DataWriter extends Array{
 			return
 		}
 		new Uint8Array(buf.buffer, buf.byteOffset).set(encoded.subarray(0, avail), this.i)
+		this.i += avail
 		this.allocnew()
 		const left = len - avail
 		if(left < avail && left <= this.cur.byteLength){

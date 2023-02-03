@@ -41,7 +41,7 @@ function selector(a, who){
 			})
 			return [closest]
 		}
-		if(a[1] == 'r')return candidates[Math.floor(Math.random() * candidates.length)]
+		if(a[1] == 'r')return [candidates[Math.floor(Math.random() * candidates.length)]]
 	}else{
 		const player = players.get(a)
 		if(!player)throw "No targets matched selector"
@@ -119,12 +119,14 @@ export const commands = {
 			if(stack.count); //TODO: summon item entity
 		}
 	},
-	help(c = 1){
+	help(c){
 		const cmds = this.permissions == MOD ? mod_help : this.permissions == OP ? help : anyone_help
-		if(c in cmds){
+		if(!c){
+			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
+		}else if(c in cmds){
 			return Array.isArray(cmds[c]) ? cmds[c].map(a => '/' + c + ' ' + a).join('\n') : '/' + c + ' ' + cmds[c]
 		}else{
-			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
+			return 'No such command: /'+c
 		}
 	},
 	stacktrace(){
@@ -165,6 +167,14 @@ export const commands = {
 		if(t >= 12000)d.tick += (24000 - t)
 		else d.tick -= t
 		return 'Set the time to '+time
+	},
+	gamerule(a, b){
+		switch(typeof GAMERULES[a]){
+			case 'boolean': if(b.toLowerCase() == 'true' || b == '1') GAMERULES[a] = true; else if(b.toLowerCase() == 'false' || b == '0') GAMERULES[a] = false; else throw 'Invalid boolean value: ' + b
+			case 'number': const c = +b; if(c == c) GAMERULES[a] = c; else throw 'Invalid number value: ' + b
+			case 'string': GAMERULES[a] = c
+			default: throw 'No such gamerule: ' + a
+		}
 	},
 	info(){
 		return `Vanilla server software ${version}\nUptime: ${formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB`

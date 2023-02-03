@@ -61,14 +61,15 @@ export class World extends Map{
 	}
 	unlink(cx, cy, pl){
 		let ch = super.get((cx&67108863)+(cy&67108863)*67108864)
-		if(!ch)return
+		if(!ch)return false
 		ch.players.remove(pl)
-		if(!pl.sock || (ch instanceof Promise))return
+		if(!pl.sock || (ch instanceof Promise))return false
 		const buf = pl.ebuf
 		for(let e of ch.entities){
 			buf.byte(0)
 			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 		}
+		return true
 	}
 	check(ch){
 		if(ch instanceof Promise)return
