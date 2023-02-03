@@ -190,11 +190,10 @@ export class DataWriter extends Array{
 		}
 		new Uint8Array(buf.buffer, buf.byteOffset).set(v.subarray(0, avail), this.i)
 		this.allocnew()
-		const left = v.byteLength - avail
-		v.byteLength - avail
+		const left = len - avail
 		if(left < avail && left < (this.cur.byteLength >> 1)){
 			//Small enough to copy to next chunk
-			new Uint8Array(this.cur, this.cur.byteOffset).set(v.subarray(avail), 0)
+			new Uint8Array(this.cur.buffer, this.cur.byteOffset).set(v.subarray(avail), 0)
 			this.i = left
 		}else super.push(v.subarray(avail))
 	}
@@ -216,11 +215,10 @@ export class DataWriter extends Array{
 		}
 		new Uint8Array(buf.buffer, buf.byteOffset).set(encoded.subarray(0, avail), this.i)
 		this.allocnew()
-		const left = encoded.byteLength - avail
-		encoded.byteLength - avail
+		const left = len - avail
 		if(left < avail && left <= this.cur.byteLength){
 			//Small enough to copy to next chunk, freeing encoded
-			new Uint8Array(this.cur, this.cur.byteOffset).set(encoded.subarray(avail), 0)
+			new Uint8Array(this.cur.buffer, this.cur.byteOffset).set(encoded.subarray(avail), 0)
 			this.i = left
 		}else super.push(encoded.subarray(avail))
 	}
