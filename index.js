@@ -167,14 +167,16 @@ async function play(sock, username, skin){
 		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
 		buf.read(Entities.player._.savedata, player)
-		chat(username + ' joined the game', YELLOW)
+		other = null
 	}catch(e){
 		player = Entities.player(0, 0)
 		dim = Dimensions.overworld
-		player.inv = [], player.health = 20, player.dragging = null
-		let i = 41; while(i--)player.inv.push(null)
-		chat(username + ' joined the server', YELLOW)
+		player.inv = [], player.health = 20, player.items = []; player.state = 0
+		let i = 36; while(i--)player.inv.push(null)
+		i = 6; while(i--)player.items.push(null)
+		players.set(username, player)
 	}
+	player.interface = null; player.interfaceId = 0
 	player.skin = skin
 	player.sock = sock
 	player.ebuf = new DataWriter()
@@ -186,8 +188,9 @@ async function play(sock, username, skin){
 	player.r = 255
 	player.rubber(0)
 	sock.player = player
+	if(!other) chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
 	sock.on('close', close)
-	sock.on('error', _ => {})
+	sock.on('error', e => sock.logMalicious('Caused an error: '+e))
 }
 
 server.permissions = 3
@@ -233,7 +236,7 @@ const message = function(_buf, isBinary){
 	try{
 		codes[code](player, buf)
 	}catch(e){
-		console.warn(e)
+		this.logMalicious('Caused an error: '+e)
 	}
 }
 setTPS(TPS)

@@ -11,11 +11,12 @@ export function encodeMove(e, pl){
 	if(e.mv & 128)buf.short(e.id)
 	if(e.mv & 1)buf.double(e.x)
 	if(e.mv & 2)buf.double(e.y)
-	if(e.mv & 4)buf.short(e.state)
-	if(e.mv & 8)buf.float(e.dx)
-	if(e.mv & 16)buf.float(e.dy)
-	if(e.mv & 32)buf.float(e.f)
-	if(e.mv & 64)buf.write(e._.savedata, e)
+	if(e.mv & 4)buf.string(e.name)
+	if(e.mv & 8)buf.short(e.state)
+	if(e.mv & 16)buf.float(e.dx)
+	if(e.mv & 32)buf.float(e.dy)
+	if(e.mv & 64)buf.float(e.f)
+	if(e.mv & 128)buf.write(e._.savedata, e)
 }
 function moved(e){
 	const {chunk, ochunk} = e
@@ -36,6 +37,7 @@ function moved(e){
 				buf.short(e.id)
 				buf.double(e.x)
 				buf.double(e.y)
+				buf.string(e.name)
 				buf.short(e.state)
 				buf.float(e.dx)
 				buf.float(e.dy)

@@ -69,3 +69,12 @@ WebSocket.prototype.send = function(data, cb){
 	_socket.write(data)
 	_socket.uncork()
 }*/
+
+// Blazingly fast!!
+const nul = new Array(1000).fill(null)
+Array.null = len => {
+	if(len <= 1000)return nul.slice(0, len)
+	let a = new Array(len)
+	for(let i = len; i > 0; i--)a[i] = null
+	return a
+}

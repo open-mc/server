@@ -1,6 +1,6 @@
-import { Block, BlockIDs } from '../blocks/block.js'
+import { BlockIDs } from '../blocks/block.js'
 import { EntityIDs } from '../entities/entity.js'
-import { DataReader, DataWriter } from '../utils/data.js'
+import { DataReader } from '../utils/data.js'
 
 export class Chunk{
 	constructor(buf, world){
@@ -10,8 +10,8 @@ export class Chunk{
 		this.y = y << 6 >> 6
 		this.world = world
 		this.tiles = []
-		
 		this.entities = new Set()
+		this.players = null
 		//read buf palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
 		let id = buf.short()
@@ -20,6 +20,7 @@ export class Chunk{
 			e.chunk = this
 			buf.setUint32(buf.i, e._id)
 			buf.setUint16((buf.i += 6) - 2, e._id / 4294967296)
+			e.name = buf.string()
 			e.state = buf.short()
 			e.dx = buf.float()
 			e.dy = buf.float()
@@ -98,6 +99,7 @@ export class Chunk{
 			buf.short((e.y % 64 + 64) * 1024)
 			buf.int(e._id | 0)
 			buf.short(e._id / 4294967296 | 0)
+			buf.string(e.name)
 			buf.short(e.state)
 			buf.float(e.dx)
 			buf.float(e.dy)

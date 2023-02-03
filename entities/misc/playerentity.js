@@ -13,7 +13,7 @@ Entities.player = Entity.define({
 	chat(msg, style = 15){
 		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
 	},
-	rubber(mv = 63){
+	rubber(mv = 127){
 		this.r = (this.r + 1) & 0xff
 		let buf = new DataWriter()
 		buf.byte(1)
@@ -29,7 +29,8 @@ Entities.player = Entity.define({
 	}
 }, {
 	health: Byte,
-	inv: [Item, 41],
+	inv: [Item, 36],
+	items: [Item, 6],
 	selected: Byte,
 	skin: Uint8Array
 })

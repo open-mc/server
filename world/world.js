@@ -28,6 +28,7 @@ export class World extends Map{
 						buf.double(e.x)
 						buf.double(e.y)
 						buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+						buf.string(e.name)
 						buf.short(e.state)
 						buf.float(e.dx)
 						buf.float(e.dy)
@@ -128,11 +129,13 @@ export class World extends Map{
 		e.chunk = ch
 		return true
 	}
-	at(x, y){
+	at(x, y, p = null){
 		let ch = super.get((x>>>6)+(y>>>6)*67108864)
-		if(!ch)return Blocks.air()
+		if(!ch || ch instanceof Promise)return null
+		if(p && !ch.players.includes(p))return null
 		return ch.tiles[(x & 63) + ((y & 63) << 6)]
 	}
+	get(x, y){ return super.get((x&67108863)+(y&67108863)*67108864) }
 	put(x, y, b){
 		let ch = super.get((x>>>6)+(y>>>6)*67108864)
 		if(!ch)return
