@@ -169,12 +169,20 @@ export const commands = {
 		return 'Set the time to '+time
 	},
 	gamerule(a, b){
+		if(!a){
+			return 'List of gamerules:\n' + Object.entries(GAMERULES).map(([k, v]) => k + ': ' + typeof v).join('\n')
+		}
+		if(!b){
+			if(!(a in GAMERULES)) throw 'No such gamerule: ' + a
+			return 'Gamerule ' + a + ': ' + JSON.stringify(GAMERULES[a])
+		}
 		switch(typeof GAMERULES[a]){
-			case 'boolean': if(b.toLowerCase() == 'true' || b == '1') GAMERULES[a] = true; else if(b.toLowerCase() == 'false' || b == '0') GAMERULES[a] = false; else throw 'Invalid boolean value: ' + b
-			case 'number': const c = +b; if(c == c) GAMERULES[a] = c; else throw 'Invalid number value: ' + b
-			case 'string': GAMERULES[a] = c
+			case 'boolean': if(b.toLowerCase() == 'true' || b == '1') GAMERULES[a] = true; else if(b.toLowerCase() == 'false' || b == '0') GAMERULES[a] = false; else throw 'Invalid boolean value: ' + b; break
+			case 'number': const c = +b; if(c == c) GAMERULES[a] = c; else throw 'Invalid number value: ' + b; break
+			case 'string': GAMERULES[a] = c; break
 			default: throw 'No such gamerule: ' + a
 		}
+		return 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a])
 	},
 	info(){
 		return `Vanilla server software ${version}\nUptime: ${formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB`
