@@ -1,8 +1,8 @@
 import { HANDLERS } from '../config.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
-import { Blocks } from '../blocks/block.js'
 import { DataWriter } from '../utils/data.js'
+import { entityMap } from '../entities/entity.js'
 export class World extends Map{
 	constructor(id){
 		super()
@@ -15,7 +15,7 @@ export class World extends Map{
 		let k = (cx&67108863)+(cy&67108863)*67108864
 		let ch = super.get(k)
 		if(ch instanceof Promise){
-			if(pl)ch.players.push(pl)
+			if(pl) ch.players.push(pl)
 			return ch
 		}
 		if(ch){
@@ -63,35 +63,37 @@ export class World extends Map{
 		let ch = super.get((cx&67108863)+(cy&67108863)*67108864)
 		if(!ch)return false
 		ch.players.remove(pl)
-		if(!pl.sock || (ch instanceof Promise))return false
+		if(!pl.sock || (ch instanceof Promise)) return false
 		const buf = pl.ebuf
 		for(let e of ch.entities){
+			if(e == pl) continue
 			buf.byte(0)
 			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 		}
 		return true
 	}
 	check(ch){
-		if(ch instanceof Promise)return
+		if(ch instanceof Promise) return
 		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
 		if(ch.players.length){
-			if(ch.t <= 0)ch.t = -1 //-1 == chunk has had a player loading it and the chunk will need saving again
+			if(ch.t <= 0) ch.t = -1 //-1 == chunk has had a player loading it and the chunk will need saving again
 			else ch.t = 20 //Reset the timer
 			return
 		}
-		if(ch.t <= 0)return
-		if(--ch.t)return //Count down timer
+		if(ch.t <= 0) return
+		if(--ch.t) return //Count down timer
 		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
 		const b = ch.toBuf(new DataWriter).build()
 		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
-			if(ch.t == -1)ch.t = 5 //If player has been in chunk, re-save chunk in 5 ticks
-			else super.delete(k) //Completely unloaded with no re-loads, delete chunk
+			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
+			super.delete(k) //Completely unloaded with no re-loads, delete chunk
+			for(const e of ch.entities) if(e.id) entityMap.delete(e._id)
 		})
 	}
 	save(ch){
-		if(ch instanceof Promise)return
+		if(ch instanceof Promise) return
 		//Save a chunk to disk, but don't unload it
-		if(ch.t <= 0)return //Already saving
+		if(ch.t <= 0) return //Already saving
 		ch.t = 0 //Whoops, chunk timer "ended"
 		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
 		const b = ch.toBuf(new DataWriter).build()

@@ -24,5 +24,5 @@ for(let i in Items){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(({_})=>_.name + ' ' + _.savedatahistory.map(a=>typeToJson(a)+' ').join('') + (_.savedata ? typeToJson(_.savedata) : '')).join('\n'))
+	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(({_})=>_.name + _.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (_.savedata ? ' '+typeToJson(_.savedata) : '')).join('\n'))
 }

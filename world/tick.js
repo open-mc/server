@@ -23,14 +23,15 @@ function moved(e){
 	if(chunk != ochunk){
 		if(ochunk){
 			for(const pl of ochunk.players){
-				if(chunk && chunk.players.includes(pl))continue
+				if((chunk && chunk.players.includes(pl)) || e == pl)continue
 				pl.ebuf.byte(0)
 				pl.ebuf.int(e._id | 0), pl.ebuf.short(e._id / 4294967296 | 0)
 			}
 		}
 		if(chunk){
 			for(const pl of chunk.players){
-				if(ochunk && ochunk.players.includes(pl)){if(e != pl)encodeMove(e, pl);continue}
+				if(ochunk && e == pl)continue
+				if(ochunk && ochunk.players.includes(pl)){encodeMove(e, pl);continue}
 				const buf = pl.ebuf
 				buf.byte(255)
 				buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)

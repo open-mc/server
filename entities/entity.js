@@ -99,6 +99,9 @@ export class Entity{
 				pl.ebuf.byte(0)
 				pl.ebuf.int(this._id | 0), pl.ebuf.short(this._id / 4294967296 | 0)
 			}
+		}else if(this.sock){
+			this.ebuf.byte(0)
+			this.ebuf.int(this._id | 0), this.ebuf.short(this._id / 4294967296 | 0)
 		}
 		this.removed()
 		this._w = this.chunk = this.ochunk = null

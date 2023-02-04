@@ -25,5 +25,5 @@ for(let i in Entities){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(({_})=>_.name + ' ' + _.savedatahistory.map(a=>typeToJson(a)+' ').join('') + (_.savedata ? typeToJson(_.savedata) : '')).join('\n'))
+	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(({_})=>_.name + _.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (_.savedata ? ' ' + typeToJson(_.savedata) : '')).join('\n'))
 }
