@@ -10,7 +10,7 @@ import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
 import { codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, HANDLERS, packs, PERMISSIONS, TPS } from './config.js'
-import { ItemIDs } from './items/item.js'
+import { ItemIDs, Items } from './items/item.js'
 import { BlockIDs } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
@@ -173,9 +173,8 @@ async function play(sock, username, skin){
 	}catch(e){
 		player = Entities.player(0, 0)
 		dim = Dimensions.overworld
-		player.inv = [], player.health = 20, player.items = []; player.state = 0
-		let i = 37; while(i--)player.inv.push(null)
-		i = 6; while(i--)player.items.push(null)
+		player.inv = [Items.stone(1), Items.sandstone(2), Items.oak_log(3), Items.oak_planks(4)], player.health = 20, player.items = [null, null, null, null, null, null]; player.state = 0
+		let i = 33; while(i--)player.inv.push(null)
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
@@ -191,7 +190,7 @@ async function play(sock, username, skin){
 	sock.player = player
 	if(!other) chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
 	sock.on('close', close)
-	sock.on('error', e => sock.logMalicious('Caused an error: '+e))
+	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e))
 }
 
 server.permissions = 3
@@ -238,9 +237,7 @@ const message = function(_buf, isBinary){
 	if(!codes[code]) return
 	try{
 		codes[code](player, buf)
-	}catch(e){
-		this.logMalicious('Caused an error: '+e)
-	}
+	}catch(e){ this.logMalicious('Caused an error: \n'+e) }
 }
 setTPS(TPS)
 

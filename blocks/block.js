@@ -18,6 +18,7 @@ export class Block{
 		}
 		let f = savedata ? () => new Block(_) : give.bind(undefined, new Block(_))
 		f._ = _
+		_.constructor = f
 		return f
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
@@ -29,7 +30,7 @@ for(let i in DEFAULTS){
 	if(!(i in Block.prototype))
 		Object.defineProperty(Block.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
 }
-
+Object.defineProperty(Block.prototype, 'constructor', {get(){return this._.constructor}})
 Object.setPrototypeOf(Block.prototype, null)
 export const Blocks = Object.create(null)
 export const BlockIDs = []

@@ -21,10 +21,11 @@ export class Item{
 		}
 		let f = i => new Item(_, i)
 		f._ = _
+		_.constructor = f
 		return f
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
-		return 'Items.'+this._.name+'()'
+		return 'Items.'+this._.name+'(\x1b[33m'+this.count+'\x1b[m)'
 	}
 }
 Item.prototype.name = ''
@@ -32,7 +33,7 @@ for(let i in DEFAULTS){
 	if(!(i in Item.prototype))
 		Object.defineProperty(Item.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
 }
-
+Object.defineProperty(Item.prototype, 'constructor', {get(){return this._.constructor}})
 Object.setPrototypeOf(Item.prototype, null)
 export const Items = Object.create(null)
 export const ItemIDs = []

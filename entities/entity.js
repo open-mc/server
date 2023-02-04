@@ -1,3 +1,4 @@
+import { DataWriter } from '../utils/data.js'
 import { World } from '../world/world.js'
 import DEFAULTS from './entitydefaults.js'
 export let entityMap = new Map(), i = -1
@@ -43,6 +44,7 @@ export class Entity{
 		}
 		let f = (a, b, c) => new Entity(_, a, b, c)
 		f._ = _
+		_.constructor = f
 		return f
 	}
 	get dx(){return this._dx}
@@ -109,12 +111,37 @@ export class Entity{
 		this._id = -1
 		//._.died() is only used for when the entity dies naturally (i.e not despawned / unloaded)
 	}
+	give(stack){
+		if(!this.inv) return
+		const changed = []
+		for(let i = 0; i < this.inv.length; i++){
+			let amount = Math.min(stack.count, stack.maxStack || 64)
+			if(!this.inv[i]){
+				this.inv[i] = stack.constructor(amount)
+				stack.count -= amount
+			}else if(this.inv[i].constructor == stack.constructor && !stack._.savedata){
+				amount = Math.min(amount, (this.inv[i].maxStack || 64) - this.inv[i].count)
+				this.inv[i].count += amount
+				stack.count -= amount
+			}else continue
+			changed.push(i)
+			if(!stack.count) break
+		}
+		const buf = new DataWriter()
+		buf.byte(32)
+		buf.uint32(this._id); buf.short(this._id / 4294967296)
+		for(const c of changed) buf.byte(c), buf.item(this.inv[c])
+		if(this.chunk)
+			for(const pl of this.chunk.players) buf.pipe(pl.sock)
+		else if(this.sock) buf.pipe(this.sock)
+	}
 }
 Entity.prototype.name = ''
 for(let i in DEFAULTS){
 	if(!(i in Entity.prototype))
 		Object.defineProperty(Entity.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
 }
+Object.defineProperty(Entity.prototype, 'constructor', {get(){return this._.constructor}})
 Object.setPrototypeOf(Entity.prototype, null)
 export const Entities = Object.create(null)
 export const EntityIDs = []

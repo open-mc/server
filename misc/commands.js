@@ -6,6 +6,7 @@ import { MOD, OP } from '../config.js'
 import { Entity } from '../entities/entity.js'
 import { World } from '../world/world.js'
 import { stats } from '../internals.js'
+import { Items } from '../items/item.js'
 
 export function formatTime(t){
 	t /= 1000
@@ -114,10 +115,12 @@ export const commands = {
 	give(sel, item, count = '1'){
 		let itm = Items[item], c = Math.max(count | 0, 0)
 		if(!itm)throw 'No such item: '+item
-		for(const player of selector(sel)){
+		for(const player of selector(sel, this)){
+			
 			const stack = itm(c)
 			player.give(stack)
 			if(stack.count); //TODO: summon item entity
+			
 		}
 	},
 	help(c){

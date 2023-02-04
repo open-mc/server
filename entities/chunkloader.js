@@ -11,8 +11,8 @@ export const CHUNKLOADER = {
 		let ocy = Math.floor(oy) >> 6
 		let cx = Math.floor(this.x) >> 6
 		let cy = Math.floor(this.y) >> 6
-		if(ocx == cx && ocy == cy)return
-		if(ow != this.world || Math.max(Math.abs(cx-ocx << 6 >> 6),Math.abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
+		if(ocx == cx && ocy == cy && ow == this._w)return
+		if(ow != this._w || Math.max(Math.abs(cx-ocx << 6 >> 6),Math.abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
 			//teleport
 			this.unload(ocx, ocy, ow)
 			this.load(cx, cy, this._w)
