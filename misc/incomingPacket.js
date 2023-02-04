@@ -51,10 +51,43 @@ function openEntityPacket(player, buf){
 function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory
 	if(!player.interface || !player.chunk) return
-	const slot = buf.byte()
+	let slot = buf.byte()
+	let changed = 0
+	if(slot > 127){
+		slot &= 127
+		if(!player.interface.items) return
+		const {items} = player.interface
+		if(slot >= items.length) return
+		const t = items[slot], h = player.inv[36]
+		if(!t && !h) return
+		if(t && !h) player.inv[36] = t, items[slot] = null, changed |= 3
+		else if(h && !t) items[slot] = h, player.inv[36] = null, changed |= 3
+		else if(h && t && h.constructor == t.constructor && !h.savedata){
+			const add = Math.min(h.count, (t.maxStack || 64) - t.count)
+			if(!(h.count -= add))player.inv[36] = null, changed |= 1
+			t.count += add
+			changed |= 2
+		}else items[slot] = h, player.inv[36] = t, changed |= 3
+		if(changed & 1){
+			const res = new DataWriter()
+			res.byte(32)
+			res.uint32(player._id)
+			res.short(player._id / 4294967296 | 0)
+			res.byte(36), res.item(player.inv[36])
+			for(const pl of player.chunk.players) res.pipe(pl.sock)
+		}
+		if(changed & 2){
+			const res = new DataWriter()
+			res.byte(32)
+			res.uint32(player._id)
+			res.short(player._id / 4294967296 | 0)
+			res.byte(slot | 128), res.item(items[slot])
+			for(const pl of player.interface.chunk.players) res.pipe(pl.sock)
+		}		
+		return
+	}
 	if(slot >= player.inv.length) return
 	const t = player.inv[slot], h = player.inv[36]
-	let changed = 0
 	if(!t && !h) return
 	if(t && !h) player.inv[36] = t, player.inv[slot] = null, changed |= 3
 	else if(h && !t) player.inv[slot] = h, player.inv[36] = null, changed |= 3
@@ -77,7 +110,37 @@ function inventoryPacket(player, buf){
 function altInventoryPacket(player, buf){
 	// Right-clicked on a slot in their inventory
 	if(!player.interface || !player.chunk) return
-	const slot = buf.byte()
+	let slot = buf.byte()
+	if(slot > 127){
+		slot &= 127
+		if(!player.interface.items) return
+		const {items} = player.interface
+		if(slot >= items.length) return
+		const t = items[slot], h = player.inv[36]
+		if(t && !h){
+			player.inv[36] = t.constructor(t.count - (t.count >>= 1))
+			if(!t.count)items[slot] = null
+		}else if(h && !t){
+			items[slot] = h.constructor(1)
+			if(!--h.count)player.inv[36] = null
+		}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < (t.maxStack || 64)){
+			t.count++
+			if(!--h.count)player.inv[36] = null
+		}else items[slot] = h, player.inv[36] = t
+		let res = new DataWriter()
+		res.byte(32)
+		res.uint32(player._id)
+		res.short(player._id / 4294967296 | 0)
+		res.byte(36), res.item(player.inv[36])
+		for(const pl of player.chunk.players) res.pipe(pl.sock)
+		res = new DataWriter()
+		res.byte(32)
+		res.uint32(player.interface._id)
+		res.short(player.interface._id / 4294967296 | 0)
+		res.byte(slot | 128); res.item(items[slot])
+		for(const pl of player.interface.chunk.players) res.pipe(pl.sock)
+		return
+	}
 	if(slot >= player.inv.length) return
 	const t = player.inv[slot], h = player.inv[36]
 	if(t && !h){
@@ -106,9 +169,7 @@ export const codes = Object.assign(new Array(256), {
 	13: openEntityPacket,
 	15(player, _){player.interface = null},
 	32: inventoryPacket,
-	//33: interfacePacket,
-	34: altInventoryPacket,
-	//35: altInterfacePacket
+	33: altInventoryPacket,
 })
 export function onstring(player, text){
 	if(!(text = text.trimEnd())) return
