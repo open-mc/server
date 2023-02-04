@@ -29,7 +29,7 @@ Entities.player = Entity.define({
 	}
 }, {
 	health: Byte,
-	inv: [Item, 36],
+	inv: [Item, 37],
 	items: [Item, 6],
 	selected: Byte,
 	skin: Uint8Array

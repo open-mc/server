@@ -11,6 +11,7 @@ function playerMovePacket(player, buf){
 	player.move(buf.double(), buf.double())
 	player.state = buf.short()
 	player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
+	player.selected = buf.byte()
 }
 
 function setBlockPacket(player, buf){

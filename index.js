@@ -66,7 +66,7 @@ server.on('listening', () => {
 	process.stdin.resume()
 	process.stdin.setEncoding('utf-8')
 	repl('[server] ', async text => {
-		if(text == 'clear')return clear()
+		if(text == 'clear') return clear()
 		if(text[0] == '/'){
 			try{
 				let args = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g).map((a,i)=>{
@@ -100,6 +100,7 @@ KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 
 const playersConnecting = new Set()
 server.on('connection', function(sock, {url}){
+	if(exiting) return
 	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
 	if(!username || !pubKey || !authSig)return sock.logMalicious('Malformed Connection'), sock.close()
 	sock.player = null
@@ -109,7 +110,7 @@ server.on('connection', function(sock, {url}){
 	if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
 		return sock.logMalicious('Invalid public key signature'), sock.close()
 	crypto.randomBytes(32, (err, rnd) => {
-		if(err)return sock.close()
+		if(err) return sock.close()
 		sock.challenge = rnd
 		const buf = new DataWriter()
 		buf.string(CONFIG.name)
@@ -122,9 +123,10 @@ server.on('connection', function(sock, {url}){
 	})
 })
 async function play(sock, username, skin){
+	if(exiting) return
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
 		sock.on('close', playerLeftQueue)
-		if(await queue(sock))return sock.close()
+		if(await queue(sock)) return sock.close()
 		sock.removeListener('close', playerLeftQueue)
 	}
 	let permissions = PERMISSIONS[username] || PERMISSIONS.default_permissions || 2
@@ -166,15 +168,14 @@ async function play(sock, username, skin){
 		dim = Dimensions[buf.string()]
 		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
-		buf.read(Entities.player._.savedata, player)
+		buf.read(player._.savedatahistory[buf.flint()] || player._.savedata, player)
 		other = null
 	}catch(e){
 		player = Entities.player(0, 0)
 		dim = Dimensions.overworld
 		player.inv = [], player.health = 20, player.items = []; player.state = 0
-		let i = 36; while(i--)player.inv.push(null)
+		let i = 37; while(i--)player.inv.push(null)
 		i = 6; while(i--)player.items.push(null)
-		players.set(username, player)
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
@@ -198,7 +199,7 @@ server.world = Dimensions.overworld
 
 const close = async function(){
 	const {player} = this
-	if(!player)return
+	if(!player) return
 	players.delete(player.name)
 	playersConnecting.add(player.name)
 	const buf = new DataWriter()
@@ -209,8 +210,9 @@ const close = async function(){
 	buf.float(player.dx)
 	buf.float(player.dy)
 	buf.float(player.f)
-	buf.write(Entities.player._.savedata, player)
-	chat(player.name + ' left the game', YELLOW)
+	buf.flint(player._.savedatahistory.length)
+	buf.write(player._.savedata, player)
+	if(!exiting) chat(player.name + ' left the game', YELLOW)
 	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
 	playersConnecting.delete(player.name)
 	playerLeft()
@@ -220,6 +222,7 @@ const close = async function(){
 const message = function(_buf, isBinary){
 	const {player} = this
 	if(!player && this.challenge && isBinary){
+		if(_buf.length <= 1008) return
 		if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf.subarray(1008))){
 			play(this, this.username, _buf.subarray(0, 1008))
 		}else{
@@ -244,20 +247,23 @@ setTPS(TPS)
 let exiting = false
 process.on('SIGINT', _ => {
 	//Save stuff here
-	if (exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
+	if(exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')
+	server.close()
 	exiting = true
-	saveAll().then(process.exit)
+	const promises = []
+	for(const sock of server.clients) promises.push(close.call(sock))
+	saveAll(process.exit, promises)
 })
 
-function saveAll(){
-	const promises = []
-	for (const name in Dimensions) {
+function saveAll(cb, promises = []){	
+	for(const name in Dimensions){
 		const d = Dimensions[name]
 		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'.json', JSON.stringify({tick: d.tick})))
 		for (const ch of d.values()) d.save(ch)
 	}
-	return Promise.all(promises)
+	Promise.all(promises).then(cb)
 }
 
-setInterval(saveAll, 120e3) //Every 2min
+const timeout = () => setTimeout(saveAll, 120e3, timeout) //Every 2min
+timeout()

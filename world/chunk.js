@@ -25,7 +25,7 @@ export class Chunk{
 			e.dx = buf.float()
 			e.dy = buf.float()
 			e.f = buf.float()
-			if(e._.savedata)buf.read(e._.savedata, e)
+			if(e._.savedata)buf.read(e._.savedatahistory[buf.flint()] || e._.savedata, e)
 			this.entities.add(e)
 			id = buf.short()
 		}
@@ -77,7 +77,7 @@ export class Chunk{
 		for(j=0;j<4096;j++){
 			const block = this.tiles[j]._
 			if(!block.savedata)continue
-			buf.read(block.savedata, block)
+			this.tiles[j] = buf.read(block.savedatahistory[buf.flint()] || block.savedata, block())
 		}
 	}
 	toBuf(buf){
@@ -104,7 +104,7 @@ export class Chunk{
 			buf.float(e.dx)
 			buf.float(e.dy)
 			buf.float(e.f)
-			if(e._.savedata)buf.write(e._.savedata, e)
+			if(e._.savedata)buf.flint(e._.savedatahistory.length), buf.write(e._.savedata, e)
 		}
 		buf.short(0)
 		

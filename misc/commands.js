@@ -26,6 +26,7 @@ function log(who, msg){
 }
 
 function selector(a, who){
+	if(!a)throw 'Selector missing!'
 	if(a[0] == '@'){
 		if(a[1] == 's')return who instanceof Entity ? [who] : []
 		if(a[1] == 'e')throw "@e unimplemented"
@@ -106,7 +107,7 @@ export const commands = {
 		let players = selector(a, this)
 		if(players.length > 1 && this.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
 		for(const pl of players){
-			pl.sock.send('-12fYou were kicked for \n'+reason)
+			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
 			pl.sock.close()
 		}
 	},

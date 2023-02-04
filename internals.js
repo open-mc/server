@@ -1,5 +1,10 @@
 const get = typeof process == 'undefined' ? a => import('Zpolyfills/'+a+'.js') : a => import(a);
 
+
+/*
+import { setFlagsFromString } from 'v8'
+setFlagsFromString('--allow-natives-syntax')
+//*/
 import fse from 'fs-extra'
 import {promises as fs, exists} from 'fs'
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
