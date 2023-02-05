@@ -1,23 +1,37 @@
 import fs from 'fs/promises'
 import { parentPort } from 'worker_threads'
 import { jsonToType } from '../../utils/data.js'
+import { Blocks, chunk, chunkBiomes, Items, setSeed } from './vars.js'
 parentPort?.on('message', async function({x, y, d, seed, name = 'default'}){
-	globalThis.seed = seed ^ 0xC0FFEBAD
+	setSeed(seed)
 	await (GENERATORS[d]?.[name]||dfgen)(x, y)
 	parentPort.postMessage({key: x+' '+y+' '+d, buf: toPacket(x, y, chunk)})
 })
 async function all(o){for(let i in o)o[i]=await o[i];return o}
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
-globalThis.chunk = []
-globalThis.chunkBiomes = new Uint8Array(10)
-globalThis.Blocks = Object.fromEntries((''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
-globalThis.Items = Object.fromEntries((''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/itemindex.txt')).split('\n').map((a, i) => [(a=a.split(" ")).shift(), ((obj, data = null) => data ? Object.assign(data, obj) : obj).bind(undefined, {id: i, savedata: jsonToType(a.pop()||'null')})]))
-for(let i = 0; i < 4096; i++)globalThis.chunk.push(Blocks.air())
+
+let i = 0
+for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n')){
+	a = a.split(' ')
+	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
+	const f = def.savedata ? (data = {}) => Object.assign(data, def) : () => def
+	Object.assign(f, def)
+	Blocks[a[0]] = f
+}
+i = 0
+for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/itemindex.txt')).split('\n')){
+	a = a.split(' ')
+	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
+	const f = (count, data = {}) => (data.count = count, Object.assign(data, def))
+	Object.assign(f, def)
+	Items[a[0]] = f
+}
+
 const GENERATORS = await all({
 	overworld: import('./overworld.js'),
 	nether: import('./nether.js'),
 })
-let dfgen = (cx,cy)=>chunk.fill(Blocks.air())
+let dfgen = (_1, _2) => chunk.fill(Blocks.air)
 Object.setPrototypeOf(GENERATORS, null)
 parentPort && parentPort.postMessage({key: 'ready'})
 function toPacket(x, y, tiles){
@@ -80,7 +94,7 @@ function toPacket(x, y, tiles){
 	}
 	//save block entities
 	/*for(let i = 0; i < 4096; i++){
-		let type = tiles[i]._._savedata
+		let type = tiles[i].savedata
 		if(!type)continue
 	}*/
 	let final = new Uint8Array(buffers.reduce((a, b) => a + b.byteLength, 0)), i = 0

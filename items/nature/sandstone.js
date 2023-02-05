@@ -1,14 +1,20 @@
 import { Item, Items } from '../item.js'
 
-const SANDSTONE = {
+class Sandstone extends Item{
 	
 }
 
-Items.sandstone = Item.define({...SANDSTONE})
-Items.cut_sandstone = Item.define({...SANDSTONE})
-Items.smooth_sandstone = Item.define({...SANDSTONE, blast: 6, breaktime: 10}) //smooth is harder
-Items.chiseled_sandstone = Item.define({...SANDSTONE})
-Items.red_sandstone = Item.define({...SANDSTONE})
-Items.cut_red_sandstone = Item.define({...SANDSTONE})
-Items.chiseled_red_sandstone = Item.define({...SANDSTONE})
-Items.smooth_red_sandstone = Item.define({...SANDSTONE, blast: 6, breaktime: 10}) //smooth is harder
+Items.sandstone = Sandstone
+Items.cut_sandstone = class extends Sandstone{}
+Items.smooth_sandstone = class extends Sandstone{ //smooth is harder
+	static blast = 6
+	static breaktime = 10
+}
+Items.chiseled_sandstone = class extends Sandstone{}
+Items.red_sandstone = class extends Sandstone{}
+Items.cut_red_sandstone = class extends Sandstone{}
+Items.chiseled_red_sandstone = class extends Sandstone{}
+Items.smooth_red_sandstone = class extends Sandstone{ //smooth is harder
+	static blast = 6
+	static breaktime = 10
+}

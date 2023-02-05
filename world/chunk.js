@@ -2,6 +2,9 @@ import { BlockIDs } from '../blocks/block.js'
 import { EntityIDs } from '../entities/entity.js'
 import { DataReader } from '../utils/data.js'
 
+// Turns out that this is BY MILES the fastest way to allocate a large array, and it allocates exactly how much we need, no more no less
+const LIGHTNINGFASTALLOCATOR = eval('() => [' + 'null,'.repeat(4096) + ']')
+
 export class Chunk{
 	constructor(buf, world){
 		if(!buf.left || buf.byte() != 16)throw new TypeError("Invalid chunk data")
@@ -9,7 +12,7 @@ export class Chunk{
 		this.x = x << 6 >> 6
 		this.y = y << 6 >> 6
 		this.world = world
-		this.tiles = []
+		this.tiles = LIGHTNINGFASTALLOCATOR()
 		this.entities = new Set()
 		this.players = null
 		//read buf palette
@@ -25,7 +28,7 @@ export class Chunk{
 			e.dx = buf.float()
 			e.dy = buf.float()
 			e.f = buf.float()
-			if(e._.savedata)buf.read(e._.savedatahistory[buf.flint()] || e._.savedata, e)
+			if(e.savedata)buf.read(e.savedatahistory[buf.flint()] || e.savedata, e)
 			this.entities.add(e)
 			id = buf.short()
 		}
@@ -34,48 +37,46 @@ export class Chunk{
 		for(let i = 0;i<palettelen;i++) palette.push(BlockIDs[buf.short()])
 		let j = 0
 		if(palettelen<2){
-			const block = palette[0]()
-			for(;j<4096;j++)this.tiles.push(block)
+			const block = palette[0]
+			for(;j<4096;j++)this.tiles[j] = block
 		}else if(palettelen == 2){
-			for(;j<512;j++){
+			for(;j<4096;j+=8){
 				const byte = buf.byte()
-				this.tiles.push(palette[byte&1]())
-				this.tiles.push(palette[(byte>>1)&1]())
-				this.tiles.push(palette[(byte>>2)&1]())
-				this.tiles.push(palette[(byte>>3)&1]())
-				this.tiles.push(palette[(byte>>4)&1]())
-				this.tiles.push(palette[(byte>>5)&1]())
-				this.tiles.push(palette[(byte>>6)&1]())
-				this.tiles.push(palette[byte>>7]())
+				this.tiles[j  ] = palette[byte&1]
+				this.tiles[j+1] = palette[(byte>>1)&1]
+				this.tiles[j+2] = palette[(byte>>2)&1]
+				this.tiles[j+3] = palette[(byte>>3)&1]
+				this.tiles[j+4] = palette[(byte>>4)&1]
+				this.tiles[j+5] = palette[(byte>>5)&1]
+				this.tiles[j+6] = palette[(byte>>6)&1]
+				this.tiles[j+7] = palette[byte>>7]
 			}
 		}else if(palettelen <= 4){
-			for(;j<1024;j++){
+			for(;j<4096;j+=4){
 				const byte = buf.byte()
-				this.tiles.push(palette[byte&3]())
-				this.tiles.push(palette[(byte>>2)&3]())
-				this.tiles.push(palette[(byte>>4)&3]())
-				this.tiles.push(palette[byte>>6]())
+				this.tiles[j  ] = palette[byte&3]
+				this.tiles[j+1] = palette[(byte>>2)&3]
+				this.tiles[j+2] = palette[(byte>>4)&3]
+				this.tiles[j+3] = palette[byte>>6]
 			}
 		}else if(palettelen <= 16){
-			for(;j<2048;j++){
+			for(;j<4096;j+=2){
 				const byte = buf.byte()
-				this.tiles.push(palette[byte&15]())
-				this.tiles.push(palette[(byte>>4)]())
+				this.tiles[j  ] = palette[byte&15]
+				this.tiles[j+1] = palette[(byte>>4)]
 			}
 		}else if(palettelen <= 256){
-			for(;j<4096;j++){
-				this.tiles.push(palette[buf.byte()]())
-			}
+			for(;j<4096;j++) this.tiles[j] = palette[buf.byte()]
 		}else{
-			for(;j<6144;j+=3){
+			for(;j<4096;j+=2){
 				let byte2
-				this.tiles.push(palette[buf.byte() + (((byte2 = buf.byte())&0x0F)<<8)]())
-				this.tiles.push(palette[buf.byte() + ((byte2&0xF0)<<4)]())
+				this.tiles[j] = palette[buf.byte() + (((byte2 = buf.byte())&0x0F)<<8)]
+				this.tiles[j] = palette[buf.byte() + ((byte2&0xF0)<<4)]
 			}
 		}
 		//parse block entities
 		for(j=0;j<4096;j++){
-			const block = this.tiles[j]._
+			const block = this.tiles[j]
 			if(!block.savedata)continue
 			this.tiles[j] = buf.read(block.savedatahistory[buf.flint()] || block.savedata, block())
 		}
@@ -104,7 +105,7 @@ export class Chunk{
 			buf.float(e.dx)
 			buf.float(e.dy)
 			buf.float(e.f)
-			if(e._.savedata)buf.flint(e._.savedatahistory.length), buf.write(e._.savedata, e)
+			if(e.savedata)buf.flint(e.savedatahistory.length), buf.write(e.savedata, e)
 		}
 		buf.short(0)
 		
@@ -150,8 +151,10 @@ export class Chunk{
 		}
 		//save block entities
 		for(let i = 0; i < 4096; i++){
-			let type = this.tiles[i]._.savedata
-			if(!type)continue
+			let tile = this.tiles[i]
+			if(!tile.savedata)continue
+			buf.flint(tile.savedatahistory.length)
+			buf.write(tile.savedata, tile)
 		}
 		return buf
 	}

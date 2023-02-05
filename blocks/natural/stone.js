@@ -1,5 +1,5 @@
 import { Block, Blocks } from '../block.js'
 
-Blocks.stone = Block.define({
-	breaktime: 10
-})
+Blocks.stone = class Stone extends Block{
+	static breaktime = 10
+}

@@ -100,8 +100,8 @@ export const commands = {
 		}
 		if(x != x || y != y)throw 'Invalid coordinates'
 		for(const pl of players)pl.transport(x, y, d), pl.rubber()
-		if(players.length>1)log(this, `Teleported ${players.length} entities`)
-		else log(this, `Teleported ${players[0].name} to (${x}, ${y})`)
+		if(players.length>1)log(this, `Teleported ${players.length} entities to (${x}, ${y}) in the ${d.id}`)
+		else log(this, `Teleported ${players[0].name} to (${x}, ${y}) in the ${d.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')

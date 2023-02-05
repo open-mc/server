@@ -1,3 +1,4 @@
+import { Blocks, chunk } from '../vars.js'
 import { biomesFor } from './biomes.js'
 import { imxs32, imxs32_2 } from './random.js'
 
@@ -97,34 +98,34 @@ export function fill(cx, cy){
 				surface
 			: s > -5/height && deepsurface ?
 				deepsurface
-			: Blocks.stone()
-		: cy < 0 ? Blocks.water() : Blocks.air()
+			: Blocks.stone
+		: cy < 0 ? Blocks.water : Blocks.air
 		i += 65
 	}
 	let rand = imxs32_2(cx, cy, 139827386, -1012498625)
 	//Ore generation
 	for(let i = 0; i < 4; i++){
 		let r = rand & 4095
-		fillIf(r, blob, Blocks.stone(), Blocks.coal_ore())
+		fillIf(r, blob, Blocks.stone, Blocks.coal_ore)
 		for(let j=12; j<28; j+=2){
 			switch(rand>>j & 3){
-				case 0: r += 65; fillIf(r, ur, Blocks.stone(), Blocks.coal_ore()); break
-				case 1: r += 63; fillIf(r, ul, Blocks.stone(), Blocks.coal_ore()); break
-				case 2: r -= 63; fillIf(r, dr, Blocks.stone(), Blocks.coal_ore()); break
-				case 3: r -= 65; fillIf(r, dl, Blocks.stone(), Blocks.coal_ore()); break
+				case 0: r += 65; fillIf(r, ur, Blocks.stone, Blocks.coal_ore); break
+				case 1: r += 63; fillIf(r, ul, Blocks.stone, Blocks.coal_ore); break
+				case 2: r -= 63; fillIf(r, dr, Blocks.stone, Blocks.coal_ore); break
+				case 3: r -= 65; fillIf(r, dl, Blocks.stone, Blocks.coal_ore); break
 			}
 		}
 		rand = imxs32(rand, 220751007)
 	}
 	for(let i = 0; i < 2; i++){
 		let r = rand & 4095
-		fillIf(r, blob, Blocks.stone(), Blocks.iron_ore())
+		fillIf(r, blob, Blocks.stone, Blocks.iron_ore)
 		for(let j=12; j<16; j+=2){
 			switch(rand>>j & 3){
-				case 0: r += 65; fillIf(r, ur, Blocks.stone(), Blocks.iron_ore()); break
-				case 1: r += 63; fillIf(r, ul, Blocks.stone(), Blocks.iron_ore()); break
-				case 2: r -= 63; fillIf(r, dr, Blocks.stone(), Blocks.iron_ore()); break
-				case 3: r -= 65; fillIf(r, dl, Blocks.stone(), Blocks.iron_ore()); break
+				case 0: r += 65; fillIf(r, ur, Blocks.stone, Blocks.iron_ore); break
+				case 1: r += 63; fillIf(r, ul, Blocks.stone, Blocks.iron_ore); break
+				case 2: r -= 63; fillIf(r, dr, Blocks.stone, Blocks.iron_ore); break
+				case 3: r -= 65; fillIf(r, dl, Blocks.stone, Blocks.iron_ore); break
 			}
 		}
 		rand = imxs32(rand, 220751007)

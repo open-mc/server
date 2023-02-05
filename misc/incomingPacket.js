@@ -1,5 +1,5 @@
 import { BlockIDs } from '../blocks/block.js'
-import { chat, ITALIC, LIGHT_GREY, prefix } from './chat.js'
+import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
 import { MOD } from '../config.js'
 import { entityMap } from '../entities/entity.js'

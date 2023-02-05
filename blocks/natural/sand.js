@@ -1,5 +1,5 @@
 import { Block, Blocks } from '../block.js'
 
-Blocks.sand = Block.define({
-	tool: 'shovel',
-})
+Blocks.sand = class extends Block{
+	static tool = 'shovel'
+}

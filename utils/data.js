@@ -99,9 +99,9 @@ export class DataReader extends DataView{
 		this.i += 2
 		if(!item)return null
 		if(!target)target = item(count)
-		else target.count = count, target._ = item._
+		else target.count = count, Object.setPrototypeOf(target, item.prototype)
 		target.name = this.string()
-		if(target._.savedata)this.read(target._.savedatahistory[this.flint()] || target._.savedata, target)
+		if(target.savedata)this.read(target.savedatahistory[this.flint()] || target.savedata, target)
 		return target
 	}
 	get left(){return this.byteLength - this.i}
@@ -146,7 +146,7 @@ export class DataWriter extends Array{
 				buf.setUint8(this.i++, v.count)
 				buf.setUint16(this.i, v.id); this.i += 2
 				this.string(v.name)
-				if(v._.savedata)this.flint(v._.savedatahistory.length), this.write(v._.savedata, v)
+				if(v.savedata)this.flint(v.savedatahistory.length), this.write(v.savedata, v)
 				return
 		}
 		if(Array.isArray(type)){
@@ -245,7 +245,7 @@ export class DataWriter extends Array{
 		this.cur.setUint8(this.i++, v.count)
 		this.cur.setUint16(this.i, v.id); this.i += 2
 		this.string(v.name)
-		if(v._.savedata)this.flint(v._.savedatahistory.length), this.write(v._.savedata, v)
+		if(v.savedata)this.flint(v.savedatahistory.length), this.write(v.savedata, v)
 	}
 	pipe(sock){
 		for(const b of this) sock.send(b, {fin: false})

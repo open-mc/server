@@ -1,5 +1,5 @@
 import { Block, Blocks } from "../block.js";
 
-Blocks.netherrack = Block.define({
-	breaktime: 5
-})
+Blocks.netherrack = class Netherrack extends Block{
+	static breaktime = 5
+}

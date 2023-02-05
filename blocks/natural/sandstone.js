@@ -1,15 +1,21 @@
 import { Block, Blocks } from '../block.js'
 
-const SANDSTONE = {
-	blast: 0.8,
-	breaktime: 4
+class Sandstone extends Block{
+	static blast = 0.8
+	static breaktime = 4
 }
 
-Blocks.sandstone = Block.define({...SANDSTONE})
-Blocks.cut_sandstone = Block.define({...SANDSTONE})
-Blocks.smooth_sandstone = Block.define({...SANDSTONE, blast: 6, breaktime: 10}) //smooth is harder
-Blocks.chiseled_sandstone = Block.define({...SANDSTONE})
-Blocks.red_sandstone = Block.define({...SANDSTONE})
-Blocks.cut_red_sandstone = Block.define({...SANDSTONE})
-Blocks.chiseled_red_sandstone = Block.define({...SANDSTONE})
-Blocks.smooth_red_sandstone = Block.define({...SANDSTONE, blast: 6, breaktime: 10}) //smooth is harder
+Blocks.sandstone = Sandstone
+Blocks.cut_sandstone = class extends Sandstone{}
+Blocks.smooth_sandstone = class SmoothSandstone extends Sandstone{ //smooth is harder
+	static blast = 6
+	static breaktime = 10
+}
+Blocks.chiseled_sandstone = class extends Sandstone{}
+Blocks.red_sandstone = class extends Sandstone{}
+Blocks.cut_red_sandstone = class extends Sandstone{}
+Blocks.chiseled_red_sandstone = class extends Sandstone{}
+Blocks.smooth_red_sandstone = class SmoothRedSandstone extends Sandstone{ //smooth is harder
+	static blast = 6
+	static breaktime = 10
+}

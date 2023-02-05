@@ -1,5 +1,5 @@
 import { Block, Blocks } from '../block.js'
 
-Blocks.bedrock = Block.define({
-	breaktime: Infinity
-})
+Blocks.bedrock = class Bedrock extends Block{
+	static breaktime = Infinity
+}

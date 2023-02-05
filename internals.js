@@ -12,7 +12,7 @@ globalThis.WORLD = PATH + '../' + (process.argv[2] || 'world') + '/'
 
 fs.exists = a => new Promise(r => exists(a, r))
 
-await fs.readdir(WORLD).catch(e=>fse.copy(PATH + 'default_world_folder', WORLD))
+await fs.readdir(WORLD).catch(e=>fse.copy(PATH + 'template_world_folder_do_not_edit', WORLD))
 let idle2 = performance.nodeTiming.idleTime
 let time2 = performance.now()
 export let stats = {elu: {cpu1: 0}, mem: {cpu1: 0}}

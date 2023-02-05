@@ -1,5 +1,5 @@
 import { Block, Blocks } from '../block.js'
 
-Blocks.air = Block.define({
-	solid: false
-})
+Blocks.air = class Air extends Block{
+	static solid = false
+}

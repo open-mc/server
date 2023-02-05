@@ -277,13 +277,13 @@ Savedata can apply to blocks (for example, chests), items and entities (for exam
 Example for using our cheese block and item from earlier:
 ```js
 //Blocks:
-//Block.<name>()
-const blockToPlace = Blocks.cheese_block()
+//Block.<name>
+const blockToPlace = Blocks.cheese_block
 //Items:
 //Item.<name>(count)
 player.give(Items.cheese_pickaxe(1))
 //Entities:
-//Entity.<name>()
+//Entity.<name>(x, y)
 
 ```
 

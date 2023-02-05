@@ -1,7 +1,10 @@
 import { Block, Blocks } from '../block.js'
 
-const ICE = {
+class Ice extends Block{
 	drops(){return []}
 }
-Blocks.ice = Block.define({...ICE})
-Blocks.packed_ice = Block.define({...ICE})
+Blocks.ice = Ice
+
+Blocks.packed_ice = class PackedIce extends Ice{
+
+}

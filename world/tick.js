@@ -16,7 +16,7 @@ export function encodeMove(e, pl){
 	if(e.mv & 16)buf.float(e.dx)
 	if(e.mv & 32)buf.float(e.dy)
 	if(e.mv & 64)buf.float(e.f)
-	if(e.mv & 128)buf.write(e._.savedata, e)
+	if(e.mv & 128)buf.write(e.savedata, e)
 }
 function moved(e){
 	const {chunk, ochunk} = e
@@ -43,7 +43,7 @@ function moved(e){
 				buf.float(e.dx)
 				buf.float(e.dy)
 				buf.float(e.f)
-				buf.write(e._.savedata, e)
+				buf.write(e.savedata, e)
 			}
 		}
 		e.ochunk = chunk

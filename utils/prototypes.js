@@ -23,6 +23,12 @@ Object.defineProperties(Array.prototype, {
 		}
 		this.length = i
 		return this
+	}},
+	mutmap: {enumerable: false, value(fn){
+		const len = this.length
+		for(let i = 0; i < len; i++)
+			this[i] = fn(this[i])
+		return this
 	}}
 })
 WebSocket.prototype.logMalicious = function(reason){
@@ -78,3 +84,4 @@ Array.null = len => {
 	for(let i = len; i > 0; i--)a[i] = null
 	return a
 }
+Function.returns = v => () => v

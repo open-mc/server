@@ -1,8 +1,20 @@
 import { Item, Items } from '../item.js'
 
-Items.lapis = Item.define() //literally does nothing
-Items.gold = Item.define()
-Items.coal = Item.define({burns: true})
-Items.iron = Item.define()
-Items.emerald = Item.define()
-Items.diamond = Item.define()
+Items.lapis = class Lapis extends Item{ //literally does nothing
+
+}
+Items.gold = class Gold extends Item{
+
+}
+Items.coal = class Coal extends Item{
+	static burns = true
+}
+Items.iron = class Iron extends Item{
+
+}
+Items.emerald = class Emerald extends Item{
+
+}
+Items.diamond = class Diamond extends Item{
+
+}

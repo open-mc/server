@@ -1,5 +1,5 @@
 import { Block, Blocks } from '../block.js'
 
-Blocks.dirt = Block.define({
-	tool: 'shovel',
-})
+Blocks.dirt = class Dirt extends Block{
+	static tool = 'shovel'
+}

@@ -6,12 +6,12 @@ import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
 import { commands, err, formatTime } from './misc/commands.js'
 import './utils/prototypes.js'
-import { Entities, EntityIDs } from './entities/entity.js'
 import { input, repl } from 'basic-repl'
 import { codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, HANDLERS, packs, PERMISSIONS, TPS } from './config.js'
+import { Entities, EntityIDs } from './entities/entity.js'
 import { ItemIDs, Items } from './items/item.js'
-import { BlockIDs } from './blocks/block.js'
+import { BlockIDs, Blocks } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
@@ -86,7 +86,6 @@ server.on('listening', () => {
 	})
 	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
 })
-
 packs.push('/cli/index.js')
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockidx + '\0' + itemidx + '\0' + entityidx + '\0' + packs.join('\0'))))
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
@@ -168,13 +167,15 @@ async function play(sock, username, skin){
 		dim = Dimensions[buf.string()]
 		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
-		buf.read(player._.savedatahistory[buf.flint()] || player._.savedata, player)
+		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
 		player = Entities.player(0, 0)
 		dim = Dimensions.overworld
-		player.inv = [Items.stone(1), Items.sandstone(2), Items.oak_log(3), Items.oak_planks(4)], player.health = 20, player.items = [null, null, null, null, null, null]; player.state = 0
-		let i = 33; while(i--)player.inv.push(null)
+		player.inv[0] = Items.stone(1)
+		player.inv[1] = Items.sandstone(2)
+		player.inv[2] = Items.oak_log(3)
+		player.inv[3] = Items.oak_planks(4)
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
@@ -209,8 +210,8 @@ const close = async function(){
 	buf.float(player.dx)
 	buf.float(player.dy)
 	buf.float(player.f)
-	buf.flint(player._.savedatahistory.length)
-	buf.write(player._.savedata, player)
+	buf.flint(player.savedatahistory.length)
+	buf.write(player.savedata, player)
 	if(!exiting) chat(player.name + ' left the game', YELLOW)
 	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
 	playersConnecting.delete(player.name)

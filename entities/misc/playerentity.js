@@ -2,17 +2,22 @@ import { TPS } from '../../config.js'
 import { Item } from '../../items/item.js'
 import { DataWriter } from '../../utils/data.js'
 import { encodeMove } from '../../world/tick.js'
-import { CHUNKLOADER } from '../chunkloader.js'
-import { Entities, Entity } from '../entity.js'
+import { ChunkLoader } from '../chunkloader.js'
+import { Entities } from '../entity.js'
 
-Entities.player = Entity.define({
-	...CHUNKLOADER,
+Entities.player = class Player extends ChunkLoader{
+	inv = Array.null(36)
+	items = [null, null, null, null, null, null]
+	health = 20
+	selected = 0
+	skin = null
+	sock = null
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
-	},
+	}
 	chat(msg, style = 15){
 		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
-	},
+	}
 	rubber(mv = 127){
 		this.r = (this.r + 1) & 0xff
 		let buf = new DataWriter()
@@ -27,10 +32,11 @@ Entities.player = Entity.define({
 			encodeMove(this, this)
 		}
 	}
-}, {
-	health: Byte,
-	inv: [Item, 37],
-	items: [Item, 6],
-	selected: Byte,
-	skin: Uint8Array
-})
+	static savedata = {
+		health: Byte,
+		inv: [Item, 37],
+		items: [Item, 6],
+		selected: Byte,
+		skin: Uint8Array
+	}
+}

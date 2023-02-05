@@ -1,12 +1,12 @@
 import { Block, Blocks } from '../block.js'
 
-const GRASS = {
-	tool: 'shovel',
+class Grass extends Block{
+	static tool = 'shovel'
 	drops(silk){
-		return silk ? [Items.grass()] : [Items.dirt()]
+		return silk ? [Items.grass(1)] : [Items.dirt(1)]
 	}
 }
+Blocks.grass = Grass
 
-Blocks.grass = Block.define(GRASS)
-
-Blocks.snowy_grass = Block.define(GRASS)
+Blocks.snowy_grass = class SnowyGrass extends Grass{
+}

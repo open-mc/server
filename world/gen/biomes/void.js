@@ -1,3 +1,5 @@
+import { Biomes } from "../vars.js";
+
 Biomes.void = {
 	surface: null,
 	offset: -4096.5,

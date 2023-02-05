@@ -33,7 +33,7 @@ export class World extends Map{
 						buf.float(e.dx)
 						buf.float(e.dy)
 						buf.float(e.f)
-						buf.write(e._.savedata, e)
+						buf.write(e.savedata, e)
 					}
 					buf.pipe(pl.sock)
 				}

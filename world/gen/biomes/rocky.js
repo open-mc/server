@@ -1,3 +1,5 @@
+import { Biomes } from "../vars.js";
+
 Biomes.rocky = {
 	surface: null,
 	offset: 24,

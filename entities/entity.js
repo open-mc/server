@@ -1,10 +1,7 @@
 import { DataWriter } from '../utils/data.js'
-import { World } from '../world/world.js'
-import DEFAULTS from './entitydefaults.js'
 export let entityMap = new Map(), i = -1
 export class Entity{
-	constructor(def, x, y){
-		this._ = def
+	constructor(x, y){
 		if(x !== x || y !== y)throw new TypeError('x and y must be a number')
 		let f = Math.floor(x)
 		x = (f >> 0) + (x - f || 0)
@@ -36,17 +33,6 @@ export class Entity{
 	 * @param {Object} [savedata] Entity data format
 	 * @return {Function} constructor for that entity
 	 */
-	static define(obj = {}, savedata = null){
-		let _ = Object.assign(Object.create(null, {savedata:{value:savedata,enumerable:false}, savedatahistory:{value:[],enumerable:false}}), DEFAULTS)
-		for(let i in obj){
-			if(!(i in Entity.prototype))Object.defineProperty(Entity.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
-			_[i] = obj[i]
-		}
-		let f = (a, b, c) => new Entity(_, a, b, c)
-		f._ = _
-		_.constructor = f
-		return f
-	}
 	get dx(){return this._dx}
 	get dy(){return this._dy}
 	get f(){return this._f}
@@ -91,7 +77,7 @@ export class Entity{
 		return this._w.putEntity(this, x, y)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
-		return `Entities.${this._.name}({ x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32m${this.world ? 'Dimensions.' + this.world.id : 'null'}\x1b[m${Object.hasOwn(this, 'name') ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} })`
+		return `Entities.${this.className}({ x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32m${this.world ? 'Dimensions.' + this.world.id : 'null'}\x1b[m${Object.hasOwn(this, 'name') ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} })`
 	}
 	remove(){
 		if(this.chunk){
@@ -109,7 +95,7 @@ export class Entity{
 		this._w = this.chunk = this.ochunk = null
 		entityMap.delete(this._id)
 		this._id = -1
-		//._.died() is only used for when the entity dies naturally (i.e not despawned / unloaded)
+		//.died() is only used for when the entity dies naturally (i.e not despawned / unloaded)
 	}
 	give(stack){
 		if(!this.inv) return
@@ -119,7 +105,7 @@ export class Entity{
 			if(!this.inv[i]){
 				this.inv[i] = stack.constructor(amount)
 				stack.count -= amount
-			}else if(this.inv[i].constructor == stack.constructor && !stack._.savedata){
+			}else if(this.inv[i].constructor == stack.constructor && !stack.savedata){
 				amount = Math.min(amount, (this.inv[i].maxStack || 64) - this.inv[i].count)
 				this.inv[i].count += amount
 				stack.count -= amount
@@ -135,13 +121,26 @@ export class Entity{
 			for(const pl of this.chunk.players) buf.pipe(pl.sock)
 		else if(this.sock) buf.pipe(this.sock)
 	}
+	static savedatahistory = []
+	static savedata = null
+	static id = -1
+	static maxhealth = 20
+	died(){}
+	placed(){}
+	moved(oldx, oldy, oldw){}
+	removed(){}
+	rubber(){}
+	damage(amount){
+		this.health -= amount
+		if(this.health < 0){
+			this.died()
+			this.remove()
+		}else if(this.health > this.maxhealth){
+			this.health = this.maxhealth
+		}
+		//TODO health packet
+	}
 }
-Entity.prototype.name = ''
-for(let i in DEFAULTS){
-	if(!(i in Entity.prototype))
-		Object.defineProperty(Entity.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
-}
-Object.defineProperty(Entity.prototype, 'constructor', {get(){return this._.constructor}})
 Object.setPrototypeOf(Entity.prototype, null)
 export const Entities = Object.create(null)
 export const EntityIDs = []

@@ -1,20 +1,56 @@
 import { Block, Blocks } from '../block.js'
-//Template for defining a bunch of blocks
-const WOOL = {flammability: 30, tool: 'shears', breaktime: 1.2}
-//the actual blocks
-Blocks.white_wool = Block.define({...WOOL, color: 'white'})
-Blocks.light_grey_wool = Block.define({...WOOL, color: 'light_grey'})
-Blocks.grey_wool = Block.define({...WOOL, color: 'grey'})
-Blocks.black_wool = Block.define({...WOOL, color: 'black'})
-Blocks.red_wool = Block.define({...WOOL, color: 'red'})
-Blocks.orange_wool = Block.define({...WOOL, color: 'orange'})
-Blocks.yellow_wool = Block.define({...WOOL, color: 'yellow'})
-Blocks.lime_wool = Block.define({...WOOL, color: 'lime'})
-Blocks.green_wool = Block.define({...WOOL, color: 'green'})
-Blocks.cyan_wool = Block.define({...WOOL, color: 'cyan'})
-Blocks.light_blue_wool = Block.define({...WOOL, color: 'light_blue'})
-Blocks.blue_wool = Block.define({...WOOL, color: 'blue'})
-Blocks.purle_wool = Block.define({...WOOL, color: 'purple'})
-Blocks.magenta_wool = Block.define({...WOOL, color: 'magenta'})
-Blocks.pink_wool = Block.define({...WOOL, color: 'pink'})
-Blocks.brown_wool = Block.define({...WOOL, color: 'brown'})
+
+class Wool extends Block{
+	static flammability = 30
+	static tool = 'shears'
+	static breaktime = 1.2
+}
+
+Blocks.white_wool = class extends Wool{
+	static color = 'white'
+}
+Blocks.light_grey_wool = class extends Wool{
+	static color = 'light_grey'
+}
+Blocks.grey_wool = class extends Wool{
+	static color = 'grey'
+}
+Blocks.black_wool = class extends Wool{
+	static color = 'black'
+}
+Blocks.red_wool = class extends Wool{
+	static color = 'red'
+}
+Blocks.orange_wool = class extends Wool{
+	static color = 'orange'
+}
+Blocks.yellow_wool = class extends Wool{
+	static color = 'yellow'
+}
+Blocks.lime_wool = class extends Wool{
+	static color = 'lime'
+}
+Blocks.green_wool = class extends Wool{
+	static color = 'green'
+}
+Blocks.cyan_wool = class extends Wool{
+	static color = 'cyan'
+}
+Blocks.light_blue_wool = class extends Wool{
+	static color = 'light_blue'
+}
+Blocks.blue_wool = class extends Wool{
+	static color = 'blue'
+}
+Blocks.purle_wool = class extends Wool{
+	static color = 'purple'
+}
+Blocks.magenta_wool = class extends Wool{
+	static color = 'magenta'
+}
+Blocks.pink_wool = class extends Wool{
+	static color = 'pink'
+}
+Blocks.brown_wool = class extends Wool{
+	static color = 'brown'
+}

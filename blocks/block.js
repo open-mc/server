@@ -1,36 +1,16 @@
-import util from 'util'
-import DEFAULTS from './blockdefaults.js'
-const give = a => a
-
 export class Block{
-	constructor(def){this._ = def}
-	/**
-	 * define a new block definition
-	 * @param {*} obj Properties of the block
-	 * @param {Object} [savedata] Block data format
-	 * @return {Function} constructor for that block
-	 */
-	static define(obj = {}, savedata = null){
-		let _ = Object.assign(Object.create(null, {savedata:{value:savedata,enumerable:false}, savedatahistory:{value:[],enumerable:false}}), DEFAULTS)
-		for(let i in obj){
-			if(!(i in Block.prototype))Object.defineProperty(Block.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
-			_[i] = obj[i]
-		}
-		let f = savedata ? () => new Block(_) : give.bind(undefined, new Block(_))
-		f._ = _
-		_.constructor = f
-		return f
-	}
-	[Symbol.for('nodejs.util.inspect.custom')](){
-		return `Blocks.${this._.name}(${this._.savedata ? '{...}' : ''})`
-	}
+	[Symbol.for('nodejs.util.inspect.custom')](){ return `Blocks.${this.className}${this.savedata ? ' {...}' : ''}` }
+	static id = -1
+	static name = ''
+	static flammability = 0
+	static breaktime = 1
+	static blast = 3
+	static solid = true
+	static tool = ''
+	static savedata = null
+	static savedatahistory = []
+	drops(){ return null }
 }
-Block.prototype.name = ''
-for(let i in DEFAULTS){
-	if(!(i in Block.prototype))
-		Object.defineProperty(Block.prototype, i, {get: new Function('return this._['+JSON.stringify(i)+']')})
-}
-Object.defineProperty(Block.prototype, 'constructor', {get(){return this._.constructor}})
 Object.setPrototypeOf(Block.prototype, null)
 export const Blocks = Object.create(null)
 export const BlockIDs = []
