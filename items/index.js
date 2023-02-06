@@ -25,13 +25,13 @@ for(const i in Items){
 		Object.setPrototypeOf(I, Item)
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
+	if(I.id < 0) I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), modified = true
 	ItemIDs[I.id] = Items[i] = c => new I(c)
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
 	const desc = Object.getOwnPropertyDescriptors(I)
 	delete desc.length; delete desc.name; desc.className = {value: i, enumerable: false, writable: false}; desc.constructor = {value: Items[i], enumerable: false, writable: false}
 	Object.defineProperties(I.prototype, desc)
-	if(I.id < 0) I.id = ItemIDs.length, ItemIDs.push(null), modified = true
 	Object.setPrototypeOf(Items[i], I.prototype)
 	Object.defineProperties(Items[i], Object.getOwnPropertyDescriptors(new I(1)))
 }

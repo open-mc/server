@@ -26,6 +26,7 @@ for(const i in Blocks){
 		Object.setPrototypeOf(B, Block)
 		Object.setPrototypeOf(B.prototype, Block.prototype)
 	}
+	if(B.id < 0) B.id = BlockIDs.length, B.savedatahistory = [], BlockIDs.push(null), modified = true
 	const shared = new B
 	BlockIDs[B.id] = Blocks[i] = B.savedata ? () => new B : Function.returns(shared)
 	// Copy static props to prototype
@@ -33,7 +34,6 @@ for(const i in Blocks){
 	const desc = Object.getOwnPropertyDescriptors(B)
 	delete desc.length; delete desc.name; desc.className = {value: i, enumerable: false, writable: false}; desc.constructor = {value: Blocks[i], enumerable: false, writable: false}
 	Object.defineProperties(B.prototype, desc)
-	if(B.id < 0) B.id = BlockIDs.length, BlockIDs.push(null), modified = true
 	Object.setPrototypeOf(Blocks[i], B.prototype)
 	Object.defineProperties(Blocks[i], Object.getOwnPropertyDescriptors(shared))
 }

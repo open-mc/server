@@ -25,14 +25,13 @@ for(const i in Entities){
 		Object.setPrototypeOf(E, Entity)
 		Object.setPrototypeOf(E.prototype, Entity.prototype)
 	}
+	if(E.id < 0) E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), modified = true
 	EntityIDs[E.id] = Entities[i] = (a, b) => new E(a, b)
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
 	const desc = Object.getOwnPropertyDescriptors(E)
 	delete desc.length; delete desc.name; desc.className = {value: i, enumerable: false, writable: false}; desc.constructor = {value: Entities[i], enumerable: false, writable: false}
 	Object.defineProperties(E.prototype, desc)
-	if(E.id < 0) E.id = EntityIDs.length, EntityIDs.push(null), modified = true
-	
 }
 if(modified){
 	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))
