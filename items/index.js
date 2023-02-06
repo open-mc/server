@@ -11,7 +11,7 @@ for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(iteminde
 	if(!item){ItemIDs.push(Items.stone);continue}
 	let sd = typeToJson(item.savedata)
 	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
-	for(const h of history)item.savedatahistory.push(jsonToType(h))
+	item.savedatahistory = history.mutmap(jsonToType)
 	item.id = ItemIDs.length
 	ItemIDs.push(null)
 }
