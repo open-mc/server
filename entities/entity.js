@@ -121,9 +121,7 @@ export class Entity{
 			for(const pl of this.chunk.players) buf.pipe(pl.sock)
 		else if(this.sock) buf.pipe(this.sock)
 	}
-	static savedatahistory = []
 	static savedata = null
-	static id = -1
 	static maxhealth = 20
 	died(){}
 	placed(){}

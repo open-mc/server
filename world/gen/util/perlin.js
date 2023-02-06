@@ -1,5 +1,5 @@
-import { Blocks, chunk } from '../vars.js'
-import { biomesFor } from './biomes.js'
+import { Biomes, Blocks, chunk } from '../vars.js'
+import { biomesFor, constantBiome } from './biomes.js'
 import { imxs32, imxs32_2 } from './random.js'
 
 const low = new Float64Array(4160)
@@ -56,8 +56,8 @@ const lerpLookup = [
 ]
 const facs = new Float64Array(64)
 const heights = new Float64Array(64)
-export function fill(cx, cy){
-	const biomes = biomesFor(cx)
+export function fill(cx, cy, fill = Blocks.stone, liquid = Blocks.water, level = 0){
+	const biomes = fill == Blocks.stone ? biomesFor(cx) : constantBiome(Biomes.nether)
 	const g = imxs32_2(cx, cy)
 	makeVector(0, g)
 	const g_up = imxs32_2(cx, cy + 1)
@@ -74,9 +74,8 @@ export function fill(cx, cy){
 		high[i] = (((x * xhigh[0] + y * yhigh[0]) * nx * nx + (nx * xhigh[16] + y * yhigh[16]) * x * x) * ny * ny
 		  + ((x * xhigh[272] + ny * yhigh[272]) * nx * nx + (nx * xhigh[288] + ny * yhigh[288]) * x * x) * y * y) * 4
 		sel[i] = (((x * xsel[0] + y * ysel[0]) * nx * nx + (nx * xsel[16] + y * ysel[16]) * x * x) * ny * ny
-		  + ((x * xsel[272] + ny * ysel[272]) * nx * nx + (nx * xsel[288] + ny * ysel[288]) * x * x) * y * y) * 4 + 0.5
+		  + ((x * xsel[272] + ny * ysel[272]) * nx * nx + (nx * xsel[288] + ny * ysel[288]) * x * x) * y * y) * 40 + 0.5
 	}
-	
 	for(let i = 0; i < 4160;){
 		if(i < 64){
 			let {offset, height} = biomes[i >> 4 & 3]
@@ -90,7 +89,7 @@ export function fill(cx, cy){
 		const height = heights[i & 63]
 		const fac = facs[i & 63]
 		const {deepsurface, surface} = biomes[(i >> 4 & 3) + (i >> 3 & 1)]
-		const u = sel[i] = (sel[i] * low[i] + (1-sel[i]) * high[i]) + fac + (i >> 6) / height
+		const u = sel[i] = (sel[i] >= 1 ? high[i] : sel[i] <= 0 ? low[i] : sel[i] * high[i] + (1-sel[i]) * low[i]) + fac + (i >> 6) / height
 		if(i < 64){i++;continue}
 		const s = sel[i -= 64]
 		chunk[i] = s < 0 ?
@@ -98,40 +97,8 @@ export function fill(cx, cy){
 				surface
 			: s > -5/height && deepsurface ?
 				deepsurface
-			: Blocks.stone
-		: cy < 0 ? Blocks.water : Blocks.air
+			: fill
+		: cy < level ? liquid : Blocks.air
 		i += 65
 	}
-	let rand = imxs32_2(cx, cy, 139827386, -1012498625)
-	//Ore generation
-	for(let i = 0; i < 4; i++){
-		let r = rand & 4095
-		fillIf(r, blob, Blocks.stone, Blocks.coal_ore)
-		for(let j=12; j<28; j+=2){
-			switch(rand>>j & 3){
-				case 0: r += 65; fillIf(r, ur, Blocks.stone, Blocks.coal_ore); break
-				case 1: r += 63; fillIf(r, ul, Blocks.stone, Blocks.coal_ore); break
-				case 2: r -= 63; fillIf(r, dr, Blocks.stone, Blocks.coal_ore); break
-				case 3: r -= 65; fillIf(r, dl, Blocks.stone, Blocks.coal_ore); break
-			}
-		}
-		rand = imxs32(rand, 220751007)
-	}
-	for(let i = 0; i < 2; i++){
-		let r = rand & 4095
-		fillIf(r, blob, Blocks.stone, Blocks.iron_ore)
-		for(let j=12; j<16; j+=2){
-			switch(rand>>j & 3){
-				case 0: r += 65; fillIf(r, ur, Blocks.stone, Blocks.iron_ore); break
-				case 1: r += 63; fillIf(r, ul, Blocks.stone, Blocks.iron_ore); break
-				case 2: r -= 63; fillIf(r, dr, Blocks.stone, Blocks.iron_ore); break
-				case 3: r -= 65; fillIf(r, dl, Blocks.stone, Blocks.iron_ore); break
-			}
-		}
-		rand = imxs32(rand, 220751007)
-	}
-}
-const blob = [0,1,-1,64,-64,65,-65,63,-63], ur = [63,64,65,1,-63], ul = [65,64,63,-1,-65], dr = [-65,-64,-63,1,65], dl = [-63,-64,-65,-1,63]
-function fillIf(r,arr, con, b){
-	for(const o of arr)if(chunk[r+o & 4095] == con)chunk[r+o & 4095] = b
 }

@@ -1,5 +1,7 @@
+import { veins } from './ores.js'
 import { biomesheet } from './util/biomes.js'
 import { fill } from './util/perlin.js'
+import { imxs32_2 } from './util/random.js'
 import { Blocks, chunk } from './vars.js'
 
 export const flat = function(cx, cy){
@@ -25,4 +27,7 @@ export default function(cx, cy){
 		//PERLIN
 		fill(cx, cy)
 	}
+	let rand = imxs32_2(cx, cy, 139827386, -1012498625)
+	rand = veins(rand, Blocks.coal_ore)
+	rand = veins(rand, Blocks.iron_ore, 2, 2)
 }

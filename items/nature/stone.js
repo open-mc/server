@@ -8,3 +8,7 @@ Items.stone = class Stone extends Item{
 Items.netherrack = class Netherrack extends Item{
 	place(){ return Blocks.netherrack }
 }
+
+Items.obsidian = class Obsidian extends Item{
+	place(){ return Blocks.obsidian }
+}

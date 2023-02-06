@@ -4,9 +4,7 @@ export class Item{
 		this.name = ''
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){ return 'Items.'+this.className+'(\x1b[33m'+this.count+'\x1b[m)' }
-	static savedatahistory = []
 	static savedata = null
-	static id = -1
 	static burns = false
 	place(){
 		return Blocks[this.className] || null

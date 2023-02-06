@@ -78,3 +78,9 @@ export const biomesFor = (cx) => {
 	biomes[4] = biomemap[(chunkBiomes[8] = b[++i]) >> 3 | (chunkBiomes[9] = b[i + 129]) >> 3 << 5]
 	return biomes
 }
+export const constantBiome = b => {
+	biomes[0] =	biomes[1] =	biomes[2] =	biomes[3] =	biomes[4] = b
+	chunkBiomes[0] = chunkBiomes[1] = chunkBiomes[2] = chunkBiomes[3] = chunkBiomes[4] = 
+	chunkBiomes[5] = chunkBiomes[6] = chunkBiomes[7] = chunkBiomes[8] = chunkBiomes[9] = 0
+	return biomes
+}

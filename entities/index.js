@@ -17,21 +17,27 @@ for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entity
 }
 for(const i in Entities){
 	const E = Entities[i]
-	if(Object.hasOwn(E.prototype, 'prototype')){ console.warn('Reused class for ' + E.prototype.className + ' (by ' + i + ')'); continue }
-	Object.defineProperty(E, 'name', {value: i})
 	// Force extend
 	if(!(E.prototype instanceof Entity)){
 		console.warn('Class ' + i + ' does not extend Entity\n')
 		Object.setPrototypeOf(E, Entity)
 		Object.setPrototypeOf(E.prototype, Entity.prototype)
 	}
-	if(E.id < 0) E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), modified = true
+	if(!Object.hasOwn(E, 'id')) E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), modified = true
 	EntityIDs[E.id] = Entities[i] = (a, b) => new E(a, b)
+	E.className = i
+	E.constructor = Entities[i]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
-	const desc = Object.getOwnPropertyDescriptors(E)
-	delete desc.length; delete desc.name; desc.className = {value: i, enumerable: false, writable: false}; desc.constructor = {value: Entities[i], enumerable: false, writable: false}
-	Object.defineProperties(E.prototype, desc)
+	let proto = E
+	while(proto.prototype && !Object.hasOwn(proto.prototype, 'prototype')){
+		const desc = Object.getOwnPropertyDescriptors(proto)
+		delete desc.length; delete desc.name
+		Object.defineProperties(proto.prototype, desc)
+		proto = Object.getPrototypeOf(proto)
+	}
+	if(proto == E){ console.warn('Reused class for ' + E.prototype.className + ' (by ' + i + ')'); continue }
+	Object.defineProperty(E, 'name', {value: i})
 }
 if(modified){
 	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))

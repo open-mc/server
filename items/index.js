@@ -17,21 +17,27 @@ for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(iteminde
 }
 for(const i in Items){
 	const I = Items[i]
-	if(Object.hasOwn(I.prototype, 'prototype')){ console.warn('Reused class for ' + I.prototype.className + ' (by ' + i + ')') }
-	Object.defineProperty(I, 'name', {value: i})
 	// Force extend
 	if(!(I.prototype instanceof Item)){
 		console.warn('Class ' + i + ' does not extend Item\n')
 		Object.setPrototypeOf(I, Item)
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
-	if(I.id < 0) I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), modified = true
+	if(!Object.hasOwn(I, 'id')) I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), modified = true
 	ItemIDs[I.id] = Items[i] = c => new I(c)
+	I.className = i
+	I.constructor = Items[i]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
-	const desc = Object.getOwnPropertyDescriptors(I)
-	delete desc.length; delete desc.name; desc.className = {value: i, enumerable: false, writable: false}; desc.constructor = {value: Items[i], enumerable: false, writable: false}
-	Object.defineProperties(I.prototype, desc)
+	let proto = I
+	while(proto.prototype && !Object.hasOwn(proto.prototype, 'prototype')){
+		const desc = Object.getOwnPropertyDescriptors(proto)
+		delete desc.length; delete desc.name
+		Object.defineProperties(proto.prototype, desc)
+		proto = Object.getPrototypeOf(proto)
+	}
+	if(proto == I){ console.warn('Reused class for ' + I.prototype.className + ' (by ' + i + ')'); continue }
+	Object.defineProperty(I, 'name', {value: i})
 	Object.setPrototypeOf(Items[i], I.prototype)
 	Object.defineProperties(Items[i], Object.getOwnPropertyDescriptors(new I(1)))
 }
