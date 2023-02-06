@@ -57,7 +57,7 @@ const lerpLookup = [
 const facs = new Float64Array(64)
 const heights = new Float64Array(64)
 export function fill(cx, cy, fill = Blocks.stone, liquid = Blocks.water, level = 0){
-	const biomes = fill == Blocks.stone ? biomesFor(cx) : constantBiome(Biomes.nether)
+	const biomes = fill == Blocks.stone ? biomesFor(cx) : cy < 0 ? cy < -10 ? constantBiome(Biomes.netherfloor) : constantBiome(Biomes.nether) : constantBiome(Biomes.netherinverted)
 	const g = imxs32_2(cx, cy)
 	makeVector(0, g)
 	const g_up = imxs32_2(cx, cy + 1)
