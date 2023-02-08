@@ -27,7 +27,7 @@ export class World extends Map{
 					for(const e of ch.entities)if(!e.id){
 						buf.double(e.x)
 						buf.double(e.y)
-						buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+						buf.uint32(e._id), buf.short(e._id / 4294967296 | 0)
 						buf.string(e.name)
 						buf.short(e.state)
 						buf.float(e.dx)

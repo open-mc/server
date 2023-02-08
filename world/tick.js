@@ -71,7 +71,7 @@ export function tick(){
 		const cx0 = floor(e.x - e.width - 16) >>> 6, cx1 = ceil((e.x + e.width + 16) / 64) & 67108863
 		const cy0 = floor(y0) >>> 6, cy1 = ceil((e.y + e.height + 32) / 64) & 67108863
 		for(let cx = cx0; cx != cx1; cx = cx + 1 & 67108863){
-			for(let cy = cy0; cy < cy1; cy = cy + 1 & 67108863){
+			for(let cy = cy0; cy != cy1; cy = cy + 1 & 67108863){
 				const chunk = e.chunk.x == cx && e.chunk.y == cy ? e.chunk : e.world.get(cx+cy*67108864)
 				if(!chunk) continue
 				for(const e2 of chunk.entities){

@@ -16,7 +16,7 @@ Entities.item = class ItemEntity extends Entity{
 			this.y += (e.y - this.y) / 2
 			return
 		}
-		if(this.age < 15 || !e.inv) return
+		if(this.age < 10 || !e.inv) return
 		e.give(this.item)
 		this.event(1)
 		if(this.item.count <= 0) this.remove()
