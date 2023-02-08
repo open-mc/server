@@ -186,7 +186,7 @@ async function play(sock, username, skin){
 		player.inv[4] = Items.netherrack(10)
 		player.inv[5] = Items.obsidian(64)
 		player.inv[6] = Items.grass(32)
-		//player.inv[7] = Items.diamond_pickaze
+		player.inv[7] = Items.diamond_pickaxe(1)
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
