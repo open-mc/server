@@ -1,3 +1,4 @@
+import { Items } from '../../items/item.js'
 import { Block, Blocks } from '../block.js'
 
 //Template for defining a bunch of blocks
@@ -5,6 +6,7 @@ class Planks extends Block{
 	static flammability = 5
 	static tool = 'axe'
 	static breaktime = 3
+	drops(i){ return Items.oak_planks }
 }
 
 //the actual blocks

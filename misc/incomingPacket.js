@@ -1,14 +1,18 @@
-import { BlockIDs } from '../blocks/block.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
-import { MOD } from '../config.js'
+import { MOD, TPS } from '../config.js'
 import { entityMap } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
+import { blockevent, cancelblockevent, goto, peek, place } from './ant.js'
 
 const REACH = 10
 
 function playerMovePacket(player, buf){
-	if(buf.byte() != player.r || !player.chunk)return
+	let t = Date.now()
+	if(t < (t = max(this.movePacketCd + 1000 / TPS, t - 2000)))return
+	this.movePacketCd = t
+	if(buf.byte() != this.r || !player.chunk)return
 	player.move(buf.double(), buf.double())
 	player.state = buf.short()
 	player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
@@ -17,15 +21,59 @@ function playerMovePacket(player, buf){
 		res.byte(15)
 		res.uint32(player._id); res.short(player._id / 4294967296 | 0)
 		res.byte(player.selected)
-		for(const pl of player.chunk.players)res.pipe(pl.sock)
+		player.emit(res)
 	}
 }
 
-function setBlockPacket(player, buf){
+function useItemPacket(player, buf){
+	const slot = buf.byte() % 9
 	const x = buf.int(), y = buf.int()
-	const block = BlockIDs[buf.short()]
-	if(!block)return
-	player.world.put(x, y, block())
+	const dx = x - player.x, dy = y - player.y
+	if(dx * dx + dy * dy > (REACH + 2) * REACH) return
+	const item = player.inv[slot]
+	if(!item) return
+	goto(x, y, player.world)
+	const b = peek()
+	if(b.solid) b.interact(item)
+	else item.interact(player)
+	if(!item.count) player.inv[slot] = null
+	const res = new DataWriter()
+	res.byte(32)
+	res.uint32(player._id)
+	res.short(player._id / 4294967296 | 0)
+	res.byte(slot), res.item(player.inv[slot])
+	player.emit(res)
+}
+
+function altItemPacket(player, buf){
+	const slot = buf.byte()
+	if(slot > 127){
+		goto(player.bx, player.by, player.world)
+		cancelblockevent(player.blockBreakEvent)
+		player.blockBreakEvent = 0
+		player.blockBreakProgress = -1
+		return
+	}
+	const x = buf.int(), y = buf.int()
+	const dx = x - player.x, dy = y - player.y
+	if(dx * dx + dy * dy > (REACH + 2) * REACH) return
+	player.bx = x; player.by = y
+	const item = player.inv[slot&127]
+	goto(x, y, player.world)
+	const b = peek()
+	if(b.solid){
+		cancelblockevent(player.blockBreakEvent)
+		player.blockBreakProgress = 0, player.blockBreakEvent = blockevent(1)
+	}else if(item){
+		item.interact2(player)
+		if(!item.count) player.inv[slot&127] = null
+		const res = new DataWriter()
+		res.byte(32)
+		res.uint32(player._id)
+		res.short(player._id / 4294967296 | 0)
+		res.byte(slot&127), res.item(player.inv[slot&127])
+		player.emit(res)
+	}
 }
 
 
@@ -36,7 +84,6 @@ function openContainerPacket(player, buf){
 }
 function openEntityPacket(player, buf){
 	if(player.interface) return
-	const bufferStart = buf.i - 1
 	const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
 	const dx = e.x - player.x, dy = e.y - player.y
 	if(dx * dx + dy * dy > (REACH + 2) * REACH || !e.chunk.players.includes(player)) return
@@ -50,7 +97,7 @@ function openEntityPacket(player, buf){
 }
 function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory
-	if(!player.interface || !player.chunk) return
+	if(!player.interface) return
 	let slot = buf.byte()
 	let changed = 0
 	if(slot > 127){
@@ -63,7 +110,7 @@ function inventoryPacket(player, buf){
 		if(t && !h) player.inv[36] = t, items[slot] = null, changed |= 3
 		else if(h && !t) items[slot] = h, player.inv[36] = null, changed |= 3
 		else if(h && t && h.constructor == t.constructor && !h.savedata){
-			const add = Math.min(h.count, (t.maxStack || 64) - t.count)
+			const add = min(h.count, t.maxStack - t.count)
 			if(!(h.count -= add))player.inv[36] = null, changed |= 1
 			t.count += add
 			changed |= 2
@@ -74,7 +121,7 @@ function inventoryPacket(player, buf){
 			res.uint32(player._id)
 			res.short(player._id / 4294967296 | 0)
 			res.byte(36), res.item(player.inv[36])
-			for(const pl of player.chunk.players) res.pipe(pl.sock)
+			player.emit(res)
 		}
 		if(changed & 2){
 			const res = new DataWriter()
@@ -82,7 +129,7 @@ function inventoryPacket(player, buf){
 			res.uint32(player._id)
 			res.short(player._id / 4294967296 | 0)
 			res.byte(slot | 128), res.item(items[slot])
-			for(const pl of player.interface.chunk.players) res.pipe(pl.sock)
+			player.interface.emit(res)
 		}		
 		return
 	}
@@ -92,7 +139,7 @@ function inventoryPacket(player, buf){
 	if(t && !h) player.inv[36] = t, player.inv[slot] = null, changed |= 3
 	else if(h && !t) player.inv[slot] = h, player.inv[36] = null, changed |= 3
 	else if(h && t && h.constructor == t.constructor && !h.savedata){
-		const add = Math.min(h.count, (t.maxStack || 64) - t.count)
+		const add = min(h.count, t.maxStack - t.count)
 		if(!(h.count -= add))player.inv[36] = null, changed |= 1
 		t.count += add
 		changed |= 2
@@ -104,12 +151,12 @@ function inventoryPacket(player, buf){
 	res.short(player._id / 4294967296 | 0)
 	if(changed & 1) res.byte(36), res.item(player.inv[36])
 	if(changed & 2) res.byte(slot), res.item(player.inv[slot])
-	for(const pl of player.chunk.players) res.pipe(pl.sock)
+	player.emit(res)
 }
 
 function altInventoryPacket(player, buf){
 	// Right-clicked on a slot in their inventory
-	if(!player.interface || !player.chunk) return
+	if(!player.interface) return
 	let slot = buf.byte()
 	if(slot > 127){
 		slot &= 127
@@ -123,7 +170,7 @@ function altInventoryPacket(player, buf){
 		}else if(h && !t){
 			items[slot] = h.constructor(1)
 			if(!--h.count)player.inv[36] = null
-		}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < (t.maxStack || 64)){
+		}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
 			t.count++
 			if(!--h.count)player.inv[36] = null
 		}else items[slot] = h, player.inv[36] = t
@@ -132,13 +179,13 @@ function altInventoryPacket(player, buf){
 		res.uint32(player._id)
 		res.short(player._id / 4294967296 | 0)
 		res.byte(36), res.item(player.inv[36])
-		for(const pl of player.chunk.players) res.pipe(pl.sock)
+		player.emit(res)
 		res = new DataWriter()
 		res.byte(32)
 		res.uint32(player.interface._id)
 		res.short(player.interface._id / 4294967296 | 0)
 		res.byte(slot | 128); res.item(items[slot])
-		for(const pl of player.interface.chunk.players) res.pipe(pl.sock)
+		player.interface.emit(res)
 		return
 	}
 	if(slot >= player.inv.length) return
@@ -149,7 +196,7 @@ function altInventoryPacket(player, buf){
 	}else if(h && !t){
 		player.inv[slot] = h.constructor(1)
 		if(!--h.count)player.inv[36] = null
-	}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < (t.maxStack || 64)){
+	}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
 		t.count++
 		if(!--h.count)player.inv[36] = null
 	}else player.inv[slot] = h, player.inv[36] = t
@@ -159,12 +206,13 @@ function altInventoryPacket(player, buf){
 	res.short(player._id / 4294967296 | 0)
 	res.byte(36), res.item(player.inv[36])
 	res.byte(slot), res.item(player.inv[slot])
-	for(const pl of player.chunk.players) res.pipe(pl.sock)
+	player.emit(res)
 }
 
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
-	8: setBlockPacket,
+	8: useItemPacket,
+	9: altItemPacket,
 	12: openContainerPacket,
 	13: openEntityPacket,
 	15(player, _){player.interface = null},
@@ -179,7 +227,7 @@ export function onstring(player, text){
 				try{return a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 			})
 			if(!(args[0] in commands))throw 'No such command: /'+args[0]
-			if(player.permissions < MOD){
+			if(this.permissions < MOD){
 				if(!anyone_help[args[0]])throw "You do not have permission to use /"+args[0]
 			}else if(player.permission == MOD && !mod_help[args[0]])throw "You do not have permission to use /"+args[0]
 			let res = commands[args[0]].apply(player, args.slice(1))

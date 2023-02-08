@@ -9,18 +9,17 @@ export class Chunk{
 	constructor(buf, world){
 		if(!buf.left || buf.byte() != 16)throw new TypeError("Invalid chunk data")
 		const x = buf.int(), y = buf.int()
-		this.x = x << 6 >> 6
-		this.y = y << 6 >> 6
+		world.set((this.x = x & 67108863)+(this.y = y & 67108863)*67108864, this)
 		this.world = world
 		this.tiles = LIGHTNINGFASTALLOCATOR()
-		this.entities = new Set()
+		this.entities = []
 		this.players = null
 		//read buf palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
 		let id = buf.short()
 		while(id){
-			const e = EntityIDs[id](buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6), this.world)
-			e.chunk = this
+			const e = EntityIDs[id](buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
+			e.place(this.world)
 			buf.setUint32(buf.i, e._id)
 			buf.setUint16((buf.i += 6) - 2, e._id / 4294967296)
 			e.name = buf.string()
@@ -28,8 +27,8 @@ export class Chunk{
 			e.dx = buf.float()
 			e.dy = buf.float()
 			e.f = buf.float()
+			e.age = buf.double()
 			if(e.savedata)buf.read(e.savedatahistory[buf.flint()] || e.savedata, e)
-			this.entities.add(e)
 			id = buf.short()
 		}
 		this.biomes = [buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte(), buf.byte()]
@@ -105,7 +104,8 @@ export class Chunk{
 			buf.float(e.dx)
 			buf.float(e.dy)
 			buf.float(e.f)
-			if(e.savedata)buf.flint(e.savedatahistory.length), buf.write(e.savedata, e)
+			buf.double(e.age)
+			if(e.savedata) buf.flint(e.savedatahistory.length), buf.write(e.savedata, e)
 		}
 		buf.short(0)
 		

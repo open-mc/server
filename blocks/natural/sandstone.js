@@ -1,8 +1,11 @@
+import { Items } from '../../items/item.js'
 import { Block, Blocks } from '../block.js'
 
 class Sandstone extends Block{
 	static blast = 0.8
 	static breaktime = 4
+	static tool = 'pick'
+	drops(i){ return Items.sandstone(1) }
 }
 
 Blocks.sandstone = Sandstone

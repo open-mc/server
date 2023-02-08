@@ -7,12 +7,12 @@ let modified = false
 export let entityindex
 for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entityindex = ''+a).split('\n'))){
 	let [name, ...history] = a.split(' ')
-	let entity = Entities[name]
-	if(!entity){EntityIDs.push(Entities.player);continue}
-	let sd = typeToJson(entity.savedata)
+	let E = Entities[name]
+	if(!E){EntityIDs.push(Entities.player);continue}
+	let sd = typeToJson(E.savedata)
 	if((history[history.length-1] || 'null') == sd){history.pop()}else{modified = true}
-	entity.savedatahistory = history.mutmap(jsonToType)
-	entity.id = EntityIDs.length
+	E.savedatahistory = history.mutmap(jsonToType)
+	E.id = EntityIDs.length
 	EntityIDs.push(null)
 }
 for(const i in Entities){
@@ -38,6 +38,7 @@ for(const i in Entities){
 	}
 	if(proto == E){ console.warn('Reused class for ' + E.prototype.className + ' (by ' + i + ')'); continue }
 	Object.defineProperty(E, 'name', {value: i})
+	Object.setPrototypeOf(Entities[i], E.prototype)
 }
 if(modified){
 	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))

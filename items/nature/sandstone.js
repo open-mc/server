@@ -1,7 +1,8 @@
+import { Blocks } from '../../blocks/block.js'
 import { Item, Items } from '../item.js'
 
 class Sandstone extends Item{
-	
+	interact(){ super.interact(Blocks.sandstone) }
 }
 
 Items.sandstone = Sandstone

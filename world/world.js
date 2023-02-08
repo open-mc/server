@@ -33,7 +33,8 @@ export class World extends Map{
 						buf.float(e.dx)
 						buf.float(e.dy)
 						buf.float(e.f)
-						buf.write(e.savedata, e)
+						buf.double(e.age)
+						if(e.savedata) buf.flint(e.savedatahistory.length), buf.write(e.savedata, e)
 					}
 					buf.pipe(pl.sock)
 				}
@@ -42,12 +43,11 @@ export class World extends Map{
 		}
 		let pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(Function.prototype).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
 			let ch = new Chunk(buf, this)
-			super.set(k, ch)
 			ch.players = pr.players
 			for(const pl of ch.players){
-				if(Math.floor(pl._x) >> 6 == cx && Math.floor(pl._y) >> 6 == cy && pl._w == this){
+				if(floor(pl._x) >> 6 == cx && floor(pl._y) >> 6 == cy && pl._w == this){
 					pl.chunk = ch
-					ch.entities.add(pl)
+					ch.entities.push(pl)
 					pl.mv = 255
 				}
 				pl.sock.send(buf)
@@ -64,10 +64,10 @@ export class World extends Map{
 		if(!ch)return false
 		ch.players.remove(pl)
 		if(!pl.sock || (ch instanceof Promise)) return false
-		const buf = pl.ebuf
+		const buf = pl.sock.ebuf
 		for(let e of ch.entities){
 			if(e == pl) continue
-			buf.byte(0)
+			buf.short(0)
 			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
 		}
 		return true
@@ -82,7 +82,7 @@ export class World extends Map{
 		}
 		if(ch.t <= 0) return
 		if(--ch.t) return //Count down timer
-		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
+		let k = ch.x+ch.y*67108864
 		const b = ch.toBuf(new DataWriter).build()
 		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
@@ -101,7 +101,7 @@ export class World extends Map{
 	}
 	
 	putEntity(e, x, y, force = false){
-		let ch = super.get((Math.floor(x)>>>6)+(Math.floor(y)>>>6)*67108864)
+		let ch = super.get((floor(x)>>>6)+(floor(y)>>>6)*67108864)
 		const oldw = e._w
 		e._w = this
 		if(oldw)e.moved(e._x, e._y, (e._x = x, e._y = y, oldw))
@@ -115,20 +115,20 @@ export class World extends Map{
 			buf.double(this.tick)
 			buf.pipe(e.sock)
 		}
-		if(e.chunk)e.chunk.entities.delete(e)
+		if(e.chunk)e.chunk.entities.remove(e)
 		if(!ch || ch instanceof Promise){
 			if(!force)return false
 			e.chunk = null
-			if(!ch)ch = this.load(Math.floor(x)>>6, Math.floor(y)>>6)
+			if(!ch)ch = this.load(floor(x)>>6, floor(y)>>6)
 			ch.then(ch => {
-				if(Math.floor(e._x) >> 6 != ch.x || Math.floor(e._y) >> 6 != ch.y || e._w != this)return
+				if(floor(e._x) >>> 6 != ch.x || floor(e._y) >>> 6 != ch.y || e._w != this)return
 				e.chunk = ch
-				ch.entities.add(e)
+				ch.entities.push(e)
 				e.mv = 255
 			})
 			return true
 		}
-		ch.entities.add(e)
+		ch.entities.push(e)
 		e.chunk = ch
 		return true
 	}
@@ -138,7 +138,7 @@ export class World extends Map{
 		if(p && !ch.players.includes(p))return null
 		return ch.tiles[(x & 63) + ((y & 63) << 6)]
 	}
-	get(x, y){ return super.get((x&67108863)+(y&67108863)*67108864) }
+	chunk(x, y){ return super.get((x&67108863)+(y&67108863)*67108864) }
 	put(x, y, b){
 		let ch = super.get((x>>>6)+(y>>>6)*67108864)
 		if(!ch)return

@@ -4,14 +4,14 @@ import { Entity } from './entity.js'
 
 export class ChunkLoader extends Entity{
 	radius = CONFIG.chunkloadingrange
-	placed(){ this.load(Math.floor(this.x) >> 6, Math.floor(this.y) >> 6, this._w) }
+	placed(){ this.load(floor(this.x) >> 6, floor(this.y) >> 6, this._w) }
 	moved(ox, oy, ow){
-		let ocx = Math.floor(ox) >> 6
-		let ocy = Math.floor(oy) >> 6
-		let cx = Math.floor(this.x) >> 6
-		let cy = Math.floor(this.y) >> 6
+		let ocx = floor(ox) >> 6
+		let ocy = floor(oy) >> 6
+		let cx = floor(this.x) >> 6
+		let cy = floor(this.y) >> 6
 		if(ocx == cx && ocy == cy && ow == this._w)return
-		if(ow != this._w || Math.max(Math.abs(cx-ocx << 6 >> 6),Math.abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
+		if(ow != this._w || max(abs(cx-ocx << 6 >> 6),abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
 			//teleport
 			this.unload(ocx, ocy, ow)
 			this.load(cx, cy, this._w)
@@ -30,7 +30,7 @@ export class ChunkLoader extends Entity{
 		let x1 = cx + this.radius
 		if(x0>x1)[x0, x1] = [x1-this.radius-this.radius+1,x0-this.radius-this.radius+1]
 		let XT = cx + this.radius
-		let YT = Math.min(cy,ocy)+this.radius
+		let YT = min(cy,ocy)+this.radius
 		let trashed = new DataWriter()
 		trashed.byte(17)
 		for(let y = y0; y < y1; y++){
@@ -44,7 +44,7 @@ export class ChunkLoader extends Entity{
 		}
 		
 		for(let x = x0; x < x1; x++){
-			for(let y=Math.max(cy,ocy)-this.radius+1;y<YT;y++){
+			for(let y=max(cy,ocy)-this.radius+1;y<YT;y++){
 				this.world.load(x, y, this)
 				if(this.world.unlink(tx-x, ty-y, this)){
 					trashed.int(tx-x)
@@ -85,8 +85,8 @@ export class ChunkLoader extends Entity{
 		trashed.pipe(this.sock)
 	}
 	removed(){
-		const cx = Math.floor(this.x) >> 6
-		const cy = Math.floor(this.y) >> 6
+		const cx = floor(this.x) >> 6
+		const cy = floor(this.y) >> 6
 		this.unload(cx, cy, this.world, false)
 	}
 }

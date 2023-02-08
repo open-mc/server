@@ -13,7 +13,7 @@ async function loadPermissions(){
 			let str = PERMISSIONS[i]
 			PERMISSIONS[i] = (perms[str.toLowerCase()] + 1 || 9) - 1
 			str = str.match(/^banned(\(([^\)]*)\))?$/)
-			if(str) PERMISSIONS[i] = Math.round(new Date(str[2]) / 1000) || 2147483647
+			if(str) PERMISSIONS[i] = round(new Date(str[2]) / 1000) || 2147483647
 		}
 	}catch(e){}
 	w.next().then(loadPermissions)

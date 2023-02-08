@@ -1,5 +1,4 @@
 import { WebSocket, WebSocketServer, Sender } from 'ws'
-import { CONFIG } from '../config.js'
 
 Object.defineProperties(Array.prototype, {
 	winner: {enumerable: false, value(pred){
@@ -31,12 +30,13 @@ Object.defineProperties(Array.prototype, {
 		return this
 	}}
 })
-WebSocket.prototype.logMalicious = function(reason){
-	if(!CONFIG.logMalicious) return
-	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
-}
 WebSocket.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){return '<WebSocket \x1b[33m'+this._socket.remoteAddress+'\x1b[m>'}
 WebSocketServer.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){return '<WebSocketServer clients: \x1b[33m'+this.clients.size+'\x1b[m>'}
+
+Math.ifloat = x => {
+	let f = Math.floor(x)
+	return (f >> 0) + (x - f)
+}
 
 /*//PERF!!!
 WebSocket.prototype.send = function(data, cb){

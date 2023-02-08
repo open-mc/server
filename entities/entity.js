@@ -3,9 +3,9 @@ export let entityMap = new Map(), i = -1
 export class Entity{
 	constructor(x, y){
 		if(x !== x || y !== y)throw new TypeError('x and y must be a number')
-		let f = Math.floor(x)
+		let f = floor(x)
 		x = (f >> 0) + (x - f || 0)
-		f = Math.floor(y)
+		f = floor(y)
 		y = (f >> 0) + (y - f || 0)
 		this._x = x
 		this._y = y
@@ -17,6 +17,7 @@ export class Entity{
 		this._state = 0
 		this._id = -1
 		this.name = ''
+		this.age = 0
 	}
 	place(world){
 		if(this._id < 0){
@@ -47,33 +48,33 @@ export class Entity{
 	set world(_){throw new Error('use entity.transport() to change dimension')}
 	transport(x, y, w){
 		this.mv |= 3
-		let f = Math.floor(x)
+		let f = floor(x)
 		x = (f >> 0) + (x - f || 0)
-		f = Math.floor(y)
+		f = floor(y)
 		y = (f >> 0) + (y - f || 0)
 		return w.putEntity(this, x, y, true)
 	}
 	set x(x){
 		this.mv |= 1
-		const f = Math.floor(x)
+		const f = floor(x)
 		x = (f >> 0) + (x - f || 0)
-		if(Math.floor(this._x)>>6 === Math.floor(x)>>6)return void (this._x = x)
+		if(floor(this._x)>>6 === floor(x)>>6)return void (this._x = x)
 		this._w.putEntity(this, x, this._y)
 	}
 	set y(y){
 		this.mv |= 2
-		const f = Math.floor(y)
+		const f = floor(y)
 		y = (f >> 0) + (y - f)
-		if(Math.floor(this._y)>>6 === Math.floor(y)>>6)return void (this._y = y)
+		if(floor(this._y)>>6 === floor(y)>>6)return void (this._y = y)
 		this._w.putEntity(this, this._x, y)
 	}
 	move(x, y){
 		this.mv |= 3
-		let f = Math.floor(x)
+		let f = floor(x)
 		x = (f >> 0) + (x - f || 0)
-		f = Math.floor(y)
+		f = floor(y)
 		y = (f >> 0) + (y - f || 0)
-		if(Math.floor(this._x)>>6 === Math.floor(x)>>6 && Math.floor(this._y)>>6 === Math.floor(y)>>6)return (this._x = x, this._y = y, true)
+		if(floor(this._x)>>6 === floor(x)>>6 && floor(this._y)>>6 === floor(y)>>6)return (this._x = x, this._y = y, true)
 		return this._w.putEntity(this, x, y)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
@@ -81,15 +82,15 @@ export class Entity{
 	}
 	remove(){
 		if(this.chunk){
-			this.chunk.entities.delete(this)
+			this.chunk.entities.remove(this)
 			for(const pl of this.chunk.players){
 				if(!pl.sock)continue
-				pl.ebuf.byte(0)
-				pl.ebuf.int(this._id | 0), pl.ebuf.short(this._id / 4294967296 | 0)
+				pl.sock.ebuf.short(0)
+				pl.sock.ebuf.uint32(this._id), pl.sock.ebuf.short(this._id / 4294967296 | 0)
 			}
 		}else if(this.sock){
-			this.ebuf.byte(0)
-			this.ebuf.int(this._id | 0), this.ebuf.short(this._id / 4294967296 | 0)
+			this.sock.ebuf.short(0)
+			this.sock.ebuf.uint32(this._id), this.sock.ebuf.short(this._id / 4294967296 | 0)
 		}
 		this.removed()
 		this._w = this.chunk = this.ochunk = null
@@ -101,12 +102,12 @@ export class Entity{
 		if(!this.inv) return
 		const changed = []
 		for(let i = 0; i < this.inv.length; i++){
-			let amount = Math.min(stack.count, stack.maxStack || 64)
+			let amount = min(stack.count, stack.maxStack)
 			if(!this.inv[i]){
 				this.inv[i] = stack.constructor(amount)
 				stack.count -= amount
 			}else if(this.inv[i].constructor == stack.constructor && !stack.savedata){
-				amount = Math.min(amount, (this.inv[i].maxStack || 64) - this.inv[i].count)
+				amount = min(amount, this.inv[i].maxStack - this.inv[i].count)
 				this.inv[i].count += amount
 				stack.count -= amount
 			}else continue
@@ -121,8 +122,6 @@ export class Entity{
 			for(const pl of this.chunk.players) buf.pipe(pl.sock)
 		else if(this.sock) buf.pipe(this.sock)
 	}
-	static savedata = null
-	static maxhealth = 20
 	died(){}
 	placed(){}
 	moved(oldx, oldy, oldw){}
@@ -133,12 +132,58 @@ export class Entity{
 		if(this.health < 0){
 			this.died()
 			this.remove()
-		}else if(this.health > this.maxhealth){
-			this.health = this.maxhealth
+		}else if(this.health > this.maxHealth){
+			this.health = this.maxHealth
 		}
 		//TODO health packet
 	}
+	emit(buf){
+		if(this.chunk){
+			if(buf instanceof DataWriter)
+				for(const pl of this.chunk.players) buf.pipe(pl.sock)
+			else for(const pl of this.chunk.players) pl.sock.send(buf)
+		}else if(this.sock){
+			if(buf instanceof DataWriter) buf.pipe(this.sock)
+			else this.sock.send(buf)
+		}
+	}
+	event(ev, id = (entityEventId = entityEventId + 1 | 0) || (entityEventId = 1)){
+		if(!this.chunk){
+			if(this.sock){
+				this.sock.ebuf.short(ev & 0xff)
+				this.sock.ebuf.uint32(this._id); this.sock.ebuf.short(this._id / 4294967296 | 0)
+				this.sock.ebuf.int(id)
+			}
+			return id
+		}
+		for(const {sock: {ebuf}} of this.chunk.players){
+			ebuf.short(ev & 0xff)
+			ebuf.uint32(this._id); ebuf.short(this._id / 4294967296 | 0)
+			ebuf.int(id)
+		}
+		return id
+	}
+	cancelevent(id){
+		if(!this.chunk){
+			if(this.sock){
+				this.sock.ebuf.short(0xff)
+				this.sock.ebuf.int(id)
+			}
+			return id
+		}
+		for(const {sock: {ebuf}} of this.chunk.players){
+			ebuf.short(0xff)
+			ebuf.int(id)
+		}
+		return id
+	}
+	static savedata = null
+	static maxHealth = 20
+	static groundDrag = .0000244
+	static airDrag = 0.667
 }
+let entityEventId = 0
+
 Object.setPrototypeOf(Entity.prototype, null)
 export const Entities = Object.create(null)
 export const EntityIDs = []

@@ -1,23 +1,24 @@
-import { GAMERULES, version } from '../config.js'
+import { GAMERULES, TPS, version } from '../config.js'
 import { players } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { MOD, OP } from '../config.js'
-import { Entity } from '../entities/entity.js'
+import { Entities, Entity } from '../entities/entity.js'
 import { World } from '../world/world.js'
 import { stats } from '../internals.js'
-import { Items } from '../items/item.js'
+import { Item, Items } from '../items/item.js'
+import { DataWriter } from '../utils/data.js'
 
 export function formatTime(t){
 	t /= 1000
 	if(t < 3600){
-		if(t >= 60)return Math.floor(t/60)+'m '+Math.floor(t%60)+'s'
-		else if(t >= 1)return Math.floor(t)+'s'
+		if(t >= 60)return floor(t/60)+'m '+floor(t%60)+'s'
+		else if(t >= 1)return floor(t)+'s'
 		else return t*1000+'ms'
 	}else{
-		if(t < 86400)return Math.floor(t/3600)+'h '+Math.floor(t%3600/60)+'m'
-		else if(t < 864000)return Math.floor(t/86400)+'d '+Math.floor(t%86400/3600)+'h'
-		else return Math.floor(t/86400)+'d'
+		if(t < 86400)return floor(t/3600)+'h '+floor(t%3600/60)+'m'
+		else if(t < 864000)return floor(t/86400)+'d '+floor(t%86400/3600)+'h'
+		else return floor(t/86400)+'d'
 	}
 }
 
@@ -43,7 +44,7 @@ function selector(a, who){
 			})
 			return [closest]
 		}
-		if(a[1] == 'r')return [candidates[Math.floor(Math.random() * candidates.length)]]
+		if(a[1] == 'r')return [candidates[floor(random() * candidates.length)]]
 	}else{
 		const player = players.get(a)
 		if(!player)throw "No targets matched selector"
@@ -72,7 +73,6 @@ export const commands = {
 	},
 	tpe(a, b){
 		if(!b)b = a, a = '@s'
-		if(this.permissions < MOD)throw 'You do not have permission to /tp'
 		const players = selector(a, this)
 		const [target, _] = selector(b, this)
 		if(_ || !target)throw 'Selector must return exactly 1 target'
@@ -84,14 +84,13 @@ export const commands = {
 	tp(a, x, y, d = this.world || 'overworld'){
 		if(!y)y=x,x=a,a='@s'
 		if(!x || !y)throw 'Invalid coordinates'
-		if(this.permissions < MOD)throw 'You do not have permission to /tp'
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!(d instanceof World))throw 'Invalid dimension'
 		const players = selector(a, this)
     if(x[0] == "^" && y[0] == "^"){
-			x = (+x.slice(1))/180*Math.PI - this.facing
+			x = (+x.slice(1))/180*PI - this.facing
 			y = +y.slice(1);
-			[x, y] = [this.x + Math.sin(x) * y, this.y + Math.cos(x) * y]
+			[x, y] = [this.x + sin(x) * y, this.y + cos(x) * y]
 		}else{
 			if(x[0] == "~")x = this.x + +x.slice(1)
 			else x -= 0
@@ -106,25 +105,53 @@ export const commands = {
 	kick(a, ...r){
 		const reason = r.join(' ')
 		let players = selector(a, this)
-		if(players.length > 1 && this.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
+		if(players.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
 		for(const pl of players){
 			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
 			pl.sock.close()
 		}
 	},
 	give(sel, item, count = '1'){
-		let itm = Items[item], c = Math.max(count | 0, 0)
+		let itm = Items[item], c = max(count | 0, 0)
 		if(!itm)throw 'No such item: '+item
 		for(const player of selector(sel, this)){
-			
 			const stack = itm(c)
 			player.give(stack)
-			if(stack.count); //TODO: summon item entity
-			
+			if(stack.count){
+				const e = Entities.item(player.x, player.y)
+				e.x = player.x; e.y = player.y; e.place(player.world)
+			}
 		}
 	},
+	clear(sel, _item, _max = '2147483647'){
+		const Con = _item && Items[_item]?.constructor || Item
+		let cleared = 0, es = 0
+		for(const e of selector(sel, this)){
+			let max = +_max
+			const buf = new DataWriter()
+			buf.byte(32)
+			buf.uint32(e._id); buf.short(e._id / 4294967296 | 0)
+			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
+				const item = e.inv[i]
+				if(!item || !(item instanceof Con)) continue
+				buf.byte(i)
+				if(item.count <= max)max -= item.count, e.inv[i] = null, buf.item(null)
+				else item.count -= max, max = 0, buf.item(item)
+			}
+			if(e.items) for(let i = 0; max && i < e.items.length; i++){
+				const item = e.items[i]
+				if(!item || !(item instanceof Con)) continue
+				buf.byte(i | 128)
+				if(item.count <= max)max -= item.count, e.items[i] = null, buf.item(null)
+				else item.count -= max, max = 0, buf.item(item)
+			}
+			cleared += +_max - max; es++
+			e.emit(buf)
+		}
+		log(this, `Cleared a total of ${cleared} items from ${es} entities`)
+	},
 	help(c){
-		const cmds = this.permissions == MOD ? mod_help : this.permissions == OP ? help : anyone_help
+		const cmds = this.sock.permissions == MOD ? mod_help : this.sock.permissions == OP ? help : anyone_help
 		if(!c){
 			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
 		}else if(c in cmds){
@@ -141,7 +168,7 @@ export const commands = {
 	time(time, d = this.world || 'overworld'){
 		if(typeof d == 'string')d = Dimensions[d]
 		if(!time){
-			return `This dimension is on tick ${d.tick}\nThe day is ${Math.floor((d.tick + 7000) / 24000)} and the time is ${Math.floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(Math.floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
+			return `This dimension is on tick ${d.tick}\nThe day is ${floor((d.tick + 7000) / 24000)} and the time is ${floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
 		}else if(time[0] == '+' || time[0] == '-'){
 			let t = d.tick + +time
 			if(t < 0)t = (t % 24000 + 24000) % 24000
@@ -189,7 +216,7 @@ export const commands = {
 		return 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a])
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB`
+		return `Vanilla server software ${version}\nUptime: ${formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB` + (this.age ? '\nYou have been in this server for: ' + formatTime(this.age * 1000 / TPS) : '')
 	}
 }
 

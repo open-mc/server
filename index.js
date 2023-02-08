@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import { stats } from './internals.js'
 import util from 'util'
-import { WebSocketServer } from 'ws'
+import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
 import { commands, err, formatTime } from './misc/commands.js'
@@ -19,7 +19,7 @@ import crypto from 'crypto'
 import { deflateSync } from 'zlib'
 
 let total = 5, loaded = -1, promise = null
-globalThis.started = Math.round(Date.now() - performance.now())
+globalThis.started = round(Date.now() - performance.now())
 globalThis.progress = function(desc){
 	loaded++
 	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${formatTime(Date.now() - started)}) ${desc}`)
@@ -42,8 +42,8 @@ import('./entities/index.js').then(({entityindex}) => {
 })
 function uncaughtErr(e){
 	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(Math.max(0,Math.floor(l / 2 - 8)))+' Critical Error '+'='.repeat(Math.max(0,Math.ceil(l / 2 - 8)))+'\x1b[m\n\n' 
-		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(Math.max(0,Math.floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
+	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
+		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
 	//process.exit(0)
 }
 process.on('uncaughtException', uncaughtErr)
@@ -98,6 +98,12 @@ KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 -----END RSA PUBLIC KEY-----`
 
 const playersConnecting = new Set()
+
+WebSocket.prototype.logMalicious = function(reason){
+	if(!CONFIG.logMalicious) return
+	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
+}
+
 server.on('connection', function(sock, {url}){
 	if(exiting) return
 	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
@@ -113,7 +119,7 @@ server.on('connection', function(sock, {url}){
 		sock.challenge = rnd
 		const buf = new DataWriter()
 		buf.string(CONFIG.name)
-		buf.string(CONFIG.motd[Math.floor(Math.random() * CONFIG.motd.length)])
+		buf.string(CONFIG.motd[floor(random() * CONFIG.motd.length)])
 		buf.string(CONFIG.icon)
 		buf.uint8array(indexCompressed)
 		buf.uint8array(rnd)
@@ -167,37 +173,42 @@ async function play(sock, username, skin){
 		dim = Dimensions[buf.string()]
 		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
+		player.age = buf.double()
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
-		player = Entities.player(0, 0)
+		player = Entities.player(0, 20)
 		dim = Dimensions.overworld
-		player.inv[0] = Items.stone(1)
-		player.inv[1] = Items.sandstone(2)
-		player.inv[2] = Items.oak_log(3)
-		player.inv[3] = Items.oak_planks(4)
-		player.inv[4] = Items.netherrack(1)
-		player.inv[5] = Items.obsidian(1)
-		player.inv[6] = Items.grass(1)
+		player.inv[0] = Items.stone(20)
+		player.inv[1] = Items.sandstone(20)
+		player.inv[2] = Items.oak_log(20)
+		player.inv[3] = Items.oak_planks(20)
+		player.inv[4] = Items.netherrack(10)
+		player.inv[5] = Items.obsidian(64)
+		player.inv[6] = Items.grass(32)
+		//player.inv[7] = Items.diamond_pickaze
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
 	player.sock = sock
-	player.ebuf = new DataWriter()
-	player.ebuf.byte(20)
 	player.name = username
-	player.permissions = permissions
+	sock.permissions = permissions
+	sock.movePacketCd = Date.now() - 1000
 	player.place(dim)
 	players.set(username, player)
-	player.r = 255
+	sock.r = 255
 	player.rubber(0)
 	sock.player = player
 	if(!other) chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
+	sock.ebuf = new DataWriter()
+	sock.ebuf.byte(20)
+	sock.tbuf = new DataWriter()
+	sock.tbuf.byte(8)
 	sock.on('close', close)
 	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e))
 }
 
-server.permissions = 3
+server.sock = {permissions: 3}
 server.world = Dimensions.overworld
 
 const close = async function(){
@@ -213,8 +224,8 @@ const close = async function(){
 	buf.float(player.dx)
 	buf.float(player.dy)
 	buf.float(player.f)
-	buf.flint(player.savedatahistory.length)
-	buf.write(player.savedata, player)
+	buf.double(player.age)
+	if(player.savedata) buf.flint(player.savedatahistory.length), buf.write(player.savedata, player)
 	if(!exiting) chat(player.name + ' left the game', YELLOW)
 	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
 	playersConnecting.delete(player.name)
@@ -235,17 +246,18 @@ const message = function(_buf, isBinary){
 		}
 		return
 	}else if(!player) return
-	if(!isBinary) return void onstring(player, _buf.toString())
+	if(!isBinary) return void onstring.call(this, player, _buf.toString())
 	const buf = new DataReader(_buf) //let your code breathe
 	const code = buf.byte()
 	if(!codes[code]) return
 	try{
-		codes[code](player, buf)
+		codes[code].call(this, player, buf)
 	}catch(e){ this.logMalicious('Caused an error: \n'+e) }
 }
+
+globalThis.exiting = false
 setTPS(TPS)
 
-let exiting = false
 process.on('SIGINT', _ => {
 	//Save stuff here
 	if(exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
