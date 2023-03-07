@@ -7,12 +7,13 @@ let modified = false
 export let itemindex
 for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(itemindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
-	let item = Items[name]
-	if(!item){ItemIDs.push(Items.stone);continue}
-	let sd = typeToJson(item.savedata)
+	const I = Items[name]
+	if(!I){ItemIDs.push(Items.stone);continue}
+	let sd = typeToJson(I.savedata)
 	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
-	item.savedatahistory = history.mutmap(jsonToType)
-	item.id = ItemIDs.length
+	I.savedatahistory = history.mutmap(jsonToType)
+	if('id' in I) I.otherIds ? I.otherIds.push(ItemIDs.length) : I.otherIds = [ItemIDs.length]
+	else I.id = ItemIDs.length
 	ItemIDs.push(null)
 }
 for(const i in Items){
@@ -25,6 +26,7 @@ for(const i in Items){
 	}
 	if(!Object.hasOwn(I, 'id')) I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), modified = true
 	ItemIDs[I.id] = Items[i] = c => new I(c)
+	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	I.className = i
 	I.constructor = Items[i]
 	// Copy static props to prototype

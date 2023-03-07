@@ -8,12 +8,13 @@ let modified = false
 export let blockindex
 for(const a of await fs.readFile(WORLD + 'defs/blockindex.txt').then(a=>(blockindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
-	let block = Blocks[name]
-	if(!block){BlockIDs.push(Blocks.air);continue}
-	let sd = typeToJson(block.savedata)
+	const B = Blocks[name]
+	if(!B){BlockIDs.push(Blocks.air);continue}
+	let sd = typeToJson(B.savedata)
 	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
-	block.savedatahistory = history.mutmap(jsonToType)
-	block.id = BlockIDs.length
+	B.savedatahistory = history.mutmap(jsonToType)
+	if('id' in B) B.otherIds ? B.otherIds.push(BlockIDs.length) : B.otherIds = [BlockIDs.length]
+	else B.id = BlockIDs.length
 	BlockIDs.push(null)
 }
 for(const i in Blocks){
@@ -27,6 +28,7 @@ for(const i in Blocks){
 	if(!Object.hasOwn(B, 'id')) B.id = BlockIDs.length, B.savedatahistory = [], BlockIDs.push(null), modified = true
 	const shared = new B
 	BlockIDs[B.id] = Blocks[i] = B.savedata ? () => new B : Function.returns(shared)
+	if(B.otherIds) for(const i of B.otherIds) BlockIDs[i] = BlockIDs[B.id]
 	B.className = i
 	B.constructor = Blocks[i]
 	// Copy static props to prototype

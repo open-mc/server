@@ -3,7 +3,7 @@ import { players } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { MOD, OP } from '../config.js'
-import { Entities, Entity } from '../entities/entity.js'
+import { Entities, Entity, entityMap } from '../entities/entity.js'
 import { World } from '../world/world.js'
 import { stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
@@ -26,14 +26,20 @@ export function formatTime(t){
 
 function log(who, msg){
 	if(!GAMERULES.commandlogs)return
-	chat(prefix(who, 1)+msg, LIGHT_GREY + ITALIC)
+	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC)
 }
 
 function selector(a, who){
 	if(!a)throw 'Selector missing!'
 	if(a[0] == '@'){
 		if(a[1] == 's')return who instanceof Entity ? [who] : []
-		if(a[1] == 'e')throw "@e unimplemented"
+		if(a[1] == 'e')return [...entityMap.values()]
+		if(a[1] == 'n'){
+			if(!who || !entityMap.delete(who._id))return [...entityMap.values()]
+			const a = [...entityMap.values()]
+			entityMap.set(who._id, who)
+			return a
+		}
 		const candidates = [...players.values()]
 		if(!candidates.length)throw "No targets matched selector"
 		if(a[1] == 'a')return candidates

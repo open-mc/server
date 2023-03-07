@@ -2,7 +2,7 @@ import { BlockIDs, Blocks } from '../blocks/block.js'
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
 import { MOD, TPS } from '../config.js'
-import { entityMap } from '../entities/entity.js'
+import { Entities, entityMap } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
 import { blockevent, cancelblockevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, place, placeat, right, up } from './ant.js'
 
@@ -83,6 +83,7 @@ function playerMovePacket(player, buf){
 		}else if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
 		if(!item) break top
 		jump(l << 16 >> 16, l >> 16)
+		b = peek()
 		{
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
@@ -195,6 +196,16 @@ function altInventoryPacket(player, buf){
 	player.itemschanged([36, slot])
 }
 
+function dropItemPacket(player, buf){
+	// Right-clicked on a slot in their inventory
+	const e = Entities.item(player.x, player.y + player.head - 0.5)
+	e.item = player.inv[player.selected]
+	e.dx = player.f > 0 ? 7 : -7
+	e.place(player.world)
+	player.inv[player.selected] = null
+	player.itemschanged([player.selected])
+}
+
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	12: openContainerPacket,
@@ -202,6 +213,7 @@ export const codes = Object.assign(new Array(256), {
 	15(player, _){player.interface = null},
 	32: inventoryPacket,
 	33: altInventoryPacket,
+	34: dropItemPacket
 })
 export function onstring(player, text){
 	if(!(text = text.trimEnd())) return

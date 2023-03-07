@@ -7,12 +7,13 @@ let modified = false
 export let entityindex
 for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entityindex = ''+a).split('\n'))){
 	let [name, ...history] = a.split(' ')
-	let E = Entities[name]
+	const E = Entities[name]
 	if(!E){EntityIDs.push(Entities.player);continue}
 	let sd = typeToJson(E.savedata)
 	if((history[history.length-1] || 'null') == sd){history.pop()}else{modified = true}
 	E.savedatahistory = history.mutmap(jsonToType)
-	E.id = EntityIDs.length
+	if('id' in E) E.otherIds ? E.otherIds.push(EntityIDs.length) : E.otherIds = [EntityIDs.length]
+	else E.id = EntityIDs.length
 	EntityIDs.push(null)
 }
 for(const i in Entities){
@@ -25,6 +26,7 @@ for(const i in Entities){
 	}
 	if(!Object.hasOwn(E, 'id')) E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), modified = true
 	EntityIDs[E.id] = Entities[i] = (a, b) => new E(a, b)
+	if(E.otherIds) for(const i of E.otherIds) EntityIDs[i] = EntityIDs[E.id]
 	E.className = i
 	E.constructor = Entities[i]
 	// Copy static props to prototype

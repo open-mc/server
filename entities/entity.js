@@ -169,6 +169,9 @@ export class Entity{
 	static groundDrag = .0000244
 	static airDrag = 0.667
 	static width = 0.5; static height = 1; static head = 0.5
+	static collisionTestPadding = 0
+	static gx = 1
+	static gy = 1
 }
 
 Object.setPrototypeOf(Entity.prototype, null)

@@ -1,6 +1,6 @@
 import { Blocks } from "../../blocks/block.js"
 import { Entities } from "../../entities/entity.js"
-import { peek, place, summon } from "../../misc/ant.js"
+import { peek, place, up, summon, getY } from "../../misc/ant.js"
 import { Item, Items } from "../item.js"
 
 Items.tnt = class extends Item{
@@ -8,7 +8,13 @@ Items.tnt = class extends Item{
 }
 
 Items.end_crystal = class extends Item{
-	place(){ summon(Entities.end_crystal); super.use() }
+	interact(b){
+		if(b.constructor != Blocks.obsidian && b.constructor != Blocks.bedrock)
+		up()
+		if(peek().constructor != Blocks.air) return
+		summon(Entities.end_crystal)
+		super.use()
+	}
 }
 
 Items.flint_and_steel = class extends Item{

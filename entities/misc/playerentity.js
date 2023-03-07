@@ -8,7 +8,7 @@ import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 
 Entities.player = class Player extends ChunkLoader{
-	inv = Array.null(36)
+	inv = Array.null(37)
 	items = [null, null, null, null, null, null]
 	health = 20
 	selected = 0
@@ -72,7 +72,7 @@ Entities.player = class Player extends ChunkLoader{
 	}
 	static savedata = {
 		health: Byte,
-		inv: [Item, 36],
+		inv: [Item, 37],
 		items: [Item, 6],
 		selected: Byte,
 		skin: Uint8Array

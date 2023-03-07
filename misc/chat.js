@@ -1,5 +1,7 @@
+import { CONFIG } from '../config.js'
 import { server } from '../index.js'
 import { players } from '../world/index.js'
+import fetch from 'node-fetch'
 
 export const BLACK = 0
 export const DARK_RED = 1
@@ -35,6 +37,13 @@ export function chat(msg, style = 15){
 	if(style&UNDERLINE)a+='4;'
 	a += (style & 8 ? 82 : 30) + (style & 15) //30-37, 90-97
 	console.log('\x1b[' + a + 'm' + (style&STRIKETHROUGH?msg.replace(/[\x20-\uffff]/g,'$&\u0336'):msg).replace(/[\x00-\x1f\x7f]/g, a => a == '\x7f' ? '\u2421' : String.fromCharCode(0x2400 + a.charCodeAt())) + '\x1b[m')
+	if(CONFIG.webhook && msg.length < 1994){
+		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
+			avatar_url: CONFIG.icon,
+			username: CONFIG.name,
+			content: style ^ 15 ? '_**' + msg + '**_' : '`' + msg + '`'
+		})}).catch(e=>null)
+	}
 	msg = (style<16?'0'+style.toString(16):style.toString(16)) + msg
 	for(const {sock} of players.values())sock.send(msg)
 }
