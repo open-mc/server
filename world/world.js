@@ -42,7 +42,7 @@ export class World extends Map{
 			return ch
 		}
 		let pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(Function.prototype).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
-			let ch = new Chunk(buf, this)
+			let ch; try{ch = new Chunk(buf, this)}catch(e){ch = Chunk.of(Blocks.air,cx,cy,this)}
 			ch.players = pr.players
 			for(const pl of ch.players){
 				if(floor(pl._x) >> 6 == cx && floor(pl._y) >> 6 == cy && pl._w == this){

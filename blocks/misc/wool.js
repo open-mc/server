@@ -42,7 +42,7 @@ Blocks.light_blue_wool = class extends Wool{
 Blocks.blue_wool = class extends Wool{
 	static color = 'blue'
 }
-Blocks.purle_wool = class extends Wool{
+Blocks.purple_wool = class extends Wool{
 	static color = 'purple'
 }
 Blocks.magenta_wool = class extends Wool{

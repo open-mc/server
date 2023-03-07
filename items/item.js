@@ -1,4 +1,5 @@
-import { blockevent, place } from "../misc/ant.js"
+import { Entity } from "../entities/entity.js"
+import { blockevent, place, summon } from "../misc/ant.js"
 
 export class Item{
 	constructor(count = 1){
@@ -10,10 +11,8 @@ export class Item{
 	static burns = false
 	static maxStack = 64
 	breaktime(block){ return block.breaktime }
-	interact(b){
-		if(!b) return
-		place(b)
-		blockevent(3)
+	use(b = true){
+		if(b) blockevent(3)
 		this.count--
 	}
 }

@@ -8,7 +8,7 @@ parentPort?.on('message', async function({x, y, d, seed, name = 'default'}){
 	parentPort.postMessage({key: x+' '+y+' '+d, buf: toPacket(x, y, chunk)})
 })
 async function all(o){for(let i in o)o[i]=await o[i];return o}
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace('file://','')
+globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
 
 let i = 0
 for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n')){

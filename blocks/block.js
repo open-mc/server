@@ -7,7 +7,6 @@ export class Block{
 	static tool = ''
 	static savedata = null
 	drops(i){ return null }
-	interact(i){}
 }
 Object.setPrototypeOf(Block.prototype, null)
 export const Blocks = Object.create(null)

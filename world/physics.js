@@ -13,7 +13,7 @@ export function stepEntity(e){
 		e.dy = e.dy * e.airDrag ** dt
 		e.dx += dt * e.world.gx
 	}
-	e.dx = e.dx * e.groundDrag ** dt
+	e.dx = e.dx * (e.state & 0x10000 ? e.groundDrag : e.airDrag / 2) ** dt
 }
 
 export const EPSILON = .0001

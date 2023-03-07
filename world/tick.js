@@ -65,6 +65,7 @@ export function tick(){
 		if(!e.chunk)continue
 		if(e.mv) moved(e)
 		e.tick?.()
+		if(!e.world) continue
 		stepEntity(e)
 		const x0 = e.x - e.width, x1 = e.x + e.width
 		const y0 = e.y, y1 = e.y + e.height
@@ -72,8 +73,8 @@ export function tick(){
 		const cy0 = floor(y0) >>> 6, cy1 = ceil((e.y + e.height + 32) / 64) & 67108863
 		for(let cx = cx0; cx != cx1; cx = cx + 1 & 67108863){
 			for(let cy = cy0; cy != cy1; cy = cy + 1 & 67108863){
-				const chunk = e.chunk.x == cx && e.chunk.y == cy ? e.chunk : e.world.get(cx+cy*67108864)
-				if(!chunk) continue
+				const chunk = e.chunk && e.chunk.x == cx && e.chunk.y == cy ? e.chunk : e.world.get(cx+cy*67108864)
+				if(!chunk || !chunk.tiles) continue
 				for(const e2 of chunk.entities){
 					if(e2._id <= e._id || e2.x + e2.width < x0 || e2.x - e2.width > x1 || e2.y + e2.height < y0 || e2.y > y1) continue
 					e.touch?.(e2)

@@ -2,7 +2,6 @@ import { DataWriter } from '../utils/data.js'
 export let entityMap = new Map(), i = -1
 export class Entity{
 	constructor(x, y){
-		if(x !== x || y !== y)throw new TypeError('x and y must be a number')
 		let f = floor(x)
 		x = (f >> 0) + (x - f || 0)
 		f = floor(y)
@@ -114,10 +113,15 @@ export class Entity{
 			changed.push(i)
 			if(!stack.count) break
 		}
+		this.itemschanged(changed)
+	}
+	itemschanged(slots){
 		const buf = new DataWriter()
 		buf.byte(32)
 		buf.uint32(this._id); buf.short(this._id / 4294967296)
-		for(const c of changed) buf.byte(c), buf.item(this.inv[c])
+		for(const c of slots) 
+			if(c > 127) buf.byte(c), buf.item(this.items[c&127])
+			else buf.byte(c), buf.item(this.inv[c])
 		if(this.chunk)
 			for(const pl of this.chunk.players) buf.pipe(pl.sock)
 		else if(this.sock) buf.pipe(this.sock)
@@ -147,42 +151,25 @@ export class Entity{
 			else this.sock.send(buf)
 		}
 	}
-	event(ev, id = (entityEventId = entityEventId + 1 | 0) || (entityEventId = 1)){
+	event(ev){
 		if(!this.chunk){
 			if(this.sock){
 				this.sock.ebuf.short(ev & 0xff)
 				this.sock.ebuf.uint32(this._id); this.sock.ebuf.short(this._id / 4294967296 | 0)
-				this.sock.ebuf.int(id)
 			}
-			return id
+			return
 		}
 		for(const {sock: {ebuf}} of this.chunk.players){
 			ebuf.short(ev & 0xff)
 			ebuf.uint32(this._id); ebuf.short(this._id / 4294967296 | 0)
-			ebuf.int(id)
 		}
-		return id
-	}
-	cancelevent(id){
-		if(!this.chunk){
-			if(this.sock){
-				this.sock.ebuf.short(0xff)
-				this.sock.ebuf.int(id)
-			}
-			return id
-		}
-		for(const {sock: {ebuf}} of this.chunk.players){
-			ebuf.short(0xff)
-			ebuf.int(id)
-		}
-		return id
 	}
 	static savedata = null
 	static maxHealth = 20
 	static groundDrag = .0000244
 	static airDrag = 0.667
+	static width = 0.5; static height = 1; static head = 0.5
 }
-let entityEventId = 0
 
 Object.setPrototypeOf(Entity.prototype, null)
 export const Entities = Object.create(null)

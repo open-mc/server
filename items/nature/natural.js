@@ -1,6 +1,7 @@
 import { Blocks } from '../../blocks/block.js'
+import { place } from '../../misc/ant.js'
 import { Item, Items } from '../item.js'
 
 Items.grass = class Grass extends Item{
-	interact(){ super.interact(Blocks.grass) }
+	place(){ place(Blocks.grass); super.use(true) }
 }

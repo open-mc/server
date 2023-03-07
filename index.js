@@ -205,7 +205,7 @@ async function play(sock, username, skin){
 	sock.tbuf = new DataWriter()
 	sock.tbuf.byte(8)
 	sock.on('close', close)
-	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e))
+	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e.stack))
 }
 
 server.sock = {permissions: 3}
@@ -252,7 +252,7 @@ const message = function(_buf, isBinary){
 	if(!codes[code]) return
 	try{
 		codes[code].call(this, player, buf)
-	}catch(e){ this.logMalicious('Caused an error: \n'+e) }
+	}catch(e){ this.logMalicious('Caused an error: \n'+e.stack) }
 }
 
 globalThis.exiting = false

@@ -8,6 +8,8 @@ import { World } from '../world/world.js'
 import { stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
 import { DataWriter } from '../utils/data.js'
+import { goto, place } from './ant.js'
+import { Blocks } from '../blocks/block.js'
 
 export function formatTime(t){
 	t /= 1000
@@ -81,26 +83,14 @@ export const commands = {
 		if(players.length>1)log(this, `Teleported ${players.length} entities to ${target.name}`)
 		else log(this, `Teleported ${players[0].name} to ${target.name}`)
 	},
-	tp(a, x, y, d = this.world || 'overworld'){
-		if(!y)y=x,x=a,a='@s'
-		if(!x || !y)throw 'Invalid coordinates'
-		if(typeof d == 'string')d = Dimensions[d]
-		if(!(d instanceof World))throw 'Invalid dimension'
+	tp(a, _x, _y, d = this.world || 'overworld'){
+		if(!_y)_y=_x,_x=a,a='@s'
 		const players = selector(a, this)
-    if(x[0] == "^" && y[0] == "^"){
-			x = (+x.slice(1))/180*PI - this.facing
-			y = +y.slice(1);
-			[x, y] = [this.x + sin(x) * y, this.y + cos(x) * y]
-		}else{
-			if(x[0] == "~")x = this.x + +x.slice(1)
-			else x -= 0
-			if(y[0] == "~")y = this.y + +y.slice(1)
-			else y -= 0
-		}
+    const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(x != x || y != y)throw 'Invalid coordinates'
-		for(const pl of players)pl.transport(x, y, d), pl.rubber()
-		if(players.length>1)log(this, `Teleported ${players.length} entities to (${x}, ${y}) in the ${d.id}`)
-		else log(this, `Teleported ${players[0].name} to (${x}, ${y}) in the ${d.id}`)
+		for(const pl of players)pl.transport(x, y, w), pl.rubber()
+		if(players.length>1)log(this, `Teleported ${players.length} entities to (${x}, ${y}) in the ${w.id}`)
+		else log(this, `Teleported ${players[0].name} to (${x}, ${y}) in the ${w.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')
@@ -123,30 +113,43 @@ export const commands = {
 			}
 		}
 	},
+	summon(type, _x = '~', _y = '~', data = '{}', d = this.world || 'overworld'){
+		const {x, y, w} = parseCoords(_x, _y, d, this)
+		if(!(type in Entities))throw 'No such entity: ' + type
+		const e = Entities[type](x, y)
+		snbt(data, 0, e)
+		e.place(w)
+	},
+	setblock(_x = '~', _y = '~', type, data = '{}', d = this.world || 'overworld'){
+		const {x, y, w} = parseCoords(_x, _y, d, this)
+		if(!(type in Blocks))throw 'No such entity: ' + type
+		const b = Blocks[type]()
+		snbt(data, 0, b)
+		goto(x, y, w)
+		place(b)
+	},
 	clear(sel, _item, _max = '2147483647'){
 		const Con = _item && Items[_item]?.constructor || Item
 		let cleared = 0, es = 0
 		for(const e of selector(sel, this)){
 			let max = +_max
-			const buf = new DataWriter()
-			buf.byte(32)
-			buf.uint32(e._id); buf.short(e._id / 4294967296 | 0)
+			const changed = []
 			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
 				const item = e.inv[i]
 				if(!item || !(item instanceof Con)) continue
-				buf.byte(i)
-				if(item.count <= max)max -= item.count, e.inv[i] = null, buf.item(null)
-				else item.count -= max, max = 0, buf.item(item)
+				changed.push(i)
+				if(item.count <= max)max -= item.count, e.inv[i] = null
+				else item.count -= max, max = 0
 			}
 			if(e.items) for(let i = 0; max && i < e.items.length; i++){
 				const item = e.items[i]
 				if(!item || !(item instanceof Con)) continue
-				buf.byte(i | 128)
-				if(item.count <= max)max -= item.count, e.items[i] = null, buf.item(null)
-				else item.count -= max, max = 0, buf.item(item)
+				changed.push(i | 128)
+				if(item.count <= max)max -= item.count, e.items[i] = null
+				else item.count -= max, max = 0
 			}
 			cleared += +_max - max; es++
-			e.emit(buf)
+			e.itemschanged(changed)
 		}
 		log(this, `Cleared a total of ${cleared} items from ${es} entities`)
 	},
@@ -167,6 +170,7 @@ export const commands = {
 	},
 	time(time, d = this.world || 'overworld'){
 		if(typeof d == 'string')d = Dimensions[d]
+		if(!d) throw 'Invalid dimension'
 		if(!time){
 			return `This dimension is on tick ${d.tick}\nThe day is ${floor((d.tick + 7000) / 24000)} and the time is ${floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
 		}else if(time[0] == '+' || time[0] == '-'){
@@ -239,3 +243,80 @@ export const anyone_help = {
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
+
+const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
+const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
+function snbt(s, i, t){
+	if(typeof t == 'object'){
+		if(s[i] != '{') throw 'Expected dict literal'
+		while(s[++i] == ' ');
+		if(s[i] == '}') return
+		while(true){
+			ID.lastIndex = i
+			const [k] = s.match(ID)
+			if(!k.length) throw 'expected prop name in dict declaration'
+			i = ID.lastIndex - 1
+			while(s[++i] == ' ');
+			if(s[i] != ':' && s[i] != '=') throw 'expected : or = after prop name in snbt'
+			while(s[++i] == ' ');
+			if(!Object.hasOwn(t, k) && !(k in t && Object.hasOwn(t, '_'+k))) throw 'No property named '+k
+			switch(typeof t[k]){
+				case "number":
+				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
+				NUM.lastIndex = i
+				t[k] = +s.match(NUM)[0]
+				i = NUM.lastIndex
+				break
+				case "boolean":
+				BOOL.lastIndex = i
+				switch(s.match(BOOL)[0][0]){
+					case 't': case 'T': case '1':	t[k] = true; break
+					case 'f': case 'F': case '0': t[k] = false; break
+					default: throw 'Expected boolean for key '+k
+				}
+				i = BOOL.lastIndex
+				case "string":
+				STRING.lastIndex = i
+				const a = s.match(STRING)
+				if(!a) throw 'Expected string for key '+k
+				t[k] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
+				break
+				case "object":
+				if(t[k]) i = snbt(s, i, t[k])
+				default: throw 'Object does not have key '+k
+			}
+			i--
+			while(s[++i] == ' ');
+			if(i >= s.length || s[i] == '}') break
+			else if(s[i] != ',' && s[i] != ';') throw 'expected , or ; after prop declaration in snbt'
+			while(s[++i] == ' ');
+		}
+	}else if(Array.isArray(t)){
+		throw 'unimplemented'
+	}
+}
+
+function safeAssign(t, v){
+	if(typeof v != 'object') return
+	for(let k in v){
+		if(!Object.hasOwn(t, k) || typeof v[k] != typeof t[k]) continue
+		if(typeof t[k] == 'object') safeAssign(t[k], v[k])
+		else t[k] = v[k]
+	}
+}
+function parseCoords(x, y, d, t){
+	let w = typeof d == 'string' ? Dimensions[d] : d
+	if(!w) throw 'No such dimension'
+	if(x[0] == "^" && y[0] == "^"){
+		x = (+x.slice(1))/180*PI - t.facing
+		y = +y.slice(1);
+		[x, y] = [t.x + sin(x) * y, t.y + cos(x) * y]
+	}else{
+		if(x[0] == "~")x = t.x + +x.slice(1)
+		else x -= 0
+		if(y[0] == "~")y = t.y + +y.slice(1)
+		else y -= 0
+	}
+	if(x != x || y != y) throw 'Invalid coordinates'
+	return {x, y, w}
+}

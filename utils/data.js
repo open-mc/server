@@ -7,6 +7,10 @@ const CHARSET = '0123456789ABCDEF'
 export const decoder = new TextDecoder()
 export const encoder = new TextEncoder()
 
+Array.prototype.freeze = function(len = this.length){
+	Object.defineProperty(this, 'length', {value: len, writable: false, configurable: true})
+}
+
 export class DataReader extends DataView{
 	constructor(arr){
 		if(arr instanceof ArrayBuffer)super(arr)
@@ -29,8 +33,6 @@ export class DataReader extends DataView{
 			case Item: return this.item(target)
 		}
 		if(Array.isArray(type)){
-			target = target || []
-			if(target.length)target.length = 0
 			let len = 0
 			if(type.length > 1){
 				len = type[1] >>> 0
@@ -41,7 +43,10 @@ export class DataReader extends DataView{
 					else len = this.getUint16(this.i) & 0x3FFF, this.i += 2
 				}else this.i++
 			}
-			while(len--)target.push(this.read(type[0]))
+			target = target || []; target.length = len
+			Object.seal(target)
+			let i = 0
+			while(i < len)target[i++] = this.read(type[0])
 			return target
 		}else{
 			const obj = target || {}

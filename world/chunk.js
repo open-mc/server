@@ -1,4 +1,4 @@
-import { BlockIDs } from '../blocks/block.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
 import { EntityIDs } from '../entities/entity.js'
 import { DataReader } from '../utils/data.js'
 
@@ -76,6 +76,7 @@ export class Chunk{
 		//parse block entities
 		for(j=0;j<4096;j++){
 			const block = this.tiles[j]
+			if(!block){this.tiles[j] = Blocks.air; continue}
 			if(!block.savedata)continue
 			this.tiles[j] = buf.read(block.savedatahistory[buf.flint()] || block.savedata, block())
 		}
@@ -159,7 +160,7 @@ export class Chunk{
 		return buf
 	}
 	static of(block, x, y, w){
-		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id)), w)
+		return new Chunk(new DataReader(Uint8Array.of(16, x << 6 >>> 30, x >>> 16, x >>> 8, x, y << 6 >>> 30, y >>> 16, y >>> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id)), w)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
 }

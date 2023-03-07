@@ -6,6 +6,7 @@ Entities.item = class ItemEntity extends Entity{
 	item = null
 	static width = 0.25
 	static height = 0.25
+	static head = 0.125
 	static savedata = {item: Item}
 	touch(e){
 		if(!this.item) return
