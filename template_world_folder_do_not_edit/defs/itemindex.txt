@@ -5,6 +5,14 @@ coal
 iron
 emerald
 diamond
+diamond_shovel
+diamond_axe
+diamond_pickaxe
+grass
+oak_planks
+oak_log
+netherrack
+obsidian
 sandstone
 cut_sandstone
 smooth_sandstone
@@ -13,4 +21,6 @@ red_sandstone
 cut_red_sandstone
 chiseled_red_sandstone
 smooth_red_sandstone
-oak_log
+tnt
+end_crystal
+flint_and_steel
