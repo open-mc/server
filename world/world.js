@@ -3,6 +3,7 @@ import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { DataWriter } from '../utils/data.js'
 import { entityMap } from '../entities/entity.js'
+import { Blocks } from '../blocks/block.js'
 export class World extends Map{
 	constructor(id){
 		super()

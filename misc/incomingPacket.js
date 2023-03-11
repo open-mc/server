@@ -80,9 +80,10 @@ function playerMovePacket(player, buf){
 				return
 			}
 			if(!l) break top
-		}else if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
+		}
 		if(!item) break top
 		jump(l << 16 >> 16, l >> 16)
+		if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
 		b = peek()
 		{
 			const x = getX(), y = getY()

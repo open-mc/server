@@ -9,7 +9,7 @@ Items.tnt = class extends Item{
 
 Items.end_crystal = class extends Item{
 	interact(b){
-		if(b.constructor != Blocks.obsidian && b.constructor != Blocks.bedrock)
+		if(b.constructor != Blocks.obsidian && b.constructor != Blocks.bedrock) return
 		up()
 		if(peek().constructor != Blocks.air) return
 		summon(Entities.end_crystal)

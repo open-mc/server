@@ -13,10 +13,11 @@ for(const a of await fs.readFile(WORLD + 'defs/blockindex.txt').then(a=>(blockin
 	let sd = typeToJson(B.savedata)
 	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
 	B.savedatahistory = history.mutmap(jsonToType)
-	if('id' in B) B.otherIds ? B.otherIds.push(BlockIDs.length) : B.otherIds = [BlockIDs.length]
+	if(Object.hasOwn(B, 'id')) Object.hasOwn(B, 'otherIds') ? B.otherIds.push(BlockIDs.length) : B.otherIds = [BlockIDs.length]
 	else B.id = BlockIDs.length
 	BlockIDs.push(null)
 }
+
 for(const i in Blocks){
 	const B = Blocks[i]
 	// Force extend
@@ -25,6 +26,7 @@ for(const i in Blocks){
 		Object.setPrototypeOf(B, Block)
 		Object.setPrototypeOf(B.prototype, Block.prototype)
 	}
+	if(!B.prototype || Object.hasOwn(B.prototype, 'prototype')){ console.warn('Reused class for ' + B.prototype.className + ' (by ' + i + ')'); continue }
 	if(!Object.hasOwn(B, 'id')) B.id = BlockIDs.length, B.savedatahistory = [], BlockIDs.push(null), modified = true
 	const shared = new B
 	BlockIDs[B.id] = Blocks[i] = B.savedata ? () => new B : Function.returns(shared)
@@ -40,7 +42,6 @@ for(const i in Blocks){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	if(proto == B){ console.warn('Reused class for ' + B.prototype.className + ' (by ' + i + ')'); continue }
 	Object.defineProperty(B, 'name', {value: i})
 	
 	Object.setPrototypeOf(Blocks[i], B.prototype)
