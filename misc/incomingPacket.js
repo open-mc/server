@@ -198,7 +198,7 @@ function altInventoryPacket(player, buf){
 }
 
 function dropItemPacket(player, buf){
-	// Right-clicked on a slot in their inventory
+	if(!player.inv[player.selected]) return
 	const e = Entities.item(player.x, player.y + player.head - 0.5)
 	e.item = player.inv[player.selected]
 	e.dx = player.f > 0 ? 7 : -7

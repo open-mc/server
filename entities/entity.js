@@ -1,3 +1,4 @@
+import { Item } from '../items/item.js'
 import { DataWriter } from '../utils/data.js'
 export let entityMap = new Map(), i = -1
 export class Entity{
@@ -120,8 +121,8 @@ export class Entity{
 		buf.byte(32)
 		buf.uint32(this._id); buf.short(this._id / 4294967296)
 		for(const c of slots) 
-			if(c > 127) buf.byte(c), buf.item(this.items[c&127])
-			else buf.byte(c), buf.item(this.inv[c])
+			if(c > 127) buf.byte(c), Item.encode(buf, this.items[c&127])
+			else buf.byte(c), Item.encode(buf, this.inv[c])
 		if(this.chunk)
 			for(const pl of this.chunk.players) buf.pipe(pl.sock)
 		else if(this.sock) buf.pipe(this.sock)

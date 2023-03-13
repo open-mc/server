@@ -10,7 +10,10 @@ Entities.item = class ItemEntity extends Entity{
 	static head = 0.125
 	static savedata = {item: Item}
 	touch(e){
-		if(!this.item) return
+		if(!this.item){
+			this.remove()
+			return
+		}
 		if(e instanceof ItemEntity && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
 			e.remove()
 			this.item.count += e.item.count
