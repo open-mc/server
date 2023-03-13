@@ -12,8 +12,10 @@ for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(iteminde
 	let sd = typeToJson(I.savedata)
 	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
 	I.savedatahistory = history.mutmap(jsonToType)
-	if(Object.hasOwn(I, 'id')) Object.hasOwn(I, 'otherIds') ? I.otherIds.push(ItemIDs.length) : I.otherIds = [ItemIDs.length]
-	else I.id = ItemIDs.length
+	if(Object.hasOwn(I, 'id'))
+		if(I.className != name) Items[name] = class extends I{static id = ItemIDs.length; static className = name}
+		else Object.hasOwn(I, 'otherIds') ? I.otherIds.push(ItemIDs.length) : I.otherIds = [ItemIDs.length]
+	else I.id = ItemIDs.length, I.className = name
 	ItemIDs.push(null)
 }
 for(const i in Items){
@@ -24,12 +26,10 @@ for(const i in Items){
 		Object.setPrototypeOf(I, Item)
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
-	if(!I.prototype || Object.hasOwn(I.prototype, 'prototype')){ console.warn('Reused class for ' + I.prototype.className + ' (by ' + i + ')'); continue }
-	if(!Object.hasOwn(I, 'id')) I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), modified = true
-	ItemIDs[I.id] = Items[i] = c => new I(c)
+	if(!Object.hasOwn(I, 'id'))
+		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = i, modified = true
+	I.constructor = ItemIDs[I.id] = Items[i] = c => new I(c)
 	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
-	I.className = i
-	I.constructor = Items[i]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
 	let proto = I
@@ -39,7 +39,6 @@ for(const i in Items){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	Object.defineProperty(I, 'name', {value: i})
 	Object.setPrototypeOf(Items[i], I.prototype)
 	Object.defineProperties(Items[i], Object.getOwnPropertyDescriptors(new I(1)))
 }

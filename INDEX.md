@@ -45,7 +45,7 @@ It is recommended that you enable the option to render whitespace characters in 
 1. Use tabs. If I see 2+ spaces next to each other to form a tab, I'll hunt you down and report you to the police as a psycopath. TABS EXIST FOR A REASON.
 2. Proper, even, but not excessive, spacing.
 3. No `;` semicolons except when strictly necessary
-4. If your single-line statements wrap around or go past the edge of the screen, they're too long. Ideally they should have a gap to the edge and be no more than ~120 cols.
+4. If your single-line statements wrap around or go past the edge of the screen, they're too long. Ideally they should have a gap to the edge and be no more than ~100 cols.
 5. Please use single-line if and while syntax when you deem it appropriate
 6. useCamelCase, it's pretty ;)
 	- Exception: names that appear in-game, such as block namespace IDs (e.g grass_block)
@@ -72,7 +72,7 @@ function  test( b ,x= 1 ) {
     {
       return true;
     }
-    if(reallyLongLineThatIsHardToRead(0 & also(painful.to(lookAt)))){thisLineIsGoingPast() & wrappedAround & isDefinitelyLongerThan(120*characters) => thisIsBad, DontDoThis()}
+    if(reallyLongLineThatIsHardToRead(0 & also(painful.to(lookAt)))){thisLineIsGoingPast() & wrappedAround & isDefinitelyLongerThan(100*characters) => thisIsBad, DontDoThis()}
 }
 //DO DO:
 //1 space after every comma, e.g: a, b
@@ -86,7 +86,7 @@ function test(b, x = 1){
 	let count = 1
 	if (count == x)return true
 	if(easyToRead(0 & also(nice.to(lookAt))))
-		thisIsFine() & wrapped & notLongerThan(120*chars) => code.shouldBe(likeThis)
+		thisIsFine() & wrapped & notLongerThan(100*chars) => code.shouldBe(likeThis)
 }
 ```
 
