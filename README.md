@@ -1,5 +1,5 @@
 ```sh
-git clone https://github.com/openmc2d/server
+git clone https://github.com/open-mc/server
 cd server
 npm i
 node .
@@ -20,7 +20,7 @@ Once it has finished, it will show you where the certificate and private key are
 
 Enter those paths into the `key` and `pem` entries in the `world/properties.yaml` file respectively, and restart the server.
 
-If you want to connect without HTTPS, you can run the [client](https://github.com/openmc2d/client) locally
+If you want to connect without HTTPS, you can run the [client](https://github.com/open-mc/client) locally
 
 # Updating
 
