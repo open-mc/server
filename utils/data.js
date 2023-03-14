@@ -12,6 +12,7 @@ export class DataReader extends DataView{
 		this.i = 0
 	}
 	read(type, target){
+		if(!type) return target
 		switch(type){
 			case Uint8: return this.getUint8(this.i++)
 			case Int8: return this.getInt8(this.i++)
@@ -114,6 +115,7 @@ export class DataWriter extends Array{
 		this.i = 0
 	}
 	write(type, v){
+		if(!type) return
 		if(this.i > this.cur.byteLength - (type < 7 ? 1 << (type >> 1) : 4))this.allocnew()
 		let buf = this.cur
 		switch(type){

@@ -132,9 +132,10 @@ export class Entity{
 	moved(oldx, oldy, oldw){}
 	removed(){}
 	rubber(){}
-	damage(amount){
+	damage(amount, dealer){
 		this.health -= amount
-		if(this.health < 0){
+		this.damageDealt?.(amount, dealer)
+		if(this.health <= 0){
 			this.died()
 			this.remove()
 		}else if(this.health > this.maxHealth){

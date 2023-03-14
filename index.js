@@ -219,7 +219,7 @@ const close = async function(){
 	const buf = new DataWriter()
 	buf.double(player.x)
 	buf.double(player.y)
-	buf.string(player.world.id)
+	buf.string(player.world?.id ?? 'overworld')
 	buf.short(player.state)
 	buf.float(player.dx)
 	buf.float(player.dy)

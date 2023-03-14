@@ -26,7 +26,16 @@ function playerMovePacket(player, buf){
 			player.emit(res)
 		}
 		const x = buf.float(), y = buf.float()
-		if(x != x){ player.f = y || 0; break top }
+		if(x != x){
+			player.f = y || 0
+			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
+			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.players.includes(player)){
+				//hit e
+				const itm = player.inv[player.selected]
+				e.damage(itm?.damage?.(e) ?? 1, player)
+			}
+			break top
+		}
 		const bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
 		goto(bx, by, player.world)
 		const reach = sqrt(x * x + y * y)
@@ -201,7 +210,7 @@ function dropItemPacket(player, buf){
 	if(!player.inv[player.selected]) return
 	const e = Entities.item(player.x, player.y + player.head - 0.5)
 	e.item = player.inv[player.selected]
-	e.dx = player.f > 0 ? 7 : -7
+	e.dx = player.dx + player.f > 0 ? 7 : -7
 	e.place(player.world)
 	player.inv[player.selected] = null
 	player.itemschanged([player.selected])

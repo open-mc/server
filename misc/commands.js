@@ -66,6 +66,9 @@ export function err(e){
 	stack = e.stack
 	return e + '\nType /stacktrace to view full stack trace'
 }
+
+const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
+
 export const commands = {
 	list(){
 		let a = "Online players"
@@ -123,14 +126,23 @@ export const commands = {
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(!(type in Entities))throw 'No such entity: ' + type
 		const e = Entities[type](x, y)
-		snbt(data, 0, e)
+		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
 		e.place(w)
+	},
+	mutate(sel, data){
+		let i = 0
+		for(const e of selector(sel, this)){
+			i++
+			snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
+			if(e.rubber) e.rubber()
+		}
+		return 'Successfully mutated '+i+' entities'
 	},
 	setblock(_x = '~', _y = '~', type, data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(!(type in Blocks))throw 'No such entity: ' + type
 		const b = Blocks[type]()
-		snbt(data, 0, b)
+		snbt(data, 0, b, b.savedata)
 		goto(x, y, w)
 		place(b)
 	},
@@ -252,7 +264,7 @@ Object.setPrototypeOf(help, null)
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
 const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
-function snbt(s, i, t){
+function snbt(s, i, t, T1, T2){
 	if(typeof t == 'object'){
 		if(s[i] != '{') throw 'Expected dict literal'
 		while(s[++i] == ' ');
@@ -265,15 +277,16 @@ function snbt(s, i, t){
 			while(s[++i] == ' ');
 			if(s[i] != ':' && s[i] != '=') throw 'expected : or = after prop name in snbt'
 			while(s[++i] == ' ');
-			if(!Object.hasOwn(t, k) && !(k in t && Object.hasOwn(t, '_'+k))) throw 'No property named '+k
-			switch(typeof t[k]){
-				case "number":
+			const T = T2[k] || T1[K]
+			switch(T){
+				case Int8: case Int16: case Int32: case Float32:
+				case Uint8: case Uint16: case Uint32: case Float64:
 				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
 				NUM.lastIndex = i
-				t[k] = +s.match(NUM)[0]
+				t[k] = T(+s.match(NUM)[0])
 				i = NUM.lastIndex
 				break
-				case "boolean":
+				case Boolean:
 				BOOL.lastIndex = i
 				switch(s.match(BOOL)[0][0]){
 					case 't': case 'T': case '1':	t[k] = true; break
@@ -281,15 +294,14 @@ function snbt(s, i, t){
 					default: throw 'Expected boolean for key '+k
 				}
 				i = BOOL.lastIndex
-				case "string":
+				case String:
 				STRING.lastIndex = i
 				const a = s.match(STRING)
 				if(!a) throw 'Expected string for key '+k
 				t[k] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
 				break
-				case "object":
-				if(t[k]) i = snbt(s, i, t[k])
-				default: throw 'Object does not have key '+k
+				case undefined: case null: throw 'Object does not have key '+k
+				default: i = snbt(s, i, t[k])
 			}
 			i--
 			while(s[++i] == ' ');
@@ -298,7 +310,45 @@ function snbt(s, i, t){
 			while(s[++i] == ' ');
 		}
 	}else if(Array.isArray(t)){
-		throw 'unimplemented'
+		if(s[i] != '[') throw 'Expected array literal'
+		while(s[++i] == ' ');
+		let [T, l = NaN] = T1 || T2
+		if(s[i] == ']' && !l) return void(t.length=0);
+		let j = -1
+		while(true){
+			if(++j == l) throw 'Too many elements in array literal'
+			switch(T){
+				case Int8: case Int16: case Int32: case Float32:
+				case Uint8: case Uint16: case Uint32: case Float64:
+				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
+				NUM.lastIndex = i
+				t[j] = T(+s.match(NUM)[0])
+				i = NUM.lastIndex
+				break
+				case Boolean:
+				BOOL.lastIndex = i
+				switch(s.match(BOOL)[0][0]){
+					case 't': case 'T': case '1':	t[j] = true; break
+					case 'f': case 'F': case '0': t[j] = false; break
+					default: throw 'Expected boolean for key '+k
+				}
+				i = BOOL.lastIndex
+				case String:
+				STRING.lastIndex = i
+				const a = s.match(STRING)
+				if(!a) throw 'Expected string for key '+k
+				t[j] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
+				break
+				case undefined: case null: throw 'Invalid array type (weird)'
+				default: i = snbt(s, i, t[j])
+			}
+			if(j < l) throw 'Not enough elements in array literal'
+			i--
+			while(s[++i] == ' ');
+			if(i >= s.length || s[i] == '}') break
+			else if(s[i] != ',' && s[i] != ';') throw 'expected , or ; after prop declaration in snbt'
+			while(s[++i] == ' ');
+		}
 	}
 }
 

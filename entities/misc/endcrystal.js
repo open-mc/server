@@ -5,4 +5,10 @@ Entities.end_crystal = class extends Entity{
 	static height = 1.99
 	static gx = 0
 	static gy = 0
+	health = 1
+	static maxHealth = 1
+	died(){
+		// explode
+		this.event(3)
+	}
 }
