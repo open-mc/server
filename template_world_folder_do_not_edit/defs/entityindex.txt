@@ -1,1 +1,4 @@
-player {"health":0,"inv":[10,41],"dragging":10}
+player {"health":"0","inv":["Item",37],"items":["Item",6],"selected":"0","skin":"10"}
+end_crystal
+item {"item":"Item"}
+tnt
