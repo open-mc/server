@@ -143,7 +143,7 @@ export const commands = {
 		if(!(type in Blocks))throw 'No such entity: ' + type
 		const b = Blocks[type]()
 		snbt(data, 0, b, b.savedata)
-		goto(x, y, w)
+		goto(floor(x), floor(y), w)
 		place(b)
 	},
 	clear(sel, _item, _max = '2147483647'){

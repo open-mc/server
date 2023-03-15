@@ -1,3 +1,4 @@
+import { explode } from "../common/explode.js";
 import { Entities, Entity } from "../entity.js";
 
 Entities.tnt = class extends Entity{
@@ -8,6 +9,8 @@ Entities.tnt = class extends Entity{
 		if(this.age == 75)this.event(2)
 		else if(this.age >= 80){
 			this.event(3)
+			this.goto()
+			explode(100)
 			this.remove()
 		}
 	}

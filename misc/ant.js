@@ -1,5 +1,7 @@
 import { Blocks } from '../blocks/block.js'
+import { Entities } from '../entities/entity.js'
 import { optimize } from '../internals.js'
+import { Item } from '../items/item.js'
 
 // TODO: wasm
 
@@ -33,6 +35,32 @@ export function place(block){
 		tbuf.int(cy << 6 | (pos>>6))
 		tbuf.short(block.id)
 		if(block.savedata) tbuf.write(block.savedata, tiles[pos])
+	}
+}
+export function destroy(){
+	if(!tiles) return
+	const drop = tiles[pos].drops?.(null)
+	if(drop instanceof Item){
+		const itm = Entities.item(cx<<6|(pos&63), cy<<6|pos>>6)
+		itm.item = drop
+		itm.dx = random() * 6 - 3
+		itm.dy = 6
+		itm.place(world)
+	}else if(drop instanceof Array){
+		for(const d of drop){
+			const itm = Entities.item(cx<<6|(pos&63), cy<<6|pos>>6)
+			itm.item = d
+			itm.dx = random() * 6 - 3
+			itm.dy = 6
+			itm.place(world)
+		}
+	}
+	tiles[pos] = Blocks.air()
+	for(const {sock: {tbuf}} of chunk.players){
+		tbuf.byte(0)
+		tbuf.int(cx << 6 | (pos&63))
+		tbuf.int(cy << 6 | (pos>>6))
+		tbuf.short(Blocks.air.id)
 	}
 }
 let blockEventId = 0

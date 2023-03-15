@@ -1,4 +1,5 @@
-import { Entities, Entity } from "../entity.js";
+import { explode } from "../common/explode.js"
+import { Entities, Entity } from "../entity.js"
 
 Entities.end_crystal = class extends Entity{
 	static width = 0.99
@@ -9,6 +10,8 @@ Entities.end_crystal = class extends Entity{
 	static maxHealth = 1
 	died(){
 		// explode
+		this.goto()
+		explode(180)
 		this.event(3)
 	}
 }

@@ -47,7 +47,7 @@ Entities.player = class Player extends ChunkLoader{
 		const item = this.inv[this.selected]
 		if(this.blockBreakProgress >= (item ? item.breaktime(block) : block.breaktime) * TPS){
 			goto(this.bx, this.by, this.world)
-			const drop = peek().drops(this.inv[this.selected])
+			const drop = peek().drops?.(this.inv[this.selected])
 			if(drop instanceof Item){
 				const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
 				itm.item = drop
@@ -56,7 +56,7 @@ Entities.player = class Player extends ChunkLoader{
 				itm.place(this.world)
 			}else if(drop instanceof Array){
 				for(const d of drop){
-					const itm = Entities.itm(this.bx + 0.5, this.by + 0.375)
+					const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
 					itm.item = d
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
