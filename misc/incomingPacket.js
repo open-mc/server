@@ -2,77 +2,110 @@ import { BlockIDs, Blocks } from '../blocks/block.js'
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
 import { MOD, TPS } from '../config.js'
-import { entityMap } from '../entities/entity.js'
+import { Entities, entityMap } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
-import { blockevent, cancelblockevent, goto, peek, place } from './ant.js'
+import { blockevent, cancelblockevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, place, placeat, right, up } from './ant.js'
 
 const REACH = 10
 
 function playerMovePacket(player, buf){
-	let t = Date.now()
-	if(t < (t = max(this.movePacketCd + 1000 / TPS, t - 2000)))return
-	this.movePacketCd = t
-	if(buf.byte() != this.r || !player.chunk)return
-	player.move(buf.double(), buf.double())
-	player.state = buf.short()
-	player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
-	if(player.selected != (player.selected = buf.byte() % 9)){
-		const res = new DataWriter()
-		res.byte(15)
-		res.uint32(player._id); res.short(player._id / 4294967296 | 0)
-		res.byte(player.selected)
-		player.emit(res)
+	top: {
+		let t = Date.now()
+		if(t < (t = max(this.movePacketCd + 1000 / TPS, t - 2000)))break top
+		this.movePacketCd = t
+		if(buf.byte() != this.r || !player.chunk)break top
+		player.move(buf.double() || 0, buf.double() || 0)
+		player.state = buf.short()
+		player.dx = buf.float() || 0; player.dy = buf.float() || 0
+		const sel = buf.byte()
+		if(player.selected != (player.selected = (sel & 127) % 9)){
+			const res = new DataWriter()
+			res.byte(15)
+			res.uint32(player._id); res.short(player._id / 4294967296 | 0)
+			res.byte(player.selected)
+			player.emit(res)
+		}
+		const x = buf.float(), y = buf.float()
+		if(x != x){
+			player.f = y || 0
+			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
+			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.players.includes(player)){
+				//hit e
+				const itm = player.inv[player.selected]
+				e.damage(itm?.damage?.(e) ?? 1, player)
+			}
+			break top
+		}
+		const bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
+		goto(bx, by, player.world)
+		const reach = sqrt(x * x + y * y)
+		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
+		const dx = x / reach, dy = y / reach
+		let l = 0
+		while(d < reach){
+			if(peek().solid)break
+			if(dx > 0){
+				const iy = py + dy * (1 - px) / dx
+				if(iy >= 0 && iy <= 1){right(); l=65535; d += (1 - px) / dx; px = 0; py = iy; continue}
+			}else if(dx < 0){
+				const iy = py + dy * -px / dx
+				if(iy >= 0 && iy <= 1){left(); l=1; d += -px / dx; px = 1; py = iy; continue}
+			}
+			if(dy > 0){
+				const ix = px + dx * (1 - py) / dy
+				if(ix >= 0 && ix <= 1){up(); l=-65536; d += (1 - py) / dy; py = 0; px = ix; continue}
+			}else if(dy < 0){
+				const ix = px + dx * -py / dy
+				if(ix >= 0 && ix <= 1){down(); l=65536; d += -py / dy; py = 1; px = ix; continue}
+			}
+			//failsafe
+			break top
+		}
+		if(sel > 127){
+			if(d >= reach) break top
+			const block = peek(), item = player.inv[sel & 127]
+			if(block.solid){
+				if(!player.blockBreakEvent || player.bx != (player.bx = getX()) || player.by != (player.by = getY())){
+					if(player.blockBreakEvent)
+						cancelblockevent(player.blockBreakEvent)
+					player.blockBreakProgress = 0, player.blockBreakEvent = blockevent(1)
+				}
+				return
+			}
+			if(item && item.interact2){
+				item.interact2(player)
+				if(!item.count) player.inv[sel&127] = null
+				player.itemschanged([sel & 127])
+			}
+			break top
+		}
+		let b = peek()
+		const item = player.inv[sel]
+		if(b.solid){
+			if(item && item.interact){
+				item.interact(b)
+				if(!item.count) player.inv[sel] = null
+				player.itemschanged([sel])
+				return
+			}
+			if(!l) break top
+		}
+		if(!item) break top
+		jump(l << 16 >> 16, l >> 16)
+		if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
+		b = peek()
+		{
+			const x = getX(), y = getY()
+			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
+		}
+		item.place?.()
+		if(!item.count) player.inv[sel&127] = null
+		player.itemschanged([sel&127])
 	}
-}
-
-function useItemPacket(player, buf){
-	const slot = buf.byte() % 9
-	const x = buf.int(), y = buf.int()
-	const dx = x - player.x, dy = y - player.y
-	if(dx * dx + dy * dy > (REACH + 2) * REACH) return
-	const item = player.inv[slot]
-	if(!item) return
-	goto(x, y, player.world)
-	const b = peek()
-	if(b.solid) b.interact(item)
-	else item.interact(player)
-	if(!item.count) player.inv[slot] = null
-	const res = new DataWriter()
-	res.byte(32)
-	res.uint32(player._id)
-	res.short(player._id / 4294967296 | 0)
-	res.byte(slot), res.item(player.inv[slot])
-	player.emit(res)
-}
-
-function altItemPacket(player, buf){
-	const slot = buf.byte()
-	if(slot > 127){
-		goto(player.bx, player.by, player.world)
+	if(player.blockBreakEvent){
 		cancelblockevent(player.blockBreakEvent)
 		player.blockBreakEvent = 0
 		player.blockBreakProgress = -1
-		return
-	}
-	const x = buf.int(), y = buf.int()
-	const dx = x - player.x, dy = y - player.y
-	if(dx * dx + dy * dy > (REACH + 2) * REACH) return
-	player.bx = x; player.by = y
-	const item = player.inv[slot&127]
-	goto(x, y, player.world)
-	const b = peek()
-	if(b.solid){
-		cancelblockevent(player.blockBreakEvent)
-		player.blockBreakProgress = 0, player.blockBreakEvent = blockevent(1)
-	}else if(item){
-		item.interact2(player)
-		if(!item.count) player.inv[slot&127] = null
-		const res = new DataWriter()
-		res.byte(32)
-		res.uint32(player._id)
-		res.short(player._id / 4294967296 | 0)
-		res.byte(slot&127), res.item(player.inv[slot&127])
-		player.emit(res)
 	}
 }
 
@@ -115,22 +148,8 @@ function inventoryPacket(player, buf){
 			t.count += add
 			changed |= 2
 		}else items[slot] = h, player.inv[36] = t, changed |= 3
-		if(changed & 1){
-			const res = new DataWriter()
-			res.byte(32)
-			res.uint32(player._id)
-			res.short(player._id / 4294967296 | 0)
-			res.byte(36), res.item(player.inv[36])
-			player.emit(res)
-		}
-		if(changed & 2){
-			const res = new DataWriter()
-			res.byte(32)
-			res.uint32(player._id)
-			res.short(player._id / 4294967296 | 0)
-			res.byte(slot | 128), res.item(items[slot])
-			player.interface.emit(res)
-		}		
+		if(changed)
+			player.itemschanged(changed & 1 ? changed & 2 ? [slot | 128, 36] : [36] : [slot | 128])
 		return
 	}
 	if(slot >= player.inv.length) return
@@ -145,13 +164,7 @@ function inventoryPacket(player, buf){
 		changed |= 2
 	}else player.inv[slot] = h, player.inv[36] = t, changed |= 3
 	if(!changed) return
-	const res = new DataWriter()
-	res.byte(32)
-	res.uint32(player._id)
-	res.short(player._id / 4294967296 | 0)
-	if(changed & 1) res.byte(36), res.item(player.inv[36])
-	if(changed & 2) res.byte(slot), res.item(player.inv[slot])
-	player.emit(res)
+	player.itemschanged(changed & 1 ? changed & 2 ? [36, slot] : [36] : [slot])
 }
 
 function altInventoryPacket(player, buf){
@@ -174,18 +187,8 @@ function altInventoryPacket(player, buf){
 			t.count++
 			if(!--h.count)player.inv[36] = null
 		}else items[slot] = h, player.inv[36] = t
-		let res = new DataWriter()
-		res.byte(32)
-		res.uint32(player._id)
-		res.short(player._id / 4294967296 | 0)
-		res.byte(36), res.item(player.inv[36])
-		player.emit(res)
-		res = new DataWriter()
-		res.byte(32)
-		res.uint32(player.interface._id)
-		res.short(player.interface._id / 4294967296 | 0)
-		res.byte(slot | 128); res.item(items[slot])
-		player.interface.emit(res)
+		player.itemschanged([36])
+		player.interface.itemschanged([slot | 128])
 		return
 	}
 	if(slot >= player.inv.length) return
@@ -200,24 +203,27 @@ function altInventoryPacket(player, buf){
 		t.count++
 		if(!--h.count)player.inv[36] = null
 	}else player.inv[slot] = h, player.inv[36] = t
-	const res = new DataWriter()
-	res.byte(32)
-	res.uint32(player._id)
-	res.short(player._id / 4294967296 | 0)
-	res.byte(36), res.item(player.inv[36])
-	res.byte(slot), res.item(player.inv[slot])
-	player.emit(res)
+	player.itemschanged([36, slot])
+}
+
+function dropItemPacket(player, buf){
+	if(!player.inv[player.selected]) return
+	const e = Entities.item(player.x, player.y + player.head - 0.5)
+	e.item = player.inv[player.selected]
+	e.dx = player.dx + player.f > 0 ? 7 : -7
+	e.place(player.world)
+	player.inv[player.selected] = null
+	player.itemschanged([player.selected])
 }
 
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
-	8: useItemPacket,
-	9: altItemPacket,
 	12: openContainerPacket,
 	13: openEntityPacket,
 	15(player, _){player.interface = null},
 	32: inventoryPacket,
 	33: altInventoryPacket,
+	34: dropItemPacket
 })
 export function onstring(player, text){
 	if(!(text = text.trimEnd())) return

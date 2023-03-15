@@ -1,7 +1,5 @@
 # Everything after a # is a comment and ignored
 
-
-
 # Commonly used
 
 name: Test Server
@@ -22,10 +20,17 @@ port: 27277
 key: 
 pem: 
 
+# Webhook url for discord chat integration (optional)
+webhook:
+
+
 # Related to server list and disconnect screen
 
 icon: https://static.wikia.nocookie.net/minecraft_gamepedia/images/b/b7/Crafting_Table_JE4_BE3.png
 motd:
   - One of the servers of all time
+  - Potassium-Free!
+  - New motd every day! (maybe)
+  - Zero warranty!
 
 ban_appeal_info: # info displayed on the banned notice screen

@@ -1,4 +1,4 @@
-import { BlockIDs } from '../blocks/block.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
 import { EntityIDs } from '../entities/entity.js'
 import { DataReader } from '../utils/data.js'
 
@@ -6,20 +6,22 @@ import { DataReader } from '../utils/data.js'
 const LIGHTNINGFASTALLOCATOR = eval('() => [' + 'null,'.repeat(4096) + ']')
 
 export class Chunk{
-	constructor(buf, world){
+	constructor(buf, world, pl = []){
 		if(!buf.left || buf.byte() != 16)throw new TypeError("Invalid chunk data")
 		const x = buf.int(), y = buf.int()
 		world.set((this.x = x & 67108863)+(this.y = y & 67108863)*67108864, this)
 		this.world = world
 		this.tiles = LIGHTNINGFASTALLOCATOR()
 		this.entities = []
-		this.players = null
+		this.players = pl
 		//read buf palette
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
 		let id = buf.short()
 		while(id){
 			const e = EntityIDs[id](buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
-			e.place(this.world)
+			e.place(world)
+			e.ochunk = e.chunk
+			e.mv = 0
 			buf.setUint32(buf.i, e._id)
 			buf.setUint16((buf.i += 6) - 2, e._id / 4294967296)
 			e.name = buf.string()
@@ -76,6 +78,7 @@ export class Chunk{
 		//parse block entities
 		for(j=0;j<4096;j++){
 			const block = this.tiles[j]
+			if(!block){this.tiles[j] = Blocks.air; continue}
 			if(!block.savedata)continue
 			this.tiles[j] = buf.read(block.savedatahistory[buf.flint()] || block.savedata, block())
 		}
@@ -158,8 +161,8 @@ export class Chunk{
 		}
 		return buf
 	}
-	static of(block, x, y, w){
-		return new Chunk(new DataReader(Uint8Array.of(16, x >> 24, x >> 16, x >> 8, x, y >> 24, y >> 16, y >> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id)), w)
+	static of(block, x, y, w, pl){
+		return new Chunk(new DataReader(Uint8Array.of(16, x << 6 >>> 30, x >>> 16, x >>> 8, x, y << 6 >>> 30, y >>> 16, y >>> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id)), w, pl)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
 }

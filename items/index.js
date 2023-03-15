@@ -7,12 +7,15 @@ let modified = false
 export let itemindex
 for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(itemindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
-	let item = Items[name]
-	if(!item){ItemIDs.push(Items.stone);continue}
-	let sd = typeToJson(item.savedata)
+	const I = Items[name]
+	if(!I){ItemIDs.push(Items.stone);continue}
+	let sd = typeToJson(I.savedata)
 	if(history[history.length-1] == sd){history.pop()}else if(sd != 'null'){modified = true}
-	item.savedatahistory = history.mutmap(jsonToType)
-	item.id = ItemIDs.length
+	I.savedatahistory = history.mutmap(jsonToType)
+	if(Object.hasOwn(I, 'id'))
+		if(I.className != name) Items[name] = class extends I{static id = ItemIDs.length; static className = name}
+		else Object.hasOwn(I, 'otherIds') ? I.otherIds.push(ItemIDs.length) : I.otherIds = [ItemIDs.length]
+	else I.id = ItemIDs.length, I.className = name
 	ItemIDs.push(null)
 }
 for(const i in Items){
@@ -23,10 +26,10 @@ for(const i in Items){
 		Object.setPrototypeOf(I, Item)
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
-	if(!Object.hasOwn(I, 'id')) I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), modified = true
-	ItemIDs[I.id] = Items[i] = c => new I(c)
-	I.className = i
-	I.constructor = Items[i]
+	if(!Object.hasOwn(I, 'id'))
+		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = i, modified = true
+	I.constructor = ItemIDs[I.id] = Items[i] = c => new I(c)
+	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
 	let proto = I
@@ -36,8 +39,6 @@ for(const i in Items){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	if(proto == I){ console.warn('Reused class for ' + I.prototype.className + ' (by ' + i + ')'); continue }
-	Object.defineProperty(I, 'name', {value: i})
 	Object.setPrototypeOf(Items[i], I.prototype)
 	Object.defineProperties(Items[i], Object.getOwnPropertyDescriptors(new I(1)))
 }

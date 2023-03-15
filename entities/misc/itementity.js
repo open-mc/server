@@ -6,9 +6,14 @@ Entities.item = class ItemEntity extends Entity{
 	item = null
 	static width = 0.25
 	static height = 0.25
+	static collisionTestPadding = 0.75
+	static head = 0.125
 	static savedata = {item: Item}
 	touch(e){
-		if(!this.item) return
+		if(!this.item){
+			this.remove()
+			return
+		}
 		if(e instanceof ItemEntity && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
 			e.remove()
 			this.item.count += e.item.count

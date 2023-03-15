@@ -9,11 +9,11 @@ export function stepEntity(e){
 	e.state = (e.state & 0xffff) | (e.state << 8 & 0xff000000) | fastCollision(e, e.dx * dt, e.dy * dt) << 16
 	if(e.state & 1)e.dy = 0
 	else{
-		e.dy += dt * e.world.gy
+		e.dy += dt * e.world.gy * e.gy
 		e.dy = e.dy * e.airDrag ** dt
-		e.dx += dt * e.world.gx
+		e.dx += dt * e.world.gx * e.gx
 	}
-	e.dx = e.dx * e.groundDrag ** dt
+	e.dx = e.dx * (e.state & 0x10000 ? e.groundDrag : e.airDrag / 2) ** dt
 }
 
 export const EPSILON = .0001

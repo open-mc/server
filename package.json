@@ -1,12 +1,13 @@
 {
 	"type": "module",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"scripts": {
 		"start": "[ -d node_modules ] || npm i; node ."
 	},
 	"dependencies": {
 		"basic-repl": "^2.2.0",
 		"fs-extra": "^10.1.0",
+		"node-fetch": "^3.3.0",
 		"pngjs": "^6.0.0",
 		"ws": "^8.8.0",
 		"yaml": "^2.1.0"

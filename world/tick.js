@@ -65,17 +65,19 @@ export function tick(){
 		if(!e.chunk)continue
 		if(e.mv) moved(e)
 		e.tick?.()
+		if(!e.world) continue
 		stepEntity(e)
-		const x0 = e.x - e.width, x1 = e.x + e.width
-		const y0 = e.y, y1 = e.y + e.height
-		const cx0 = floor(e.x - e.width - 16) >>> 6, cx1 = ceil((e.x + e.width + 16) / 64) & 67108863
-		const cy0 = floor(y0) >>> 6, cy1 = ceil((e.y + e.height + 32) / 64) & 67108863
+		const x0 = e.x - e.width - e.collisionTestPadding, x1 = e.x + e.width + e.collisionTestPadding
+		const y0 = e.y - e.collisionTestPadding, y1 = e.y + e.height + e.collisionTestPadding
+		const cx0 = floor(x0 - 16) >>> 6, cx1 = ceil((x1 + 16) / 64) & 67108863
+		const cy0 = floor(y0) >>> 6, cy1 = ceil((y1 + 32) / 64) & 67108863
 		for(let cx = cx0; cx != cx1; cx = cx + 1 & 67108863){
 			for(let cy = cy0; cy != cy1; cy = cy + 1 & 67108863){
-				const chunk = e.chunk.x == cx && e.chunk.y == cy ? e.chunk : e.world.get(cx+cy*67108864)
-				if(!chunk) continue
+				const chunk = e.chunk && e.chunk.x == cx && e.chunk.y == cy ? e.chunk : e.world && e.world.get(cx+cy*67108864)
+				if(!chunk || !chunk.tiles) continue
 				for(const e2 of chunk.entities){
-					if(e2._id <= e._id || e2.x + e2.width < x0 || e2.x - e2.width > x1 || e2.y + e2.height < y0 || e2.y > y1) continue
+					const {collisionTestPadding: ctp} = e2
+					if(e2._id <= e._id || e2.x + e2.width + ctp < x0 || e2.x - e2.width - ctp > x1 || e2.y + e2.height + ctp < y0 || e2.y - ctp > y1) continue
 					e.touch?.(e2)
 					e2.touch?.(e)
 				}

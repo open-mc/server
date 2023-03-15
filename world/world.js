@@ -3,6 +3,7 @@ import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { DataWriter } from '../utils/data.js'
 import { entityMap } from '../entities/entity.js'
+import { Blocks } from '../blocks/block.js'
 export class World extends Map{
 	constructor(id){
 		super()
@@ -41,9 +42,8 @@ export class World extends Map{
 			}
 			return ch
 		}
-		let pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(Function.prototype).then(buf => buf || generator(cx, cy, this.id)).then(buf => {
-			let ch = new Chunk(buf, this)
-			ch.players = pr.players
+		const pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.id)).then(buf => {
+			let ch; try{ch = new Chunk(buf, this, pr.players)}catch(e){ch = Chunk.of(Blocks.air,cx,cy,this, pr.players)}
 			for(const pl of ch.players){
 				if(floor(pl._x) >> 6 == cx && floor(pl._y) >> 6 == cy && pl._w == this){
 					pl.chunk = ch

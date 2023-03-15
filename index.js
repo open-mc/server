@@ -10,8 +10,8 @@ import { input, repl } from 'basic-repl'
 import { codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, HANDLERS, packs, PERMISSIONS, TPS } from './config.js'
 import { Entities, EntityIDs } from './entities/entity.js'
-import { ItemIDs, Items } from './items/item.js'
-import { BlockIDs, Blocks } from './blocks/block.js'
+import { ItemIDs, Items, Item } from './items/item.js'
+import { BlockIDs, Blocks, Block } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
@@ -205,7 +205,7 @@ async function play(sock, username, skin){
 	sock.tbuf = new DataWriter()
 	sock.tbuf.byte(8)
 	sock.on('close', close)
-	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e))
+	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e.stack))
 }
 
 server.sock = {permissions: 3}
@@ -219,7 +219,7 @@ const close = async function(){
 	const buf = new DataWriter()
 	buf.double(player.x)
 	buf.double(player.y)
-	buf.string(player.world.id)
+	buf.string(player.world?.id ?? 'overworld')
 	buf.short(player.state)
 	buf.float(player.dx)
 	buf.float(player.dy)
@@ -252,7 +252,7 @@ const message = function(_buf, isBinary){
 	if(!codes[code]) return
 	try{
 		codes[code].call(this, player, buf)
-	}catch(e){ this.logMalicious('Caused an error: \n'+e) }
+	}catch(e){ this.logMalicious('Caused an error: \n'+e.stack) }
 }
 
 globalThis.exiting = false

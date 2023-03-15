@@ -8,7 +8,7 @@ import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 
 Entities.player = class Player extends ChunkLoader{
-	inv = Array.null(36)
+	inv = Array.null(37)
 	items = [null, null, null, null, null, null]
 	health = 20
 	selected = 0
@@ -19,6 +19,7 @@ Entities.player = class Player extends ChunkLoader{
 	bx = 0; by = 0
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
+	get head(){return this.state & 2 ? 1.4 : 1.6}
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
 	}
@@ -46,18 +47,18 @@ Entities.player = class Player extends ChunkLoader{
 		const item = this.inv[this.selected]
 		if(this.blockBreakProgress >= (item ? item.breaktime(block) : block.breaktime) * TPS){
 			goto(this.bx, this.by, this.world)
-			const drop = peek().drops(this.inv[this.selected])
+			const drop = peek().drops?.(this.inv[this.selected])
 			if(drop instanceof Item){
 				const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
 				itm.item = drop
-				itm.dx = random() * 20 - 10
+				itm.dx = random() * 6 - 3
 				itm.dy = 6
 				itm.place(this.world)
 			}else if(drop instanceof Array){
 				for(const d of drop){
-					const itm = Entities.itm(this.bx + 0.5, this.by + 0.375)
+					const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
 					itm.item = d
-					itm.dx = random() * 20 - 10
+					itm.dx = random() * 6 - 3
 					itm.dy = 6
 					itm.place(this.world)
 				}

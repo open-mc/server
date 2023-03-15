@@ -1,4 +1,3 @@
-<style>code{font-size:0.9em}</style>
 I feel like this is a type of file a lot of open source projects are missing.
 
 Here, I'll explain:
@@ -43,14 +42,15 @@ Everything can be found in `world/gen`
 
 It is recommended that you enable the option to render whitespace characters in your code editor.
 
-1. Use tabs. If I see 2 spaces next to each other to form a tab, I'll hunt you down and blacklist your IP from Github. TABS EXIST FOR A REASON.
+1. Use tabs. If I see 2+ spaces next to each other to form a tab, I'll hunt you down and report you to the police as a psycopath. TABS EXIST FOR A REASON.
 2. Proper, even, but not excessive, spacing.
-3. No `;` semicolons except for single-line statements
-4. If your single-line statements wrap around or go past the edge of the screen, they're too long. Ideally they should have a gap to the edge and be no more than ~120 cols.
+3. No `;` semicolons except when strictly necessary
+4. If your single-line statements wrap around or go past the edge of the screen, they're too long. Ideally they should have a gap to the edge and be no more than ~100 cols.
 5. Please use single-line if and while syntax when you deem it appropriate
 6. useCamelCase, it's pretty ;)
 	- Exception: names that appear in-game, such as block namespace IDs (e.g grass_block)
 7. `var` is completely BANNED. Also, do not use old ES5 method for declaring classes. Use the ES6 `class` syntax
+8. Prefer concise over precise names
 ```js
 //DO NOT DO:
 //Space indentation
@@ -64,28 +64,29 @@ It is recommended that you enable the option to render whitespace characters in 
 //Semicolons (why waste time on them??)
 //if/while condition and corresponding `{` on seperate lines
 //var
+//reallyLongDescriptiveNames
 //ES5 `function` classes
 function  test( b ,x= 1 ) {
-    var a = 1; 
-    if (a == x)
-		{
+    var numberOfThings = 1; 
+    if (numberOfThings == x)
+    {
       return true;
     }
-		if(reallyLongLineThatIsHardToRead(0 & also(painful.to(lookAt)))){thisLineIsGoingPast() & wrappedAround & isDefinitelyLongerThan(120*characters) => thisIsBad, DontDoThis()}
+    if(reallyLongLineThatIsHardToRead(0 & also(painful.to(lookAt)))){thisLineIsGoingPast() & wrappedAround & isDefinitelyLongerThan(100*characters) => thisIsBad, DontDoThis()}
 }
 //DO DO:
 //1 space after every comma, e.g: a, b
 //camelCase
 //Spaces around operators (optional, still looks better though)
-//) and { stuck together (or with 1 space if you really want)
-//PLEASE DO use single-line ifs and whiles when the line is short enough
-//e.g the above code could've done:
+//) and { on the same line, stuck together
+//Omit {} when if/while/for statement only has a single statement inside
+// Concise variable names
+//e.g the above code could've been like this:
 function test(b, x = 1){
-  let a = 1; 
-  if (a == x)return true
-	if(shortenedLineThatIsEasyToRead(0 & also(nice.to(lookAt))))
-		thisLineIsFine() & wrappedAround &
-			isNotLongerThan(120*characters) => thisIsFine, DoDoThis()
+	let count = 1
+	if (count == x)return true
+	if(easyToRead(0 & also(nice.to(lookAt))))
+		thisIsFine() & wrapped & notLongerThan(100*chars) => code.shouldBe(likeThis)
 }
 ```
 
@@ -164,7 +165,7 @@ function calculate(a, b, c){
 	return result
 }
 ```
-Variables are only useful if they're needed more than once.
+Variables are only useful if they're needed more than once (or very sparingly to break up _really_ long lines)
 ```js
 function calculate(a, b, c){
 	return 1 - 1 / (a + b / c)
@@ -176,6 +177,7 @@ const calculate = (a, b, c) => 1 - 1 / (a + b / c)
 ## Performance standard
 
 Coming soon
+In a nutshell, do things fast, not O(2^n).
 
 <hr>
 </details>
@@ -184,11 +186,11 @@ Coming soon
 <details>
 <summary><h2 style="display:inline-block">Common variable names</h2></summary>
 
-- `pl`: player (instanceof `Entity`)
-- `sock`: Network socket (typically attached to a player)
-- `ch`: Chunk
+- `pl`: player (instanceof `Entity`, typically attached to a socket, `sock.player`)
+- `sock`: Network socket (typically attached to a player, `pl.sock`)
+- `ch`: Chunk (64x64 world section)
 - `x`, `y`: x and y position
-- `cx`, `cy`: Chunk position x and y (chunk at x=10 would be at position x=640)
+- `cx`, `cy`: Chunk position x and y (chunk at cx=10 would be at position x=640)
 - `buf`: Buffer of bytes used for reading / writing
 - `e`: Entity (any entity)
 - `world`, `w`: A `World` object for a specific dimension
@@ -200,13 +202,13 @@ Coming soon
 <details>
 <summary><h2 style="display:inline-block">Rubber</h2></summary>
 
-A packet that indicates that the server has modified a value that the client normally controls (e.g the player's position) and that serves the purpose of preventing the client from controlling that value until it is safe to do so (All other relevant packets the client sends will be ignored until it recieves the rubber packet)
+A packet that indicates that the server has modified a value that the client normally controls (e.g the player's position) and that serves the purpose of preventing the client from controlling that value until it's received the server's packet
 
 Example:
-1. player has been teleported, all incoming position packets will be ignored. Rubber packet sent
+1. player has been teleported by server, all incoming position packets will be ignored. Rubber packet sent
 2. Client later recieves rubber packet which contains a new key (called `r`)
 3. Server starts recieving movement packets with the new key and starts accepting them again
-4. Like this, Client will not send move packets that could move the player back to its previous location (which would in effect revert the teleport)
+Like this, Client will not send move packets that could move the player back to its previous location (which would in effect revert the teleport)
 
 </details>
 <details>
@@ -220,13 +222,13 @@ If you're trying to work with this game's source code and you don't yet know wha
 
 A buffer is raw binary data, which can be read from or written to (left to right). Many types can be written to a buffer, each taking up a different amount of space in the buffer. The length of a buffer is typically measured in bytes. Here are some common things written to a buffer:
 - Int or Int32 (**4 bytes**): number between -2147483648 and 2147483647
-- Short or Int16 (**2 bytes**): Similar to an Int, but with a much shorter range. Short = 0 - 65536, Int16 = -32768 - 32767
-- Byte or Int8 (**1 byte**): Byte = 0 - 255, Int8 = -128 - 127
+- Short or Int16 (**2 bytes**): Similar to an Int, but with a much shorter range. Short = 0 to 65536, Int16 = -32768 to 32767
+- Byte or Int8 (**1 byte**): Byte = 0 to 255, Int8 = -128 to 127
 - Float (**4 bytes**): Any number, including fractional. Float allows for around 7 digits of precision, and values up to around ±3.4e38.
 - Double (**8 bytes**): Any number, including fractional. Double allows for around 16 digits of precision, and values up to around ±1.8e308.
 - Bool (**1 byte**): Bool can store 2 values: true and false. Used to represent an additional detail that you could answer with "yes" or "no", such as whether the player is crouching.
 - String (**any size**): Some text, of any length. May or may not contain new lines
-- Item: An item is an example of a complex thing that can be encoded with entirely the above types. Items are encoded in this order:
+- Item: An item is an example of a complex object that can be encoded with entirely the above types. Items are encoded in this order:
 	- Amount in stack, as a **byte**
 	- Item ID, as a **short**
 	- Custom name (or blank), as a **string**
@@ -248,25 +250,28 @@ thing
 
 Example for defining a cheese block:
 ```js
-Blocks.cheese_block = Block.define({
+Blocks.cheese_block = class extends Item{
 	//behaviour properties
-	breaktime: 0.5,
-	tool: 'sword',
+	static breaktime = 0.5
+	static tool = 'sword'
 	...
-})
+}
 ```
 > Note: use camel_case for block names
 All possible properties with their default values can be found in `blocks/blockdefaults.js` (and likewise in `items/itemdefaults.js` for items and `entities/entitydefaults.js` for entities)
 
 **Savedata**: Suppose we want to define a cheese pickaxe that needs to be saved with a durability value
 ```js
-//Item.define(props, savedata)
-Items.cheese_pickaxe = Item.define({
-	toolCategory: 'pick',
+Items.cheese_pickaxe = class extends Item{
+	durability = 1000
+	static breaktime(block){
+		return block.tool == 'pick' ? block.breaktime / 3 : block.breaktime
+	}
 	...
-}, {
-	durability: Short
-})
+	static savedata = {
+		durability: Short
+	}
+}
 ```
 Savedata can apply to blocks (for example, chests), items and entities (for example, donkeys, which also store data about any chest they're wearing)
 </details>

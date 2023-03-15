@@ -7,12 +7,15 @@ let modified = false
 export let entityindex
 for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entityindex = ''+a).split('\n'))){
 	let [name, ...history] = a.split(' ')
-	let E = Entities[name]
+	const E = Entities[name]
 	if(!E){EntityIDs.push(Entities.player);continue}
 	let sd = typeToJson(E.savedata)
 	if((history[history.length-1] || 'null') == sd){history.pop()}else{modified = true}
 	E.savedatahistory = history.mutmap(jsonToType)
-	E.id = EntityIDs.length
+	if(Object.hasOwn(E, 'id'))
+		if(E.className != name) Entities[name] = class extends E{static id = EntityIDs.length; static className = name}
+		else Object.hasOwn(E, 'otherIds') ? E.otherIds.push(EntityIDs.length) : E.otherIds = [EntityIDs.length]
+	else E.id = EntityIDs.length, E.className = name
 	EntityIDs.push(null)
 }
 for(const i in Entities){
@@ -23,10 +26,10 @@ for(const i in Entities){
 		Object.setPrototypeOf(E, Entity)
 		Object.setPrototypeOf(E.prototype, Entity.prototype)
 	}
-	if(!Object.hasOwn(E, 'id')) E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), modified = true
-	EntityIDs[E.id] = Entities[i] = (a, b) => new E(a, b)
-	E.className = i
-	E.constructor = Entities[i]
+	if(!Object.hasOwn(E, 'id'))
+		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), E.className = i, modified = true
+	E.constructor = EntityIDs[E.id] = Entities[i] = (a, b) => new E(a, b)
+	if(E.otherIds) for(const i of E.otherIds) EntityIDs[i] = EntityIDs[E.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
 	let proto = E
@@ -36,8 +39,6 @@ for(const i in Entities){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	if(proto == E){ console.warn('Reused class for ' + E.prototype.className + ' (by ' + i + ')'); continue }
-	Object.defineProperty(E, 'name', {value: i})
 	Object.setPrototypeOf(Entities[i], E.prototype)
 }
 if(modified){
