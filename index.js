@@ -180,13 +180,16 @@ async function play(sock, username, skin){
 		player = Entities.player(0, 20)
 		dim = Dimensions.overworld
 		player.inv[0] = Items.stone(20)
-		player.inv[1] = Items.sandstone(20)
-		player.inv[2] = Items.oak_log(20)
-		player.inv[3] = Items.oak_planks(20)
-		player.inv[4] = Items.netherrack(10)
+		player.inv[1] = Items.oak_log(20)
+		player.inv[2] = Items.oak_planks(20)
+		player.inv[3] = Items.tnt(10)
+		player.inv[4] = Items.flint_and_steel()
 		player.inv[5] = Items.obsidian(64)
 		player.inv[6] = Items.grass(32)
-		player.inv[7] = Items.diamond_pickaxe(1)
+		player.inv[7] = Items.diamond_pickaxe()
+		player.inv[8] = Items.diamond_shovel()
+		player.inv[9] = Items.netherrack(10)
+		player.inv[10] = Items.sandstone(10)
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin

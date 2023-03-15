@@ -43,7 +43,7 @@ export class World extends Map{
 			return ch
 		}
 		const pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.id)).then(buf => {
-			let ch; try{ch = new Chunk(buf, this, pr.players)}catch(e){ch = Chunk.of(Blocks.air,cx,cy,this, pr.players)}
+			let ch; try{ch = new Chunk(buf, this, pr.players)}catch(e){buf = Chunk.bufOf(Blocks.air,cx,cy); ch = new Chunk(buf, this, pr.players)}
 			for(const pl of ch.players){
 				if(floor(pl._x) >> 6 == cx && floor(pl._y) >> 6 == cy && pl._w == this){
 					pl.chunk = ch

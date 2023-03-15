@@ -161,8 +161,8 @@ export class Chunk{
 		}
 		return buf
 	}
-	static of(block, x, y, w, pl){
-		return new Chunk(new DataReader(Uint8Array.of(16, x << 6 >>> 30, x >>> 16, x >>> 8, x, y << 6 >>> 30, y >>> 16, y >>> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id)), w, pl)
+	static bufOf(block, x, y){
+		return new DataReader(Uint8Array.of(16, x << 6 >>> 30, x >>> 16, x >>> 8, x, y << 6 >>> 30, y >>> 16, y >>> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id))
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: '+this.x+' y: '+this.y+'>'}
 }

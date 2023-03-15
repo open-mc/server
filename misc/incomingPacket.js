@@ -216,11 +216,23 @@ function dropItemPacket(player, buf){
 	player.itemschanged([player.selected])
 }
 
+function closeInterfacePacket(player, _){
+	player.interface = null
+	if(player.inv[36]){
+		const e = Entities.item(player.x, player.y + player.head - 0.5)
+		e.item = player.inv[36]
+		e.dx = player.dx + player.f > 0 ? 7 : -7
+		e.place(player.world)
+		player.inv[36] = null
+		player.itemschanged([36])
+	}
+}
+
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	12: openContainerPacket,
 	13: openEntityPacket,
-	15(player, _){player.interface = null},
+	15: closeInterfacePacket,
 	32: inventoryPacket,
 	33: altInventoryPacket,
 	34: dropItemPacket
