@@ -1,10 +1,9 @@
-import { BlockIDs, Blocks } from '../blocks/block.js'
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
 import { MOD, TPS } from '../config.js'
 import { Entities, entityMap } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
-import { blockevent, cancelblockevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, place, placeat, right, up } from './ant.js'
+import { blockevent, cancelblockevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
 
 const REACH = 10
 
@@ -65,7 +64,7 @@ function playerMovePacket(player, buf){
 			if(d >= reach) break top
 			const block = peek(), item = player.inv[sel & 127]
 			if(block.solid){
-				if(!player.blockBreakEvent || player.bx != (player.bx = getX()) || player.by != (player.by = getY())){
+				if(!player.blockBreakEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.blockBreakEvent)
 						cancelblockevent(player.blockBreakEvent)
 					player.blockBreakProgress = 0, player.blockBreakEvent = blockevent(1)

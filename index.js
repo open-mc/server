@@ -44,7 +44,7 @@ function uncaughtErr(e){
 	const l = process.stdout.columns
 	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
 		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
-	//process.exit(0)
+	if(loaded <= total) process.exit(0)
 }
 process.on('uncaughtException', uncaughtErr)
 process.on('unhandledRejection', uncaughtErr)

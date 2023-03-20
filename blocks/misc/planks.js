@@ -6,7 +6,7 @@ class Planks extends Block{
 	static flammability = 5
 	static tool = 'axe'
 	static breaktime = 3
-	drops(i){ return Items.oak_planks }
+	drops(){ return Items.oak_planks }
 }
 
 //the actual blocks

@@ -7,7 +7,7 @@ import { Item } from '../items/item.js'
 
 let cx = 0, cy = 0, pos = 0
 let tiles = undefined, chunk = undefined
-let world = null
+export let world = null
 // Our functions run on so little overhead that array or map caching becomes a big burden for close-together world access
 let cachet = undefined, cachec = undefined, cachex = 0, cachey = 0
 
@@ -39,7 +39,8 @@ export function place(block){
 }
 export function destroy(){
 	if(!tiles) return
-	const drop = tiles[pos].drops?.(null)
+	if(tiles[pos].destroyed?.()) return
+	const drop = tiles[pos].drops?.()
 	if(drop instanceof Item){
 		const itm = Entities.item(cx<<6|(pos&63), cy<<6|pos>>6)
 		itm.item = drop
@@ -218,5 +219,25 @@ export function placeat(dx, dy, block){
 	}
 }
 
+export function select(x0, y0, x1, y1){
+	x0 += cx<<6|(pos&63); x1 += (cx<<6|(pos&63)) + 1
+	y0 += cy<<6|pos>>6; y1 += (cy<<6|pos>>6) + 1
+	const cx0 = floor(x0) >>> 6, cx1 = ceil(x1 / 64) & 67108863
+	const cy0 = floor(y0) >>> 6, cy1 = ceil(y1 / 64) & 67108863
+	let i = 0
+	for(let cxa = cx0; cxa != cx1; cxa = cxa + 1 & 67108863){
+		for(let cya = cy0; cya != cy1; cya = cya + 1 & 67108863){
+			const ch = (cxa == cx & cya == cy) && chunk || world.get(cxa+cya*67108864)
+			if(!ch || !ch.entities) continue
+			for(const e2 of ch.entities){
+				if(e2.x < x0 || e2.x > x1 || e2.y < y0 || e2.y > y1) continue
+				arr[i++] = e2
+			}
+		}
+	}
+	arr.length = i
+	return arr
+}
+const arr = []
 
-optimize(nc, npeek, nput, place, goto, peek, jump, peekat, placeat, right, left, up, down, peekright, peekleft, peekup, peekdown, placeright, placeleft, placeup, placedown, summon, blockevent, cancelblockevent)
+optimize(nc, npeek, nput, place, goto, peek, jump, peekat, placeat, right, left, up, down, peekright, peekleft, peekup, peekdown, placeright, placeleft, placeup, placedown, summon, blockevent, cancelblockevent, select)

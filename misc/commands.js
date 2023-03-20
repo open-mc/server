@@ -4,11 +4,9 @@ import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { MOD, OP } from '../config.js'
 import { Entities, Entity, entityMap } from '../entities/entity.js'
-import { World } from '../world/world.js'
-import { stats } from '../internals.js'
+import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
-import { DataWriter } from '../utils/data.js'
-import { goto, place } from './ant.js'
+import { goto, jump, place, right } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 
 export function formatTime(t){
@@ -58,6 +56,7 @@ function selector(a, who){
 		if(!player)throw "No targets matched selector"
 		return [player]
 	}
+	throw 'Invalid selector'
 }
 
 let stack = null
@@ -140,11 +139,31 @@ export const commands = {
 	},
 	setblock(_x = '~', _y = '~', type, data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
-		if(!(type in Blocks))throw 'No such entity: ' + type
+		if(!(type in Blocks))throw 'No such block: ' + type
 		const b = Blocks[type]()
 		snbt(data, 0, b, b.savedata)
 		goto(floor(x), floor(y), w)
 		place(b)
+		return 'Set block at ('+ifloat(x)+', '+ifloat(y)+')'
+	},
+	fill(_x, _y, _x2, _y2, type, d = this.world || 'overworld'){
+		let n = performance.now()
+		let {x, y, w} = parseCoords(_x, _y, d, this)
+		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
+		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(x, y, w)
+		if(x2 < 0 || y2 < 0)return;
+		if(!(type in Blocks))throw 'No such block: ' + type
+		const b = Blocks[type]
+		for(y = 0; y != y2+1; y=(y+1)|0){
+			for(x = 0; x != x2+1; x=(x+1)|0){
+				place(b)
+				right()
+			}
+			jump(-x2-1,1)
+		}
+		n = performance.now() - n
+		const count = x2*y2+x2+y2+1
+		return 'Filled '+count+' blocks' + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : '')
 	},
 	clear(sel, _item, _max = '2147483647'){
 		const Con = _item && Items[_item]?.constructor || Item
@@ -351,15 +370,8 @@ function snbt(s, i, t, T1, T2){
 		}
 	}
 }
+optimize(parseCoords, snbt, ...Object.values(commands))
 
-function safeAssign(t, v){
-	if(typeof v != 'object') return
-	for(let k in v){
-		if(!Object.hasOwn(t, k) || typeof v[k] != typeof t[k]) continue
-		if(typeof t[k] == 'object') safeAssign(t[k], v[k])
-		else t[k] = v[k]
-	}
-}
 function parseCoords(x, y, d, t){
 	let w = typeof d == 'string' ? Dimensions[d] : d
 	if(!w) throw 'No such dimension'

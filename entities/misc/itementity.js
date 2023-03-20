@@ -1,12 +1,11 @@
 import { Item } from '../../items/item.js'
-import { DataWriter } from '../../utils/data.js'
 import { Entities, Entity } from '../entity.js'
 
 Entities.item = class ItemEntity extends Entity{
 	item = null
-	static width = 0.25
+	static width = 0.125
 	static height = 0.25
-	static collisionTestPadding = 0.75
+	static collisionTestPadding = 0.5
 	static head = 0.125
 	static savedata = {item: Item}
 	touch(e){

@@ -1,5 +1,5 @@
-import { Blocks } from "../../blocks/block.js"
-import { getX, getY, up, jump, peek, place, right, destroy } from "../../misc/ant.js"
+import { optimize } from "../../internals.js"
+import { getX, getY, up, jump, peek, right, destroy, select } from "../../misc/ant.js"
 
 const DIAMETER = 41, LEFT = DIAMETER - 1 >>> 1
 const buffer = new Int32Array(DIAMETER * DIAMETER * 2)
@@ -7,9 +7,9 @@ const buffer = new Int32Array(DIAMETER * DIAMETER * 2)
 let x = 0, y = 0
 const get = (xo=0,yo=0) => buffer[x+xo + LEFT + (y+yo + LEFT) * DIAMETER]
 const set = a => buffer[x + LEFT + (y + LEFT) * DIAMETER] = a
-
-export function explode(strength = 100, fire = false){
+export function explode(entity, strength = 100, fire = false){
 	buffer.fill(0); x = y = 0
+	entity.goto()
 	set(strength -= peek().blast)
 	if(strength > 0) destroy()
 	else return
@@ -59,4 +59,16 @@ export function explode(strength = 100, fire = false){
 			right(); x++
 		}
 	}
+	jump(-x,-y); x = getX(); y = getY()
+	for(const e of select(-LEFT, -LEFT, LEFT, LEFT)){
+		if(e == entity) continue
+		let dx = e.x - x, dy = e.y - y
+		const dmg = buffer[(floor(dx+LEFT)|0) + (floor(dy+LEFT)|0)*DIAMETER]
+		const d = sqrt(dx * dx + dy * dy)
+		dx /= d; dy /= d
+		e.dx += dx * dmg / 4; e.dy += dy * dmg / 4
+		e.damage(dmg / 4)
+		if(e.rubber) e.rubber(48)
+	}
 }
+optimize(explode)
