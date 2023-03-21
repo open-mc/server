@@ -25,7 +25,8 @@ globalThis.progress = function(desc){
 	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${formatTime(Date.now() - started)}) ${desc}`)
 	if(total == loaded + 1)promise()
 }
-process.stdout.write('\x1bc\x1b[3J')
+const clear = () => process.stdout.write('\x1bc\x1b[3J')
+clear()
 progress('Modules loaded')
 let blockidx, itemidx, entityidx
 import('./blocks/index.js').then(({blockindex}) => {
@@ -40,15 +41,6 @@ import('./entities/index.js').then(({entityindex}) => {
 	entityidx = entityindex
 	progress(`${BlockIDs.length} Entities loaded`)
 })
-function uncaughtErr(e){
-	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
-		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
-	if(loaded <= total) process.exit(0)
-}
-process.on('uncaughtException', uncaughtErr)
-process.on('unhandledRejection', uncaughtErr)
-const clear = () => process.stdout.write('\x1bc\x1b[3J')
 await new Promise(r => promise = r)
 
 export let server
@@ -281,5 +273,4 @@ function saveAll(cb, promises = []){
 	Promise.all(promises).then(cb)
 }
 
-const timeout = () => setTimeout(saveAll, 120e3, timeout) //Every 2min
-timeout()
+void function setTimeout(){setTimeout(saveAll, 120e3, timeout)}()
