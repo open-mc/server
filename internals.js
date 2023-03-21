@@ -3,12 +3,12 @@ import {promises as fs, exists} from 'fs'
 import { setFlagsFromString } from 'v8'
 import './utils/prototypes.js'
 import { runInThisContext } from 'vm'
-import './utils/prototypes.js'
+
 setFlagsFromString('--allow-natives-syntax')
 // TODO: research on %CompileOptimized_Concurrent
 export const optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
 
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
+globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\/\w+:)?/y,'')
 globalThis.WORLD = PATH + '../' + (process.argv[2] || 'world') + '/'
 
 fs.exists = a => new Promise(r => exists(a, r))
