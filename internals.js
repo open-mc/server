@@ -1,18 +1,45 @@
-import fse from 'fs-extra'
 import {promises as fs, exists} from 'fs'
 import { setFlagsFromString } from 'v8'
 import './utils/prototypes.js'
 import { runInThisContext } from 'vm'
 import './utils/prototypes.js'
-setFlagsFromString('--allow-natives-syntax')
-// TODO: research on %CompileOptimized_Concurrent
-export const optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
+export let optimize = Function.prototype
+try{
+	setFlagsFromString('--allow-natives-syntax')
+	// TODO: research on %CompileOptimized_Concurrent
+	optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
+}catch(e){}
 
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
 globalThis.WORLD = PATH + '../' + (process.argv[2] || 'world') + '/'
 
 fs.exists = a => new Promise(r => exists(a, r))
-await fs.readdir(WORLD).catch(e=>fse.copy(PATH + 'template_world_folder_do_not_edit', WORLD))
+if(!await fs.exists(WORLD)){
+	await fs.mkdir(WORLD)
+	await Promise.all([
+		fs.mkdir(WORLD + 'players'),
+		fs.mkdir(WORLD + 'dimensions'),
+		fs.mkdir(WORLD + 'defs').then(() => Promise.all([
+			fs.writeFile(WORLD + 'defs/blockindex.txt', 'air'),
+			fs.writeFile(WORLD + 'defs/itemindex.txt', 'stone'),
+			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}')
+		])),
+		fs.writeFile(WORLD + 'permissions.yaml', `# permission settings
+# possible permissions: op, mod, normal, spectate, deny, banned(ban_end)
+
+# "Spectate" players may move around, load chunks and see the world
+# but cannot place, break or otherwise interact with the world.
+# They are also not visible to other players, but do show up /list
+
+# Example permissions (without the #):
+# cyarty: op
+# zekiah: mod
+
+default_permissions: normal`),
+		fs.writeFile(WORLD + 'gamerules.json', '{}'),
+		fs.copyFile(PATH + 'default_properties.yaml', WORLD + 'properties.yaml')
+	])
+}
 let idle2 = performance.nodeTiming.idleTime
 let time2 = performance.now()
 
@@ -68,3 +95,15 @@ const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, t
 const Object = globalThis.Object
 
 }).toString().slice(6,-3))
+
+if(!('abs' in globalThis))
+	Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
+
+function uncaughtErr(e){
+	const l = process.stdout.columns
+	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
+		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
+	process.exit(0)
+}
+process.on('uncaughtException', uncaughtErr)
+process.on('unhandledRejection', uncaughtErr)

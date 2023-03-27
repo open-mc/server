@@ -40,14 +40,6 @@ import('./entities/index.js').then(({entityindex}) => {
 	entityidx = entityindex
 	progress(`${BlockIDs.length} Entities loaded`)
 })
-function uncaughtErr(e){
-	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
-		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
-	if(loaded <= total) process.exit(0)
-}
-process.on('uncaughtException', uncaughtErr)
-process.on('unhandledRejection', uncaughtErr)
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 await new Promise(r => promise = r)
 
@@ -269,7 +261,7 @@ process.on('SIGINT', _ => {
 	exiting = true
 	const promises = []
 	for(const sock of server.clients) promises.push(close.call(sock))
-	saveAll(process.exit, promises)
+	saveAll(() => process.exit(0), promises)
 })
 
 function saveAll(cb, promises = []){	
@@ -281,5 +273,4 @@ function saveAll(cb, promises = []){
 	Promise.all(promises).then(cb)
 }
 
-const timeout = () => setTimeout(saveAll, 120e3, timeout) //Every 2min
-timeout()
+void function timeout(){setTimeout(saveAll, 120e3, timeout)}()

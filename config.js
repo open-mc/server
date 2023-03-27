@@ -15,7 +15,7 @@ async function loadPermissions(){
 			str = str.match(/^banned(\(([^\)]*)\))?$/)
 			if(str) PERMISSIONS[i] = round(new Date(str[2]) / 1000) || 2147483647
 		}
-	}catch(e){}
+	}catch(e){PERMISSIONS={};console.warn(e+'\n\n\n')}
 	w.next().then(loadPermissions)
 }
 

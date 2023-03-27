@@ -15,5 +15,5 @@ export const generator = (x, y, d) => new Promise(r => {
 	waiting.set(x+' '+y+' '+d, r)
 	gen.postMessage({x, y, d, seed: CONFIG.seed, name: CONFIG.generators[d]})
 })
-gen.on('exit', process.exit)
+gen.on('exit', () => process.exit(0))
 globalThis.genprocess = gen

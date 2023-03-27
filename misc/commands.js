@@ -22,6 +22,113 @@ export function formatTime(t){
 	}
 }
 
+const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
+const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
+function snbt(s, i, t, T1, T2){
+	if(typeof t == 'object'){
+		if(s[i] != '{') throw 'Expected dict literal'
+		while(s[++i] == ' ');
+		if(s[i] == '}') return
+		while(true){
+			ID.lastIndex = i
+			const [k] = s.match(ID)
+			if(!k.length) throw 'expected prop name in dict declaration'
+			i = ID.lastIndex - 1
+			while(s[++i] == ' ');
+			if(s[i] != ':' && s[i] != '=') throw 'expected : or = after prop name in snbt'
+			while(s[++i] == ' ');
+			const T = T2[k] || T1[K]
+			switch(T){
+				case Int8: case Int16: case Int32: case Float32:
+				case Uint8: case Uint16: case Uint32: case Float64:
+				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
+				NUM.lastIndex = i
+				t[k] = T(+s.match(NUM)[0])
+				i = NUM.lastIndex
+				break
+				case Boolean:
+				BOOL.lastIndex = i
+				switch(s.match(BOOL)[0][0]){
+					case 't': case 'T': case '1':	t[k] = true; break
+					case 'f': case 'F': case '0': t[k] = false; break
+					default: throw 'Expected boolean for key '+k
+				}
+				i = BOOL.lastIndex
+				case String:
+				STRING.lastIndex = i
+				const a = s.match(STRING)
+				if(!a) throw 'Expected string for key '+k
+				t[k] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
+				break
+				case undefined: case null: throw 'Object does not have key '+k
+				default: i = snbt(s, i, t[k])
+			}
+			i--
+			while(s[++i] == ' ');
+			if(i >= s.length || s[i] == '}') break
+			else if(s[i] != ',' && s[i] != ';') throw 'expected , or ; after prop declaration in snbt'
+			while(s[++i] == ' ');
+		}
+	}else if(Array.isArray(t)){
+		if(s[i] != '[') throw 'Expected array literal'
+		while(s[++i] == ' ');
+		let [T, l = NaN] = T1 || T2
+		if(s[i] == ']' && !l) return void(t.length=0);
+		let j = -1
+		while(true){
+			if(++j == l) throw 'Too many elements in array literal'
+			switch(T){
+				case Int8: case Int16: case Int32: case Float32:
+				case Uint8: case Uint16: case Uint32: case Float64:
+				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
+				NUM.lastIndex = i
+				t[j] = T(+s.match(NUM)[0])
+				i = NUM.lastIndex
+				break
+				case Boolean:
+				BOOL.lastIndex = i
+				switch(s.match(BOOL)[0][0]){
+					case 't': case 'T': case '1':	t[j] = true; break
+					case 'f': case 'F': case '0': t[j] = false; break
+					default: throw 'Expected boolean for key '+k
+				}
+				i = BOOL.lastIndex
+				case String:
+				STRING.lastIndex = i
+				const a = s.match(STRING)
+				if(!a) throw 'Expected string for key '+k
+				t[j] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
+				break
+				case undefined: case null: throw 'Invalid array type (weird)'
+				default: i = snbt(s, i, t[j])
+			}
+			if(j < l) throw 'Not enough elements in array literal'
+			i--
+			while(s[++i] == ' ');
+			if(i >= s.length || s[i] == '}') break
+			else if(s[i] != ',' && s[i] != ';') throw 'expected , or ; after prop declaration in snbt'
+			while(s[++i] == ' ');
+		}
+	}
+}
+
+function parseCoords(x, y, d, t){
+	let w = typeof d == 'string' ? Dimensions[d] : d
+	if(!w) throw 'No such dimension'
+	if(x[0] == "^" && y[0] == "^"){
+		x = (+x.slice(1))/180*PI - t.facing
+		y = +y.slice(1);
+		[x, y] = [t.x + sin(x) * y, t.y + cos(x) * y]
+	}else{
+		if(x[0] == "~")x = t.x + +x.slice(1)
+		else x -= 0
+		if(y[0] == "~")y = t.y + +y.slice(1)
+		else y -= 0
+	}
+	if(x != x || y != y) throw 'Invalid coordinates'
+	return {x, y, w}
+}
+
 function log(who, msg){
 	if(!GAMERULES.commandlogs)return
 	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC)
@@ -266,125 +373,23 @@ commands.i = commands.info
 
 export const anyone_help = {
 	help: '<cmd> -- Help for a command',
-	list: '-- List online players'
+	list: '-- List online players',
+	info: '-- Info about the server and yourself'
 }, mod_help = {
 	...anyone_help,
 	kick: '[player] -- Kick a player',
 	say: '[style] [msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
 	tpe: '[targets] [destEntity]',
-	time: ['+<amount> -- Add to time', '-<amount> -- Substract from time', '<value> -- Set time', '-- Get current time']
+	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
+	summon: '[entity_type] (x) (y) (snbt_data) (dimension) -- Summon an entity',
+	setblock: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Place a block somewhere',
+	clear: '[player] (filter_item) (max_amount) -- Remove items from a player'
 }, help = {
 	...mod_help,
+	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
 }
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
-
-const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
-const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
-function snbt(s, i, t, T1, T2){
-	if(typeof t == 'object'){
-		if(s[i] != '{') throw 'Expected dict literal'
-		while(s[++i] == ' ');
-		if(s[i] == '}') return
-		while(true){
-			ID.lastIndex = i
-			const [k] = s.match(ID)
-			if(!k.length) throw 'expected prop name in dict declaration'
-			i = ID.lastIndex - 1
-			while(s[++i] == ' ');
-			if(s[i] != ':' && s[i] != '=') throw 'expected : or = after prop name in snbt'
-			while(s[++i] == ' ');
-			const T = T2[k] || T1[K]
-			switch(T){
-				case Int8: case Int16: case Int32: case Float32:
-				case Uint8: case Uint16: case Uint32: case Float64:
-				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
-				NUM.lastIndex = i
-				t[k] = T(+s.match(NUM)[0])
-				i = NUM.lastIndex
-				break
-				case Boolean:
-				BOOL.lastIndex = i
-				switch(s.match(BOOL)[0][0]){
-					case 't': case 'T': case '1':	t[k] = true; break
-					case 'f': case 'F': case '0': t[k] = false; break
-					default: throw 'Expected boolean for key '+k
-				}
-				i = BOOL.lastIndex
-				case String:
-				STRING.lastIndex = i
-				const a = s.match(STRING)
-				if(!a) throw 'Expected string for key '+k
-				t[k] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
-				break
-				case undefined: case null: throw 'Object does not have key '+k
-				default: i = snbt(s, i, t[k])
-			}
-			i--
-			while(s[++i] == ' ');
-			if(i >= s.length || s[i] == '}') break
-			else if(s[i] != ',' && s[i] != ';') throw 'expected , or ; after prop declaration in snbt'
-			while(s[++i] == ' ');
-		}
-	}else if(Array.isArray(t)){
-		if(s[i] != '[') throw 'Expected array literal'
-		while(s[++i] == ' ');
-		let [T, l = NaN] = T1 || T2
-		if(s[i] == ']' && !l) return void(t.length=0);
-		let j = -1
-		while(true){
-			if(++j == l) throw 'Too many elements in array literal'
-			switch(T){
-				case Int8: case Int16: case Int32: case Float32:
-				case Uint8: case Uint16: case Uint32: case Float64:
-				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
-				NUM.lastIndex = i
-				t[j] = T(+s.match(NUM)[0])
-				i = NUM.lastIndex
-				break
-				case Boolean:
-				BOOL.lastIndex = i
-				switch(s.match(BOOL)[0][0]){
-					case 't': case 'T': case '1':	t[j] = true; break
-					case 'f': case 'F': case '0': t[j] = false; break
-					default: throw 'Expected boolean for key '+k
-				}
-				i = BOOL.lastIndex
-				case String:
-				STRING.lastIndex = i
-				const a = s.match(STRING)
-				if(!a) throw 'Expected string for key '+k
-				t[j] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
-				break
-				case undefined: case null: throw 'Invalid array type (weird)'
-				default: i = snbt(s, i, t[j])
-			}
-			if(j < l) throw 'Not enough elements in array literal'
-			i--
-			while(s[++i] == ' ');
-			if(i >= s.length || s[i] == '}') break
-			else if(s[i] != ',' && s[i] != ';') throw 'expected , or ; after prop declaration in snbt'
-			while(s[++i] == ' ');
-		}
-	}
-}
 optimize(parseCoords, snbt, ...Object.values(commands))
-
-function parseCoords(x, y, d, t){
-	let w = typeof d == 'string' ? Dimensions[d] : d
-	if(!w) throw 'No such dimension'
-	if(x[0] == "^" && y[0] == "^"){
-		x = (+x.slice(1))/180*PI - t.facing
-		y = +y.slice(1);
-		[x, y] = [t.x + sin(x) * y, t.y + cos(x) * y]
-	}else{
-		if(x[0] == "~")x = t.x + +x.slice(1)
-		else x -= 0
-		if(y[0] == "~")y = t.y + +y.slice(1)
-		else y -= 0
-	}
-	if(x != x || y != y) throw 'Invalid coordinates'
-	return {x, y, w}
-}
