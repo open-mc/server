@@ -1,7 +1,12 @@
-import {promises as fs, exists} from 'fs'
-import { setFlagsFromString } from 'v8'
+import { promises as fs, exists } from 'node:fs'
+fs.exists = a => new Promise(r => exists(a, r))
+
+export { Worker } from 'node:worker_threads'
+export { fs }
+
+import { setFlagsFromString, getHeapStatistics } from 'node:v8'
 import './utils/prototypes.js'
-import { runInThisContext } from 'vm'
+import { runInThisContext } from 'node:vm'
 import './utils/prototypes.js'
 export let optimize = Function.prototype
 try{
@@ -11,9 +16,8 @@ try{
 }catch(e){}
 
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
-globalThis.WORLD = PATH + '../' + (process.argv[2] || 'world') + '/'
+globalThis.WORLD = PATH + '../' + ((typeof Deno == 'undefined' ? process.argv[2] : Deno.args[0]) || 'world') + '/'
 
-fs.exists = a => new Promise(r => exists(a, r))
 if(!await fs.exists(WORLD)){
 	await fs.mkdir(WORLD)
 	await Promise.all([
@@ -40,6 +44,9 @@ default_permissions: normal`),
 		fs.copyFile(PATH + 'default_properties.yaml', WORLD + 'properties.yaml')
 	])
 }
+
+performance.nodeTiming ??= {idleTime: 0}
+
 let idle2 = performance.nodeTiming.idleTime
 let time2 = performance.now()
 
@@ -52,7 +59,7 @@ export function gotStats(key, obj){
 setInterval(() => {
 	const f = (idle2 - (idle2 = performance.nodeTiming.idleTime)) / (time2 - (time2 = performance.now()))
 	stats.elu.cpu1 -= (stats.elu.cpu1 + f - 1) / 20
-	stats.mem.cpu1 = process.memoryUsage().heapTotal
+	stats.mem.cpu1 = getHeapStatistics().used_heap_size
 }, 500)
 function composeStat(a, v){
 	const COLS = process.stdout.columns
@@ -69,7 +76,7 @@ function composeStat(a, v){
 
 	return a.join(' / ')+'\n'+bar+'\x1b[m'
 }
-export const MEMLIMIT = +(process.execArgv.find(a=>a.startsWith('--max-old-space-size='))||'=4096').split('=')[1] * 1048576
+export const MEMLIMIT = getHeapStatistics().heap_size_limit
 Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	let s = [], a = [], v = []
 	for(const k in stats.elu){

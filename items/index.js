@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
 //import all item files
 import { Item, ItemIDs, Items } from './item.js'

@@ -1,4 +1,4 @@
-import { Worker } from 'worker_threads'
+import { Worker } from '../internals.js'
 import { CONFIG } from '../config.js'
 import { gotStats } from '../internals.js'
 import { DataReader } from '../utils/data.js'

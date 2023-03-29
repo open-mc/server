@@ -1,6 +1,5 @@
-import fs from 'fs/promises'
-import { stats } from './internals.js'
-import util from 'util'
+import { fs, stats } from './internals.js'
+import util from 'node:util'
 import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
@@ -15,8 +14,8 @@ import { BlockIDs, Blocks, Block } from './blocks/block.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { setTPS } from './world/tick.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
-import crypto from 'crypto'
-import { deflateSync } from 'zlib'
+import crypto from 'node:crypto'
+import { deflateSync } from 'node:zlib'
 
 let total = 5, loaded = -1, promise = null
 globalThis.started = round(Date.now() - performance.now())

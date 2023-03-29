@@ -41,7 +41,8 @@ export function chat(msg, style = 15){
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
 			avatar_url: CONFIG.icon,
 			username: CONFIG.name,
-			content: style ^ 15 ? '_**' + msg + '**_' : '`' + msg + '`'
+			content: style ^ 15 ? '_**' + msg + '**_' : '`' + msg + '`',
+			allowed_mentions: { parse: [] }
 		})}).catch(e=>null)
 	}
 	msg = (style<16?'0'+style.toString(16):style.toString(16)) + msg
