@@ -22,6 +22,8 @@ pem:
 
 # Webhook url for discord chat integration (optional)
 webhook:
+# Display a different discord avatar and username for each player when chatting
+webhook_profiles: true
 
 
 # Related to server list and disconnect screen

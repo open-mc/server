@@ -44,9 +44,8 @@ export class World extends Map{
 		}
 		const pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.id)).then(buf => {
 			let ch; try{ch = new Chunk(buf, this, pr.players)}catch(e){buf = Chunk.bufOf(Blocks.air,cx,cy); ch = new Chunk(buf, this, pr.players)}
-			for(const pl of ch.players){
+			for(const pl of ch.players)
 				pl.sock.send(buf)
-			}
 			ch.t = 20
 			return ch
 		})

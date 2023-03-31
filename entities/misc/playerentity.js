@@ -6,6 +6,7 @@ import { DataWriter } from '../../utils/data.js'
 import { encodeMove } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
+import { PNG } from 'pngjs'
 
 Entities.player = class Player extends ChunkLoader{
 	inv = Array.null(37)
@@ -77,4 +78,40 @@ Entities.player = class Player extends ChunkLoader{
 		selected: Byte,
 		skin: Uint8Array
 	}
+	_avatar = null
+	//todo: 64x64 size instead of 12x12
+	getAvatar(){
+		if(this._avatar) return this._avatar
+		const png = new PNG({width: 64, height: 64})
+		src = this.skin; dest = new Uint32Array(png.data.buffer)
+		// draw shoulder at x=22, y=49 (to x=42, y=64)
+		c3t4_5(3158, 4); c3t4_5(3163, 5); c3t4_5(3168, 6); c3t4_5(3173, 7)
+		c3t4_5(3478,32); c3t4_5(3483,33); c3t4_5(3488,34); c3t4_5(3493,35)
+		c3t4_5(3798,60); c3t4_5(3803,61); c3t4_5(3808,62); c3t4_5(3813,63)
+		// draw head at x=12, y=9
+		for(let i = 0; i < 64; i++)
+			c3t4_5(588 + (i&7)*5 + (i>>3)*320, 132 + (i&7) + (i>>3)*28)
+		// Free echo back service because discord is dumb and doesn't allow data avatar urls
+		return this._avatar = 'http://echo.2147483647.repl.co/?' + PNG.sync.write(png).toString('base64')
+	}
+	getName(){ return this.name }
+}
+let src, dest
+// Function for copying 3 bytes from an rgb u8 image buffer to a 5x5 area in an rgba u32 image buffer
+const c3t4_5 = new Uint8Array(Uint16Array.of(1).buffer)[0] === 1
+? (p, o) => {
+	dest[p    ] = dest[p + 1] = dest[p + 2] = dest[p + 3] = dest[p + 4] =
+	dest[p +64] = dest[p +65] = dest[p +66] = dest[p +67] = dest[p +68] =
+	dest[p+128] = dest[p+129] = dest[p+130] = dest[p+131] = dest[p+132] =
+	dest[p+192] = dest[p+193] = dest[p+194] = dest[p+195] = dest[p+196] =
+	dest[p+256] = dest[p+257] = dest[p+258] = dest[p+259] = dest[p+260] =
+		src[o*=3] | src[o+1] << 8 | src[o+2] << 16 | 0xFF000000
+}
+: (p, o) => {
+	dest[p    ] = dest[p + 1] = dest[p + 2] = dest[p + 3] = dest[p + 4] =
+	dest[p +64] = dest[p +65] = dest[p +66] = dest[p +67] = dest[p +68] =
+	dest[p+128] = dest[p+129] = dest[p+130] = dest[p+131] = dest[p+132] =
+	dest[p+192] = dest[p+193] = dest[p+194] = dest[p+195] = dest[p+196] =
+	dest[p+256] = dest[p+257] = dest[p+258] = dest[p+259] = dest[p+260] =
+		src[o*=3] << 16 | src[o+1] << 8 | src[o+2] | 255
 }

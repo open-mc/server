@@ -252,5 +252,5 @@ export function onstring(player, text){
 		}catch(e){
 			player.chat(err(e), 9)
 		}
-	}else chat(prefix(player)+text)
+	}else chat(prefix(player)+text, undefined, player)
 }

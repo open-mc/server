@@ -131,7 +131,7 @@ function parseCoords(x, y, d, t){
 
 function log(who, msg){
 	if(!GAMERULES.commandlogs)return
-	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC)
+	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC, who)
 }
 
 function selector(a, who){
