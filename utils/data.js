@@ -1,6 +1,4 @@
-Promise.prototype.reader = function(){return this.then(CONSTRUCT)}
-const CONSTRUCT = a => a ? new DataReader(a) : null
-const CHARSET = '0123456789ABCDEF'
+Promise.prototype.reader = function(){return this.then(a => a ? new DataReader(a) : null)}
 
 export const decoder = new TextDecoder()
 export const encoder = new TextEncoder()
@@ -98,7 +96,7 @@ export class DataReader extends DataView{
 		sock.send(this)
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
-		return `DataReader(${this.byteLength - this.i}) [ \x1b[33m${[...new Uint8Array(this.buffer, this.byteOffset, this.byteLength).subarray(this.i, 50)].map(a=>CHARSET[a>>4]+CHARSET[a&15]).join(' ')}\x1b[m${this.byteLength-this.i>50?' ...':''} ]`
+		return `DataReader(${this.byteLength - this.i}) [ \x1b[33m${[...new Uint8Array(this.buffer, this.byteOffset, this.byteLength).subarray(this.i, 50)].map(a=>'0123456789ABCDEF'[a>>4]+'0123456789ABCDEF'[a&15]).join(' ')}\x1b[m${this.byteLength-this.i>50?' ...':''} ]`
 	}
 }
 const ALLOCSIZE = 4096 //Do not try to set this value below 200 or above 100k
@@ -187,6 +185,7 @@ export class DataWriter extends Array{
 			return
 		}
 		new Uint8Array(buf.buffer, buf.byteOffset).set(v.subarray(0, avail), this.i)
+		this.i += avail
 		this.allocnew()
 		const left = len - avail
 		if(left < avail && left < (this.cur.byteLength >> 1)){
@@ -238,9 +237,9 @@ export class DataWriter extends Array{
 		return buf
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){
-		let len = this.i, b
+		let len = this.i, b = []
 		for(b of this)len += b.byteLength
-		return `DataWriter(${len}) [ ${len>50?'... ':''}\x1b[33m${[...b.slice(this.i-50 || b.length), ...new Uint8Array(this.cur.buffer, this.cur.byteOffset, this.cur.byteLength).slice(Math.max(0, this.i-50),this.i)].map(a=>CHARSET[a>>4]+CHARSET[a&15]).join(' ')}\x1b[m ]`
+		return `DataWriter(${len}) [ ${len>50?'... ':''}\x1b[33m${[...b.slice(this.i-50 || b.length), ...new Uint8Array(this.cur.buffer, this.cur.byteOffset, this.cur.byteLength).slice(Math.max(0, this.i-50),this.i)].map(a=>'0123456789ABCDEF'[a>>4]+'0123456789ABCDEF'[a&15]).join(' ')}\x1b[m ]`
 	}
 }
 let flt = new Float32Array(1)

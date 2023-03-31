@@ -37,7 +37,7 @@ function snbt(s, i, t, T1, T2){
 			while(s[++i] == ' ');
 			if(s[i] != ':' && s[i] != '=') throw 'expected : or = after prop name in snbt'
 			while(s[++i] == ' ');
-			const T = T2[k] || T1[K]
+			const T = T2[k] || T1[k]
 			switch(T){
 				case Int8: case Int16: case Int32: case Float32:
 				case Uint8: case Uint16: case Uint32: case Float64:
