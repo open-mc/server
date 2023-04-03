@@ -15,9 +15,9 @@ Entities.item = class ItemEntity extends Entity{
 		}
 		if(e instanceof ItemEntity && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
 			e.remove()
+			if(this.item.count < e.item.count)
+				this.x = e.x, this.y = e.y
 			this.item.count += e.item.count
-			this.x += (e.x - this.x) / 2
-			this.y += (e.y - this.y) / 2
 			return
 		}
 		if(this.age < 10 || !e.inv) return

@@ -39,8 +39,8 @@ export class Entity{
 	get dy(){return this._dy}
 	get f(){return this._f}
 	get state(){return this._state}
-	set dx(a){this._dx=a;this.mv|=16}
-	set dy(a){this._dy=a;this.mv|=32}
+	set dx(a){this._dx=a||0;this.mv|=16}
+	set dy(a){this._dy=a||0;this.mv|=32}
 	set f(a){this._f=a;this.mv|=64}
 	set state(a){this._state=a;this.mv|=8}
 	get x(){return this._x}
