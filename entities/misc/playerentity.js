@@ -95,6 +95,7 @@ Entities.player = class Player extends ChunkLoader{
 		return this._avatar = 'http://echo.2147483647.repl.co/?' + PNG.sync.write(png).toString('base64')
 	}
 	getName(){ return this.name }
+	damage(){}
 }
 let src, dest
 // Function for copying 3 bytes from an rgb u8 image buffer to a 5x5 area in an rgba u32 image buffer
