@@ -171,7 +171,8 @@ export class Entity{
 	static savedata = null
 	static maxHealth = 20
 	static groundDrag = .0000244
-	static airDrag = 0.667
+	static airDrag = 0.06
+	static yDrag = 0.667
 	static width = 0.5; static height = 1; static head = 0.5
 	static collisionTestPadding = 0
 	static gx = 1

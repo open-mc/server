@@ -10,10 +10,10 @@ export function stepEntity(e){
 	if(e.state & 1)e.dy = 0
 	else{
 		e.dy += dt * e.world.gy * e.gy
-		e.dy = e.dy * e.airDrag ** dt
+		e.dy = e.dy * e.yDrag ** dt
 		e.dx += dt * e.world.gx * e.gx
 	}
-	e.dx = e.dx * (e.state & 0x10000 ? e.groundDrag : e.airDrag / 2) ** dt
+	e.dx = e.dx * (e.state & 0x10000 ? e.groundDrag : e.airDrag) ** dt
 }
 
 export const EPSILON = .0001
