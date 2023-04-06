@@ -9,18 +9,6 @@ import { Item, Items } from '../items/item.js'
 import { goto, jump, place, right } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 
-export function formatTime(t){
-	t /= 1000
-	if(t < 3600){
-		if(t >= 60)return floor(t/60)+'m '+floor(t%60)+'s'
-		else if(t >= 1)return floor(t)+'s'
-		else return t*1000+'ms'
-	}else{
-		if(t < 86400)return floor(t/3600)+'h '+floor(t%3600/60)+'m'
-		else if(t < 864000)return floor(t/86400)+'d '+floor(t%86400/3600)+'h'
-		else return floor(t/86400)+'d'
-	}
-}
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
 const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
@@ -364,7 +352,7 @@ export const commands = {
 		return 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a])
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB` + (this.age ? '\nYou have been in this server for: ' + formatTime(this.age * 1000 / TPS) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB` + (this.age ? '\nYou have been in this server for: ' + Date.formatTime(this.age * 1000 / TPS) : '')
 	}
 }
 

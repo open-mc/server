@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js'
-import { server } from '../index.js'
+import { server } from '../server.js'
 import { players } from '../world/index.js'
 import fetch from 'node-fetch'
 

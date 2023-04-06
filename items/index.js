@@ -45,3 +45,5 @@ for(const i in Items){
 if(modified){
 	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.className + I.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.savedata ? ' '+typeToJson(I.savedata) : '')).join('\n'))
 }
+
+progress(`${ItemIDs.length} Items loaded`)

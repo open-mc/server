@@ -48,3 +48,5 @@ for(const i in Blocks){
 if(modified){
 	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(def => def.className + def.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (def.savedata ? ' ' + typeToJson(def.savedata) : '')).join('\n'))
 }
+
+progress(`${BlockIDs.length} Blocks loaded`)

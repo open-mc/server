@@ -5,7 +5,6 @@ export { Worker } from 'node:worker_threads'
 export { fs }
 
 import { setFlagsFromString, getHeapStatistics } from 'node:v8'
-import './utils/prototypes.js'
 import { runInThisContext } from 'node:vm'
 import './utils/prototypes.js'
 export let optimize = Function.prototype
@@ -114,3 +113,15 @@ function uncaughtErr(e){
 }
 process.on('uncaughtException', uncaughtErr)
 process.on('unhandledRejection', uncaughtErr)
+
+
+let total = 5, loaded = -1
+let resolvePromise = null
+const started = Date.now()
+
+export const ready = new Promise(r => resolvePromise = r)
+globalThis.progress = function(desc){
+	loaded++
+	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}`)
+	if(total == loaded + 1)resolvePromise()
+}
