@@ -1,13 +1,14 @@
-import { GAMERULES, TPS, version } from '../config.js'
+import { GAMERULES, version, MOD, OP, stat } from '../config.js'
 import { players } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
-import { MOD, OP } from '../config.js'
 import { Entities, Entity, entityMap } from '../entities/entity.js'
 import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
 import { goto, jump, place, right } from './ant.js'
 import { Blocks } from '../blocks/block.js'
+import { current_tps, setTPS } from '../world/tick.js'
+import { started } from '../server.js'
 
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
@@ -199,6 +200,7 @@ export const commands = {
 		const reason = r.join(' ')
 		let players = selector(a, this)
 		if(players.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
+		stat('misc', 'player_kicks', players.length)
 		for(const pl of players){
 			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
 			pl.sock.close()
@@ -351,8 +353,36 @@ export const commands = {
 		}
 		return 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a])
 	},
+	spawnpoint(x='~',y='~',d=this.world||'overworld'){
+		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
+			return commands.tp.call(this, y || '@s', GAMERULES.spawnX, GAMERULES.spawnY, GAMERULES.spawnWorld)
+		void ({x: GAMERULES.spawnX, y: GAMERULES.spawnY, w: {id: GAMERULES.spawnWorld}} = parseCoords(x,y,d,this))
+		return 'Set the spawn point successfully!'
+	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB` + (this.age ? '\nYou have been in this server for: ' + Date.formatTime(this.age * 1000 / TPS) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB` + (this.age ? '\nYou have been in this server for: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
+	},
+	tps(tps){
+		setTPS(max(1, min((tps|0) || 20, 1000)))
+		for(const pl of players.values()){
+			let buf = new DataWriter()
+			buf.byte(1)
+			buf.int(pl._id | 0)
+			buf.short(pl._id / 4294967296 | 0)
+			buf.byte(pl.sock.r)
+			buf.float(current_tps)
+			pl.sock.packets.push(buf)
+		}
+		return 'Set the TPS to '+current_tps
+	},
+	kill(t, cause = 'void'){
+		let i = 0
+		for(const e of selector(t, this)){
+			if(cause != 'void') e.died()
+			e.remove()
+			i++
+		}
+		return 'Killed '+i+' entities'
 	}
 }
 
@@ -376,6 +406,10 @@ export const anyone_help = {
 }, help = {
 	...mod_help,
 	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
+	mutate: '[entity] [snbt_data] -- Change properties of an entity',
+	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
+	tps: '[tps] -- Set server-side tps',
+	spawnpoint: ['(x) (y) (dimension) -- Set the spawn point', 'tp (who) -- Teleport entities to spawn'],
 }
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)

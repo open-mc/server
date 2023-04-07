@@ -1,21 +1,24 @@
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
-import { MOD, TPS } from '../config.js'
+import { CONFIG, MOD, stat, statRecord } from '../config.js'
 import { Entities, entityMap } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
 import { blockevent, cancelblockevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
+import { current_tps } from '../world/tick.js'
 
 const REACH = 10
 
 function playerMovePacket(player, buf){
 	top: {
 		let t = Date.now()
-		if(t < (t = max(this.movePacketCd + 1000 / TPS, t - 2000)))break top
+		if(t < (t = max(this.movePacketCd + 1000 / current_tps, t - 2000)))break top
 		this.movePacketCd = t
 		if(buf.byte() != this.r || !player.chunk)break top
 		player.move(buf.double() || 0, buf.double() || 0)
+		statRecord('player', 'max_dist', Math.sqrt(player.x * player.x + player.y * player.y))
 		player.state = buf.short()
 		player.dx = buf.float() || 0; player.dy = buf.float() || 0
+		statRecord('player', 'max_speed', Math.sqrt(player.dx * player.dx + player.dy * player.dy))
 		const sel = buf.byte()
 		if(player.selected != (player.selected = (sel & 127) % 9)){
 			const res = new DataWriter()
@@ -97,7 +100,10 @@ function playerMovePacket(player, buf){
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
-		item.place?.()
+		if(item.place){
+			item.place()
+			stat('player', 'blocks_placed')
+		}
 		if(!item.count) player.inv[sel&127] = null
 		player.itemschanged([sel&127])
 	}
@@ -105,6 +111,7 @@ function playerMovePacket(player, buf){
 		cancelblockevent(player.blockBreakEvent)
 		player.blockBreakEvent = 0
 		player.blockBreakProgress = -1
+		stat('player', 'break_abandon')
 	}
 }
 
@@ -240,17 +247,26 @@ export function onstring(player, text){
 	if(!(text = text.trimEnd())) return
 	if(text[0] == '/'){
 		try{
-			let args = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g).map((a,i)=>{
-				try{return a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
-			})
-			if(!(args[0] in commands))throw 'No such command: /'+args[0]
+			const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
+			if(!match) return void player.chat('Slash, yes, very enlightening.')
+			for(let i = 0; i < match.length; i++){
+				const a = match[i]
+				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
+			}
+			if(!(match[0] in commands))throw 'No such command: /'+match[0]
 			if(this.permissions < MOD){
-				if(!anyone_help[args[0]])throw "You do not have permission to use /"+args[0]
-			}else if(player.permission == MOD && !mod_help[args[0]])throw "You do not have permission to use /"+args[0]
-			let res = commands[args[0]].apply(player, args.slice(1))
+				if(!anyone_help[match[0]])throw "You do not have permission to use /"+match[0]
+			}else if(player.permission == MOD && !mod_help[match[0]])throw "You do not have permission to use /"+match[0]
+			stat('misc', 'commands_used')
+			let res = commands[match[0]].apply(player, match.slice(1))
 			res && player.chat(res)
 		}catch(e){
 			player.chat(err(e), 9)
 		}
-	}else chat(prefix(player)+text, undefined, player)
+	}else{
+		stat('misc', 'chat_messages')
+		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
+		if(text.includes('pineapple') && text.includes('pizza')) stat('misc', 'controversial')
+		chat(prefix(player)+text, undefined, player)
+	}
 }

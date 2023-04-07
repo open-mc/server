@@ -10,7 +10,7 @@ Entities.end_crystal = class extends Entity{
 	static maxHealth = 1
 	died(){
 		// explode
-		explode(this, 180)
 		this.event(3)
+		explode(this, 180)
 	}
 }

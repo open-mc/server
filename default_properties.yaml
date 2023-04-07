@@ -25,14 +25,17 @@ webhook:
 # Display a different discord avatar and username for each player when chatting
 webhook_profiles: true
 
+magic_word: bread # Home page will count how often this word is said in chat
 
 # Related to server list and disconnect screen
 
-icon: https://static.wikia.nocookie.net/minecraft_gamepedia/images/b/b7/Crafting_Table_JE4_BE3.png
+icon: https://i.imgur.com/jLnrxWt.png
 motd:
   - One of the servers of all time
   - Potassium-Free!
   - New motd every day! (maybe)
   - Zero warranty!
+  - 44 Hours without sleep!
+  - "!!!!!"
 
 ban_appeal_info: # info displayed on the banned notice screen

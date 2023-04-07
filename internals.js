@@ -27,6 +27,7 @@ if(!await fs.exists(WORLD)){
 			fs.writeFile(WORLD + 'defs/itemindex.txt', 'stone'),
 			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}')
 		])),
+		fs.writeFile(WORLD + 'stats.json', `{}`),
 		fs.writeFile(WORLD + 'permissions.yaml', `# permission settings
 # possible permissions: op, mod, normal, spectate, deny, banned(ban_end)
 

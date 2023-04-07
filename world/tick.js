@@ -4,6 +4,7 @@ import { DataWriter } from '../utils/data.js'
 import { Chunk } from './chunk.js'
 import { allDimensions, Dimensions } from './index.js'
 import { stepEntity } from './physics.js'
+import { DEFAULT_TPS, stat, statAvg } from '../config.js'
 
 export function encodeMove(e, pl){
 	const buf = pl.sock.ebuf
@@ -100,6 +101,7 @@ export function tick(){
 		for(let i = 0; i < packets.length; i++)
 			packets[i].pipe(pl.sock)
 	}
+	statAvg('misc', 'tps', -1000 / (lastTick - (lastTick = performance.now())))
 }
 
 function everySecond(){
@@ -109,12 +111,16 @@ function everySecond(){
 		buf.double(pl.world ? pl.world.tick : 0)
 		buf.pipe(pl.sock)
 	}
+	stat('misc', 'age')
 }
-
+let lastTick = 0
 let tickTimer = null, timer2 = null
+export let current_tps = DEFAULT_TPS
 export function setTPS(a){
+	current_tps = a
+	lastTick = performance.now()
 	clearInterval(tickTimer)
-	tickTimer = setInterval(tick, 1000 / a - 1)
+	tickTimer = setInterval(tick, 1000 / a)
 	clearInterval(timer2)
 	timer2 = setInterval(everySecond, 1000)
 }

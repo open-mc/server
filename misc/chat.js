@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js'
-import { server } from '../server.js'
+import { httpHost, server } from '../server.js'
 import { players } from '../world/index.js'
 import fetch from 'node-fetch'
 
@@ -34,7 +34,7 @@ const defaultProfile = {
  * @param {number} style Color and style to send the message as
  * @param {{getName: () => string, getAvatar: () => string}} [player] sender of chat message, primarily used to prefix the message. Setting this to their websocket object will send the message as a command output
  */
-export function chat(msg, style = 15, who = defaultProfile){
+export function chat(msg, style = 15, who = server){
 	let a = ''
 	if(style&BOLD)a+='1;'
 	if(style&ITALIC)a+='3;'
@@ -43,9 +43,9 @@ export function chat(msg, style = 15, who = defaultProfile){
 	console.log('\x1b[' + a + 'm' + (style&STRIKETHROUGH?msg.replace(/[\x20-\uffff]/g,'$&\u0336'):msg).replace(/[\x00-\x1f\x7f]/g, a => a == '\x7f' ? '\u2421' : String.fromCharCode(0x2400 + a.charCodeAt())) + '\x1b[m')
 	if(CONFIG.webhook && msg.length < 1994){
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
-			content: who == defaultProfile ? '_**' + msg + '**_' : CONFIG.webhook_profiles ?? true ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
-			username: (CONFIG.webhook_profiles ?? true ? who : defaultProfile).getName(),
-			avatar_url: (CONFIG.webhook_profiles ?? true ? who : defaultProfile).getAvatar(),
+			content: who == server ? '_**' + msg + '**_' : CONFIG.webhook_profiles ?? true ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
+			username: CONFIG.webhook_profiles ?? true ? who.getName() : CONFIG.name,
+			avatar_url: CONFIG.webhook_profiles ?? true ? httpHost + '/avatar/' + who.name : CONFIG.icon,
 			allowed_mentions: { parse: [] }, flags: 4
 		})}).catch(e => null)
 	}

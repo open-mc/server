@@ -1,3 +1,4 @@
+import { stat } from "../../config.js"
 import { optimize } from "../../internals.js"
 import { getX, getY, up, jump, peek, right, destroy, select } from "../../misc/ant.js"
 
@@ -8,8 +9,12 @@ let x = 0, y = 0
 const get = (xo=0,yo=0) => buffer[x+xo + LEFT + (y+yo + LEFT) * DIAMETER]
 const set = a => buffer[x + LEFT + (y + LEFT) * DIAMETER] = a
 export function explode(entity, strength = 100, fire = false){
+	stat('world', 'explosions')
 	buffer.fill(0); x = y = 0
-	entity.goto()
+	if(entity){
+		entity.goto()
+		entity.remove()
+	}
 	set(strength -= peek().blast)
 	if(strength > 0) destroy()
 	else return
@@ -61,7 +66,6 @@ export function explode(entity, strength = 100, fire = false){
 	}
 	jump(-x,-y); x = getX(); y = getY()
 	for(const e of select(-LEFT, -LEFT, LEFT, LEFT)){
-		if(e == entity) continue
 		let dx = e.x - x, dy = e.y - y
 		const dmg = buffer[(floor(dx+LEFT)|0) + (floor(dy+LEFT)|0)*DIAMETER]
 		const d = sqrt(dx * dx + dy * dy)

@@ -1,9 +1,9 @@
 import { Blocks } from '../../blocks/block.js'
-import { TPS } from '../../config.js'
+import { stat } from '../../config.js'
 import { Item } from '../../items/item.js'
 import { blockevent, cancelblockevent, goto, peek, place } from '../../misc/ant.js'
 import { DataWriter } from '../../utils/data.js'
-import { encodeMove } from '../../world/tick.js'
+import { current_tps, encodeMove } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { PNG } from 'pngjs'
@@ -34,7 +34,7 @@ Entities.player = class Player extends ChunkLoader{
 		buf.int(this._id | 0)
 		buf.short(this._id / 4294967296 | 0)
 		buf.byte(this.sock.r)
-		buf.float(TPS)
+		buf.float(current_tps)
 		this.sock.packets.push(buf)
 		if(mv){
 			this.mv |= mv
@@ -46,7 +46,7 @@ Entities.player = class Player extends ChunkLoader{
 		this.blockBreakProgress++
 		const block = this.world.at(this.bx, this.by) || Blocks.air
 		const item = this.inv[this.selected]
-		if(this.blockBreakProgress >= (item ? item.breaktime(block) : block.breaktime) * TPS){
+		if(this.blockBreakProgress >= (item ? item.breaktime(block) : block.breaktime) * current_tps){
 			goto(this.bx, this.by, this.world)
 			const drop = peek().drops?.(this.inv[this.selected])
 			if(drop instanceof Item){
@@ -66,6 +66,7 @@ Entities.player = class Player extends ChunkLoader{
 			}
 			blockevent(2)
 			place(Blocks.air)
+			stat('player', 'blocks_broken')
 			cancelblockevent(this.blockBreakEvent)
 			this.blockBreakEvent = 0
 			this.blockBreakProgress = -1
@@ -92,7 +93,7 @@ Entities.player = class Player extends ChunkLoader{
 		for(let i = 0; i < 64; i++)
 			c3t4_5(588 + (i&7)*5 + (i>>3)*320, 132 + (i&7) + (i>>3)*28)
 		// Free echo back service because discord is dumb and doesn't allow data avatar urls
-		return this._avatar = 'http://echo.2147483647.repl.co/?' + PNG.sync.write(png).toString('base64')
+		return this._avatar = PNG.sync.write(png)
 	}
 	getName(){ return this.name }
 	damage(){}

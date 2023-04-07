@@ -6,7 +6,7 @@ import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
 import { commands, err } from './misc/commands.js'
 import { input, repl } from 'basic-repl'
 import { codes, onstring } from './misc/incomingPacket.js'
-import { CONFIG, HANDLERS, packs, PERMISSIONS } from './config.js'
+import { CONFIG, GAMERULES, HANDLERS, packs, PERMISSIONS, stat, STATS } from './config.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
 import crypto from 'node:crypto'
@@ -16,6 +16,7 @@ import { itemindex } from './items/index.js'
 import { blockindex } from './blocks/index.js'
 import { Entities } from './entities/entity.js'
 import { Items } from './items/item.js'
+const clear = () => process.stdout.write('\x1bc\x1b[3J')
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -26,14 +27,37 @@ gnhKtGgJDdv3MweRrgkyz0aethcpcCF17xlXwszJn/Nyvc+E7+8XIRSbFglij0ei
 KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 -----END RSA PUBLIC KEY-----`
 
-/**
- * @param {Request} req
- * @param {Response} res
- */
-const handler = (req, res) => {
-	res.setHeader('Location', 'https://preview.openmc.pages.dev/?ws'+(key&&pem?'s://':'://') + req.headers.host)
-	res.writeHead(301)
-	res.end('')
+const endpoints = {
+	avatar(res, i){
+		const p = players.get(i)
+		if(!p) return void res.end('')
+		res.setHeader('content-type', 'image/png')
+		res.end(p.getAvatar())
+	},
+	play(res){
+		res.setHeader('Location', 'https://preview.openmc.pages.dev/?' + wsHost)
+		res.writeHead(301)
+		res.end('')
+	}
+}
+const [statsHtml0, statsHtml1] = (await fs.readFile('./stats.html')).toString().split('[SERVER_INSERT]')
+const handler = async (req, res) => {
+	if(!wsHost){
+		wsHost = (key&&pem ? 'wss://' : 'ws://') + req.headers['host']
+		httpHost = wsHost.replace('ws', 'http')
+	}
+	const [, endpoint, i] = req.url.match(/\/?([\w_\-]+)(?:\/(.*))?/y) || []
+	if(!endpoint){
+		res.write(statsHtml0)
+		const ps = [], ds = []
+		for(const p of players.values()) ps.push(p.name), ds.push(p.health)
+		res.write(JSON.stringify([{players: ps, playerData: ds, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)]}, STATS]))
+		res.end(statsHtml1)
+		return
+	}
+	const fn = endpoints[endpoint]
+	if(fn) fn(res, i, req)
+	else res.end('404')
 }
 
 const {key, pem} = CONFIG
@@ -49,17 +73,20 @@ export let started = 0
 server.once('listening', () => {
 	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port+(key&&pem?' (secure)':'')}\x1b[m\nType /help for a list of commands, or press tab to switch to repl`)
 	started = Date.now()
+	stat('misc', 'restarts')
 	repl('[server] ', async text => {
 		if(text == 'clear') return clear()
 		if(text[0] == '/'){
 			try{
-				let args = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g).map((a,i)=>{
-					try{
-						return a[0] == '"' ? JSON.parse(a) : a
-					}catch(e){ throw 'failed parsing argument '+i }
-				})
-				if(!(args[0] in commands))throw 'no such command: /'+args[0]
-				let res = commands[args[0]].apply(server, args.slice(1))
+				const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
+				if(!match) return void console.log('Slash, yes, very enlightening.')
+				for(let i = 0; i < match.length; i++){
+					const a = match[i]
+					try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
+				}
+				if(!(match[0] in commands))throw 'No such command: /'+match[0]
+				stat('misc', 'commands_used')
+				let res = commands[match[0]].apply(server, match.slice(1))
 				if(res)console.log(res)
 			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
 		}else{
@@ -80,8 +107,12 @@ WebSocket.prototype.logMalicious = function(reason){
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + packs.map(a=>'\0'+a).join(''))))
 
 const playersConnecting = new Set()
-
-server.on('connection', function(sock, {url}){
+export let wsHost = '', httpHost = ''
+server.on('connection', function(sock, {url, headers, socket}){
+	if(!wsHost){
+		wsHost = (key&&pem ? 'wss://' : 'ws://') + headers['host']
+		httpHost = wsHost.replace('ws', 'http')
+	}
 	if(exiting) return
 	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
 	if(!username || !pubKey || !authSig)return sock.logMalicious('Malformed Connection'), sock.close()
@@ -154,8 +185,8 @@ async function play(sock, username, skin){
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
-		player = Entities.player(0, 20)
-		dim = Dimensions.overworld
+		player = Entities.player(GAMERULES.spawnX, GAMERULES.spawnY)
+		dim = Dimensions[GAMERULES.spawnWorld]
 		player.inv[0] = Items.stone(20)
 		player.inv[1] = Items.oak_log(20)
 		player.inv[2] = Items.oak_planks(20)
@@ -167,6 +198,7 @@ async function play(sock, username, skin){
 		player.inv[8] = Items.diamond_shovel()
 		player.inv[9] = Items.netherrack(10)
 		player.inv[10] = Items.sandstone(10)
+		stat('misc', 'unique_players')
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
@@ -179,7 +211,10 @@ async function play(sock, username, skin){
 	sock.r = 255
 	player.rubber(0)
 	sock.player = player
-	if(!other) chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
+	if(!other){
+		stat('misc', 'sessions')
+		chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
+	}
 	sock.ebuf = new DataWriter()
 	sock.ebuf.byte(20)
 	sock.tbuf = new DataWriter()
@@ -188,7 +223,7 @@ async function play(sock, username, skin){
 	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e.stack))
 }
 
-server.sock = {permissions: 3}
+server.sock = {permissions: 4}
 server.world = Dimensions.overworld
 
 export const close = async function(){

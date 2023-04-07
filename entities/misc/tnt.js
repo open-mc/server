@@ -10,7 +10,6 @@ Entities.tnt = class extends Entity{
 		else if(this.age >= 80){
 			this.event(3)
 			explode(this, 100)
-			this.remove()
 		}
 	}
 }
