@@ -41,7 +41,7 @@ const endpoints = {
 	}
 }
 const [statsHtml0, statsHtml1] = (await fs.readFile('./stats.html')).toString().split('[SERVER_INSERT]')
-const handler = async (req, res) => {
+const handler = (req, res) => {
 	if(!wsHost){
 		wsHost = (key&&pem ? 'wss://' : 'ws://') + req.headers['host']
 		httpHost = wsHost.replace('ws', 'http')
@@ -61,10 +61,10 @@ const handler = async (req, res) => {
 }
 
 const {key, pem} = CONFIG
-export const httpServer = key && pem ? (await import('https')).createServer(handler, {
+export const httpServer = key && pem ? (await import('https')).createServer({
 	key: await fs.readFile(key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key),
 	cert: await fs.readFile(pem[0]=='/'||pem[0]=='~' ? pem : PATH + '../' + pem)
-}) : (await import('http')).createServer(handler)
+}, handler) : (await import('http')).createServer(handler)
 
 export const server = new WebSocketServer({server: httpServer, perMessageDeflate: false})
 
