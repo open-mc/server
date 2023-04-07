@@ -211,6 +211,7 @@ export class DataWriter extends Array{
 			return
 		}
 		new Uint8Array(buf.buffer, buf.byteOffset).set(encoded.subarray(0, avail), this.i)
+		this.i += avail
 		this.allocnew()
 		const left = len - avail
 		if(left < avail && left <= this.cur.byteLength){
