@@ -24,17 +24,13 @@ export const BOLD = 16
 export const ITALIC = 32
 export const UNDERLINE = 64
 export const STRIKETHROUGH = 128
-const defaultProfile = {
-	getAvatar: () => CONFIG.icon,
-	getName: () => CONFIG.name
-}
 /**
  * 
  * @param {string} msg Message to be sent
  * @param {number} style Color and style to send the message as
  * @param {{getName: () => string, getAvatar: () => string}} [player] sender of chat message, primarily used to prefix the message. Setting this to their websocket object will send the message as a command output
  */
-export function chat(msg, style = 15, who = server){
+export function chat(msg, style = 15, who = null){
 	let a = ''
 	if(style&BOLD)a+='1;'
 	if(style&ITALIC)a+='3;'
@@ -42,10 +38,11 @@ export function chat(msg, style = 15, who = server){
 	a += (style & 8 ? 82 : 30) + (style & 15) //30-37, 90-97
 	console.log('\x1b[' + a + 'm' + (style&STRIKETHROUGH?msg.replace(/[\x20-\uffff]/g,'$&\u0336'):msg).replace(/[\x00-\x1f\x7f]/g, a => a == '\x7f' ? '\u2421' : String.fromCharCode(0x2400 + a.charCodeAt())) + '\x1b[m')
 	if(CONFIG.webhook && msg.length < 1994){
+		const wpf = CONFIG.webhook_profiles ?? true
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
-			content: who == server ? '_**' + msg + '**_' : CONFIG.webhook_profiles ?? true ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
-			username: CONFIG.webhook_profiles ?? true ? who.getName() : CONFIG.name,
-			avatar_url: CONFIG.webhook_profiles ?? true ? httpHost + '/avatar/' + who.name : CONFIG.icon,
+			content: !who ? '_**' + msg + '**_' : wpf ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
+			username: wpf && who ? who.getName() : CONFIG.name,
+			avatar_url: wpf && who ? httpHost + '/avatar/' + who.name : CONFIG.icon,
 			allowed_mentions: { parse: [] }, flags: 4
 		})}).catch(e => null)
 	}
