@@ -159,10 +159,13 @@ const App = () => [
 		Entry('Blocks placed by players', stats.player.blocks_placed),
 		Entry('Blocks broken by players', stats.player.blocks_broken),
 		Entry('Times someone stopped breaking a block', stats.player.break_abandon),
-		Entry('Maximum speed ever attained', (stats.player.max_speed).toFixed(3) + ' b/s'),
+		Entry('Maximum speed ever attained', (stats.player.max_speed ?? 0).toFixed(3) + ' b/s'),
 		Entry('Furthest distance ever reached', Math.floor(stats.player.max_dist) + ' blocks'),
 	)
 ]
+
+for(const i of ['misc', 'world', 'player'])
+	if(!i in stats) stats[i] = {}
 
 document.body.append(...App())
 </script>
