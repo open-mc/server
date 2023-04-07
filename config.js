@@ -63,7 +63,7 @@ export function statAvg(cat, name, v){
 	return o[name] = ((o[name] ?? 0) + v * count) / (1 + count)
 }
 export function statRecord(cat, name, v){
-	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0, [countProp]: 0})
+	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
 	return o[name] = max(o[name] ?? 0, v)
 }
 export function setStat(cat, name, v){
