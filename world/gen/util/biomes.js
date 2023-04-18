@@ -1,9 +1,9 @@
 import { imxs32 } from './random.js'
 import { PNG } from 'pngjs'
-import fs from 'fs/promises'
+import { fs } from '../../../internals.js'
 import { Biomes, chunkBiomes } from '../vars.js'
 const biomemap = []
-biomemap.buffer = new DataView(await new Promise(async r => new PNG().parse(await fs.readFile(PATH + '/util/biomes.png'), (_,a)=>r(a.data.buffer))))
+biomemap.buffer = new DataView(PNG.sync.read(await fs.readFile(PATH + '/util/biomes.png')).data.buffer)
 await Promise.all((await fs.readdir(PATH+'/biomes')).map(a=>import(PATH+'/biomes/'+a)))
 const biomeconvert = {
 	0x2eb300: Biomes.plains,

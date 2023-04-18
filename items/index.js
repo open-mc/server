@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
 //import all item files
 import { Item, ItemIDs, Items } from './item.js'
@@ -45,3 +45,5 @@ for(const i in Items){
 if(modified){
 	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.className + I.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.savedata ? ' '+typeToJson(I.savedata) : '')).join('\n'))
 }
+
+progress(`${ItemIDs.length} Items loaded`)

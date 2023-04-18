@@ -1,18 +1,52 @@
-import fse from 'fs-extra'
-import {promises as fs, exists} from 'fs'
-import { setFlagsFromString } from 'v8'
-import './utils/prototypes.js'
-import { runInThisContext } from 'vm'
-
-setFlagsFromString('--allow-natives-syntax')
-// TODO: research on %CompileOptimized_Concurrent
-export const optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
-
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\/\w+:)?/y,'')
-globalThis.WORLD = PATH + '../' + (process.argv[2] || 'world') + '/'
-
+import { promises as fs, exists } from 'node:fs'
 fs.exists = a => new Promise(r => exists(a, r))
-await fs.readdir(WORLD).catch(e=>fse.copy(PATH + 'template_world_folder_do_not_edit', WORLD))
+
+export { Worker } from 'node:worker_threads'
+export { fs }
+
+import { setFlagsFromString, getHeapStatistics } from 'node:v8'
+import { runInThisContext } from 'node:vm'
+import './utils/prototypes.js'
+export let optimize = Function.prototype
+try{
+	setFlagsFromString('--allow-natives-syntax')
+	// TODO: research on %CompileOptimized_Concurrent
+	optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
+}catch(e){}
+
+globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
+globalThis.WORLD = PATH + '../' + ((typeof Deno == 'undefined' ? process.argv[2] : Deno.args[0]) || 'world') + '/'
+
+if(!await fs.exists(WORLD)){
+	await fs.mkdir(WORLD)
+	await Promise.all([
+		fs.mkdir(WORLD + 'players'),
+		fs.mkdir(WORLD + 'dimensions'),
+		fs.mkdir(WORLD + 'defs').then(() => Promise.all([
+			fs.writeFile(WORLD + 'defs/blockindex.txt', 'air'),
+			fs.writeFile(WORLD + 'defs/itemindex.txt', 'stone'),
+			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}')
+		])),
+		fs.writeFile(WORLD + 'stats.json', `{}`),
+		fs.writeFile(WORLD + 'permissions.yaml', `# permission settings
+# possible permissions: op, mod, normal, spectate, deny, banned(ban_end)
+
+# "Spectate" players may move around, load chunks and see the world
+# but cannot place, break or otherwise interact with the world.
+# They are also not visible to other players, but do show up /list
+
+# Example permissions (without the #):
+# cyarty: op
+# zekiah: mod
+
+default_permissions: normal`),
+		fs.writeFile(WORLD + 'gamerules.json', '{}'),
+		fs.copyFile(PATH + 'default_properties.yaml', WORLD + 'properties.yaml')
+	])
+}
+
+performance.nodeTiming ??= {idleTime: 0}
+
 let idle2 = performance.nodeTiming.idleTime
 let time2 = performance.now()
 
@@ -25,7 +59,7 @@ export function gotStats(key, obj){
 setInterval(() => {
 	const f = (idle2 - (idle2 = performance.nodeTiming.idleTime)) / (time2 - (time2 = performance.now()))
 	stats.elu.cpu1 -= (stats.elu.cpu1 + f - 1) / 20
-	stats.mem.cpu1 = process.memoryUsage().heapTotal
+	stats.mem.cpu1 = getHeapStatistics().used_heap_size
 }, 500)
 function composeStat(a, v){
 	const COLS = process.stdout.columns
@@ -42,7 +76,7 @@ function composeStat(a, v){
 
 	return a.join(' / ')+'\n'+bar+'\x1b[m'
 }
-export const MEMLIMIT = +(process.execArgv.find(a=>a.startsWith('--max-old-space-size='))||'=4096').split('=')[1] * 1048576
+export const MEMLIMIT = getHeapStatistics().heap_size_limit
 Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	let s = [], a = [], v = []
 	for(const k in stats.elu){
@@ -77,3 +111,27 @@ const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, t
 const Object = globalThis.Object
 
 }).toString().slice(6,-3))
+
+if(!('abs' in globalThis))
+	Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
+
+function uncaughtErr(e){
+	const l = process.stdout.columns
+	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
+		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
+	process.exit(0)
+}
+process.on('uncaughtException', uncaughtErr)
+process.on('unhandledRejection', uncaughtErr)
+
+
+let total = 5, loaded = -1
+let resolvePromise = null
+const started = Date.now()
+
+export const ready = new Promise(r => resolvePromise = r)
+globalThis.progress = function(desc){
+	loaded++
+	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}`)
+	if(total == loaded + 1)resolvePromise()
+}

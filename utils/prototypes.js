@@ -79,9 +79,22 @@ WebSocket.prototype.send = function(data, cb){
 // Blazingly fast!!
 const nul = new Array(1000).fill(null)
 Array.null = len => {
-	if(len <= 1000)return nul.slice(0, len)
+	if(len <= 1000) return nul.slice(0, len)
 	let a = new Array(len)
-	for(let i = len; i > 0; i--)a[i] = null
+	while(len > 0) a[--len] = null
 	return a
 }
 Function.returns = v => () => v
+
+Date.formatTime = function(t){
+	t /= 1000
+	if(t < 3600){
+		if(t >= 60)return floor(t/60)+'m '+floor(t%60)+'s'
+		else if(t >= 1)return floor(t)+'s'
+		else return t*1000+'ms'
+	}else{
+		if(t < 86400)return floor(t/3600)+'h '+floor(t%3600/60)+'m'
+		else if(t < 864000)return floor(t/86400)+'d '+floor(t%86400/3600)+'h'
+		else return floor(t/86400)+'d'
+	}
+}

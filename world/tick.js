@@ -4,6 +4,7 @@ import { DataWriter } from '../utils/data.js'
 import { Chunk } from './chunk.js'
 import { allDimensions, Dimensions } from './index.js'
 import { stepEntity } from './physics.js'
+import { DEFAULT_TPS, stat, statAvg } from '../config.js'
 
 export function encodeMove(e, pl){
 	const buf = pl.sock.ebuf
@@ -66,7 +67,7 @@ export function tick(){
 		if(e.mv) moved(e)
 		e.tick?.()
 		if(!e.world) continue
-		stepEntity(e)
+		if(e.id) stepEntity(e)
 		const x0 = e.x - e.width - e.collisionTestPadding, x1 = e.x + e.width + e.collisionTestPadding
 		const y0 = e.y - e.collisionTestPadding, y1 = e.y + e.height + e.collisionTestPadding
 		const cx0 = floor(x0 - 16) >>> 6, cx1 = ceil((x1 + 16) / 64) & 67108863
@@ -86,20 +87,19 @@ export function tick(){
 		e.age++
 	}
 	for(const pl of players.values()){
-		if(pl.sock.ebuf.length || pl.sock.ebuf.i > 1){
-			pl.sock.ebuf.pipe(pl.sock)
-			pl.sock.ebuf = new DataWriter()
-			pl.sock.ebuf.byte(20)
-		}
-		if(pl.sock.tbuf.length || pl.sock.tbuf.i > 1){
-			pl.sock.tbuf.pipe(pl.sock)
-			pl.sock.tbuf = new DataWriter()
-			pl.sock.tbuf.byte(8)
-		}
-		const {packets} = pl.sock
+		const {packets, ebuf, tbuf} = pl.sock
 		for(let i = 0; i < packets.length; i++)
 			packets[i].pipe(pl.sock)
+		if(ebuf.length || ebuf.i > 1){
+			ebuf.pipe(pl.sock)
+			void (pl.sock.ebuf = new DataWriter()).byte(20)
+		}
+		if(tbuf.length || tbuf.i > 1){
+			tbuf.pipe(pl.sock)
+			void (pl.sock.tbuf = new DataWriter()).byte(8)
+		}
 	}
+	statAvg('misc', 'tps', -1000 / (lastTick - (lastTick = performance.now())))
 }
 
 function everySecond(){
@@ -109,12 +109,16 @@ function everySecond(){
 		buf.double(pl.world ? pl.world.tick : 0)
 		buf.pipe(pl.sock)
 	}
+	stat('misc', 'age')
 }
-
+let lastTick = 0
 let tickTimer = null, timer2 = null
+export let current_tps = DEFAULT_TPS
 export function setTPS(a){
+	current_tps = a
+	lastTick = performance.now()
 	clearInterval(tickTimer)
-	tickTimer = setInterval(tick, 1000 / a - 1)
+	tickTimer = setInterval(tick, 1000 / a)
 	clearInterval(timer2)
 	timer2 = setInterval(everySecond, 1000)
 }

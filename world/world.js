@@ -1,4 +1,4 @@
-import { HANDLERS } from '../config.js'
+import { HANDLERS, stat } from '../config.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { DataWriter } from '../utils/data.js'
@@ -43,10 +43,11 @@ export class World extends Map{
 			return ch
 		}
 		const pr = HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.id)).then(buf => {
+			// Corresponding unstat in gendelegator.js
+			stat('world', 'chunk_revisits')
 			let ch; try{ch = new Chunk(buf, this, pr.players)}catch(e){buf = Chunk.bufOf(Blocks.air,cx,cy); ch = new Chunk(buf, this, pr.players)}
-			for(const pl of ch.players){
+			for(const pl of ch.players)
 				pl.sock.send(buf)
-			}
 			ch.t = 20
 			return ch
 		})

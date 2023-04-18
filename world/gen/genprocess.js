@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import { fs } from '../../internals.js'
 import { parentPort } from 'worker_threads'
 import { jsonToType } from '../../utils/data.js'
 import { Blocks, chunk, chunkBiomes, Items, setSeed } from './vars.js'

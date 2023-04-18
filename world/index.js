@@ -1,10 +1,11 @@
 import { World } from './world.js'
 import '../internals.js'
-import fs from 'fs/promises'
+import { fs } from '../internals.js'
 export const Dimensions = {
 	overworld: new World('overworld'),
 	nether: new World('nether'),
-	end: new World('end')
+	end: new World('end'),
+	void: new World('void')
 }
 const dimCreate = []
 for(let i in Dimensions){

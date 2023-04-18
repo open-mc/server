@@ -1,0 +1,171 @@
+<!-- Stats page -->
+<!DOCTYPE html>
+<html lang="en" ontouchend="event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{clientX:event.clientX,clientY:event.clientY}))">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>Stats</title><style>
+@font-face {
+	font-family: mc;
+	src: url('https://openmc.pages.dev/font.ttf') format('truetype');
+	font-weight: normal;
+  font-style: normal;
+}
+*{padding:0;margin:0;box-sizing:border-box;min-width: 0;}
+body{
+	margin: 0;
+	overscroll-behavior: none;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding: 20px;
+}
+html{
+	height: 100%;
+	font-family: mc;
+	background: url('https://openmc.pages.dev/img/bg32.png') center/48px;
+	background-attachment: fixed;
+	image-rendering: pixelated;
+	color: white;
+	font-size: 20px;
+	white-space: pre-wrap;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+category{
+	display: block;
+	border: 2px white solid;
+	padding: 10px;
+}
+
+category::before{
+	display: block;
+	content: attr(name);
+	font-size: 1.2em;
+	padding: 10px;
+	border-bottom: 4px var(--c) solid;
+}
+category.open::before{margin-bottom: 20px;}
+category.open > entry{display: block}
+
+entry{
+	display: none;
+	user-select: text;
+	-webkit-user-select: text;
+	color: var(--c);
+}
+entry::before{
+	content: attr(name);
+	color: white;
+}
+
+card{
+	display: flex;
+	padding: calc(var(--s) * 7px) calc(var(--s) * 15px);
+	font-size: calc(var(--s) * 0.3em + 0.5em);
+	height: calc(var(--s) * 60px + 40px);
+}
+card > img{
+	height: 100%;
+}
+card > div{
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: stretch;
+	color: #fff8;
+	margin-left: 20px;
+}
+card > div > h1{color:#ffff}
+flex{
+	display: flex;
+	flex-wrap: wrap;
+}
+flex > *{
+	width: var(--w);
+
+}
+</style></head></html><script>
+document.currentScript.remove()
+Date.formatTime = function(t){
+	t /= 1000
+	if(t < 3600){
+		if(t >= 60)return Math.floor(t/60)+'m '+Math.floor(t%60)+'s'
+		else if(t >= 1)return Math.floor(t)+'s'
+		else return t*1000+'ms'
+	}else{
+		if(t < 86400)return Math.floor(t/3600)+'h '+Math.floor(t%3600/60)+'m'
+		else if(t < 864000)return Math.floor(t/86400)+'d '+Math.floor(t%86400/3600)+'h'
+		else return Math.floor(t/86400)+'d'
+	}
+}
+
+const [info, stats] = [SERVER_INSERT];
+
+const Entry = (n, v = 0) => {
+	const el = document.createElement('entry')
+	el.setAttribute('name', n+': ')
+	el.append(typeof v == 'number' && v%1 ? v.toFixed(3) : v)
+	return el
+}
+const Category = (name, col, ...e) => {
+	const d = document.createElement('category')
+	d.setAttribute('name', name)
+	d.style.setProperty('--c', col)
+	d.append(...e)
+	d.onclick = e => {e.clientY - d.getBoundingClientRect().top <= 72 && d.classList.toggle('open')}
+	return d
+}
+const H1 = a => {const d = document.createElement('h1'); d.textContent = a; return d}
+const Card = (size, name, icon, desc) => {
+	const el = document.createElement('card');
+	const i = new Image()
+	i.src = icon
+	const d = document.createElement('div')
+	d.append(H1(name), desc)
+	el.append(i, d)
+	el.style.setProperty('--s', size)
+	return el
+}
+const Table = (w, a) => {
+	const d = document.createElement('flex')
+	d.style.setProperty('--w', w)
+	d.append(...a)
+	return d
+}
+const App = () => [
+	Card(3, info.name, info.icon, info.motd),
+	H1('Players'),
+	Table(100, info.players.map((a, i) =>
+		Card(1,a, '/avatar/'+a, 'Health: '+info.playerData[i])
+	)),
+	H1('Statistics'),
+	'Click on a category to expand it',
+	Category('General', '#999',
+		Entry('Map age', Date.formatTime(stats.misc.age*1000)),
+		Entry('Unique players', stats.misc.unique_players),
+		Entry('Sessions', stats.misc.sessions),
+		Entry('Total ticks', stats.misc.tps_count),
+		Entry('Average tps', stats.misc.tps),
+		Entry('Messages sent in chat', stats.misc.chat_messages),
+		Entry('Commands used', stats.misc.commands_used),
+		Entry('Times '+JSON.stringify(info.magic_word)+' said in chat', stats.misc.magic_word),
+		Entry('Controversial opinions shared in chat', stats.misc.controversial)
+	),
+	Category('World', 'green',
+		Entry('Chunks generated', stats.world.chunks_generated),
+		Entry('Chunk revisits', stats.world.chunk_revisits),
+		Entry('Explosions', stats.world.explosions),
+	),
+	Category('Player', '#25e',
+		Entry('Blocks placed by players', stats.player.blocks_placed),
+		Entry('Blocks broken by players', stats.player.blocks_broken),
+		Entry('Times someone stopped breaking a block', stats.player.break_abandon),
+		Entry('Maximum speed ever attained', (stats.player.max_speed ?? 0).toFixed(3) + ' b/s'),
+		Entry('Furthest distance ever reached', Math.floor(stats.player.max_dist) + ' blocks'),
+	)
+]
+
+for(const i of ['misc', 'world', 'player'])
+	if(!i in stats) stats[i] = {}
+
+document.body.append(...App())
+</script>

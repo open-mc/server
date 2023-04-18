@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
 //import all entity files
 import { Entities, Entity, EntityIDs } from './entity.js'
@@ -44,3 +44,5 @@ for(const i in Entities){
 if(modified){
 	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))
 }
+
+progress(`${EntityIDs.length} Entities loaded`)

@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js'
-import { server } from '../index.js'
+import { httpHost, server } from '../server.js'
 import { players } from '../world/index.js'
 import fetch from 'node-fetch'
 
@@ -26,11 +26,11 @@ export const UNDERLINE = 64
 export const STRIKETHROUGH = 128
 /**
  * 
- * @param {Player | WebSocket | null} player sender of chat message, primarily used to prefix the message. Setting this to their websocket object will send the message as a command output
- * @param {string} message Message to be sent
- * @param {*} style Color to send the message as
+ * @param {string} msg Message to be sent
+ * @param {number} style Color and style to send the message as
+ * @param {{getName: () => string, getAvatar: () => string}} [player] sender of chat message, primarily used to prefix the message. Setting this to their websocket object will send the message as a command output
  */
-export function chat(msg, style = 15){
+export function chat(msg, style = 15, who = null){
 	let a = ''
 	if(style&BOLD)a+='1;'
 	if(style&ITALIC)a+='3;'
@@ -38,16 +38,18 @@ export function chat(msg, style = 15){
 	a += (style & 8 ? 82 : 30) + (style & 15) //30-37, 90-97
 	console.log('\x1b[' + a + 'm' + (style&STRIKETHROUGH?msg.replace(/[\x20-\uffff]/g,'$&\u0336'):msg).replace(/[\x00-\x1f\x7f]/g, a => a == '\x7f' ? '\u2421' : String.fromCharCode(0x2400 + a.charCodeAt())) + '\x1b[m')
 	if(CONFIG.webhook && msg.length < 1994){
+		const wpf = CONFIG.webhook_profiles ?? true
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
-			avatar_url: CONFIG.icon,
-			username: CONFIG.name,
-			content: style ^ 15 ? '_**' + msg + '**_' : '`' + msg + '`'
-		})}).catch(e=>null)
+			content: !who ? '_**' + msg + '**_' : wpf ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
+			username: wpf && who ? who.getName() : CONFIG.name,
+			avatar_url: wpf && who ? httpHost + '/avatar/' + who.name : CONFIG.icon,
+			allowed_mentions: { parse: [] }, flags: 4
+		})}).catch(e => null)
 	}
 	msg = (style<16?'0'+style.toString(16):style.toString(16)) + msg
-	for(const {sock} of players.values())sock.send(msg)
+	for(const {sock} of players.values())
+		sock.send(msg)
 }
-
 
 export function prefix(player, style = 0){
 	const {name} = player || server

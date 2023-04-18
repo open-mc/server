@@ -9,7 +9,7 @@ Blocks.tnt = class extends Block{
 	destroyed(){
 		place(Blocks.air)
 		const tnt = summon(Entities.tnt)
-		tnt.age = 65
+		tnt.age = floor(random() * 20) + 55
 		return true
 	}
 }
