@@ -96,15 +96,6 @@ Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	return s.join('\n\n')
 },enumerable:false})
 
-function uncaughtErr(e){
-	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
-		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf\x1b[m')
-	process.exit(0)
-}
-process.on('uncaughtException', uncaughtErr)
-process.on('unhandledRejection', uncaughtErr)
-
 runInThisContext((_=>{
 
 const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat } = Math
