@@ -1,7 +1,7 @@
 import { Blocks } from '../../blocks/block.js'
 import { stat } from '../../config.js'
 import { Item } from '../../items/item.js'
-import { blockevent, cancelblockevent, goto, peek, place } from '../../misc/ant.js'
+import { blockevent, cancelgridevent, goto, peek, place } from '../../misc/ant.js'
 import { DataWriter } from '../../utils/data.js'
 import { current_tps, encodeMove } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
@@ -9,14 +9,14 @@ import { Entities } from '../entity.js'
 import { PNG } from 'pngjs'
 
 Entities.player = class Player extends ChunkLoader{
-	inv = Array.null(37)
+	inv = Array.null(36)
 	items = [null, null, null, null, null, null]
 	health = 20
 	selected = 0
 	skin = null
 	sock = null
-	blockBreakEvent = 0
-	blockBreakProgress = -1
+	breakGridEvent = 0
+	blockBreakLeft = -1
 	bx = 0; by = 0
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
@@ -37,44 +37,45 @@ Entities.player = class Player extends ChunkLoader{
 		buf.float(current_tps)
 		this.sock.packets.push(buf)
 		if(mv){
-			this.mv |= mv
+			const mv2 = this.mv
+			this.mv = mv
 			encodeMove(this, this)
+			this.mv = mv2
 		}
 	}
 	tick(){
-		if(this.blockBreakProgress < 0) return
-		this.blockBreakProgress++
-		const block = this.world.at(this.bx, this.by) || Blocks.air
-		const item = this.inv[this.selected]
-		if(this.blockBreakProgress >= (item ? item.breaktime(block) : block.breaktime) * current_tps){
-			goto(this.bx, this.by, this.world)
-			const drop = peek().drops?.(this.inv[this.selected])
-			if(drop instanceof Item){
-				const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
-				itm.item = drop
-				itm.dx = random() * 6 - 3
-				itm.dy = 6
-				itm.place(this.world)
-			}else if(drop instanceof Array){
-				for(const d of drop){
+		if(this.blockBreakLeft >= 0){
+			this.blockBreakLeft--
+			if(this.blockBreakLeft == 0){
+				goto(this.bx, this.by, this.world)
+				const drop = peek().drops?.(this.inv[this.selected])
+				if(drop instanceof Item){
 					const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
-					itm.item = d
+					itm.item = drop
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
 					itm.place(this.world)
+				}else if(drop instanceof Array){
+					for(const d of drop){
+						const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
+						itm.item = d
+						itm.dx = random() * 6 - 3
+						itm.dy = 6
+						itm.place(this.world)
+					}
 				}
+				blockevent(2)
+				place(Blocks.air)
+				stat('player', 'blocks_broken')
+				cancelgridevent(this.breakGridEvent)
+				this.breakGridEvent = 0
+				this.blockBreakLeft = -1
 			}
-			blockevent(2)
-			place(Blocks.air)
-			stat('player', 'blocks_broken')
-			cancelblockevent(this.blockBreakEvent)
-			this.blockBreakEvent = 0
-			this.blockBreakProgress = -1
 		}
 	}
 	static savedata = {
 		health: Byte,
-		inv: [Item, 37],
+		inv: [Item, 36],
 		items: [Item, 6],
 		selected: Byte,
 		skin: Uint8Array

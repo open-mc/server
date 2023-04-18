@@ -111,7 +111,7 @@ const Category = (name, col, ...e) => {
 	d.setAttribute('name', name)
 	d.style.setProperty('--c', col)
 	d.append(...e)
-	d.onclick = e => {e.clientY - d.offsetTop <= 72 && d.classList.toggle('open')}
+	d.onclick = e => {e.clientY - d.getBoundingClientRect().top <= 72 && d.classList.toggle('open')}
 	return d
 }
 const H1 = a => {const d = document.createElement('h1'); d.textContent = a; return d}

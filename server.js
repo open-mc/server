@@ -5,7 +5,7 @@ import { Dimensions, players } from './world/index.js'
 import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
 import { commands, err } from './misc/commands.js'
 import { input, repl } from 'basic-repl'
-import { codes, onstring } from './misc/incomingPacket.js'
+import { PROTOCOL_VERSION, codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, GAMERULES, HANDLERS, packs, PERMISSIONS, stat, STATS } from './config.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
@@ -120,6 +120,7 @@ server.on('connection', function(sock, {url, headers, socket}){
 	sock.username = username
 	sock.packets = []
 	sock.pubKey = pubKey
+	sock.rx = 10; sock.ry = 10
 	if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
 		return sock.logMalicious('Invalid public key signature'), sock.close()
 	crypto.randomBytes(32, (err, rnd) => {
@@ -205,7 +206,7 @@ async function play(sock, username, skin){
 	player.sock = sock
 	player.name = username
 	sock.permissions = permissions
-	sock.movePacketCd = Date.now() - 1000
+	sock.movePacketCd = Date.now() / 1000 - 1
 	player.place(dim)
 	players.set(username, player)
 	sock.r = 255
@@ -249,23 +250,28 @@ export const close = async function(){
 }
 
 const message = function(_buf, isBinary){
-	const {player} = this
-	if(!player && this.challenge && isBinary){
-		if(_buf.length <= 1008) return
-		if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf.subarray(1008))){
-			play(this, this.username, _buf.subarray(0, 1008))
-		}else{
-			this.send('-119Invalid signature')
-			this.close()
-			this.logMalicious('Invalid signature')
-		}
-		return
-	}else if(!player) return
-	if(!isBinary) return void onstring.call(this, player, _buf.toString())
-	const buf = new DataReader(_buf) //let your code breathe
-	const code = buf.byte()
-	if(!codes[code]) return
 	try{
+		const {player} = this
+		if(!player && this.challenge && isBinary){
+			if(_buf.length <= 1008) return
+			if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf.subarray(1010))){
+				const cli_ver = _buf.readUint16BE(0)
+				if(cli_ver < PROTOCOL_VERSION)
+					return void this.send('-12fOutdated client! Please update your client.\n('+cli_ver+' < '+PROTOCOL_VERSION+')')
+				else if(cli_ver > PROTOCOL_VERSION)
+					return void this.send('-12fOutdated server! Contact server owner.\n('+cli_ver+' > '+PROTOCOL_VERSION+')')
+				play(this, this.username, _buf.subarray(2, 1010))
+			}else{
+				this.send('-119Invalid signature')
+				this.close()
+				this.logMalicious('Invalid signature')
+			}
+			return
+		}else if(!player) return
+		if(!isBinary) return void onstring.call(this, player, _buf.toString())
+		const buf = new DataReader(_buf) //let your code breathe
+		const code = buf.byte()
+		if(!codes[code]) return
 		codes[code].call(this, player, buf)
 	}catch(e){ this.logMalicious('Caused an error: \n'+e.stack) }
 }

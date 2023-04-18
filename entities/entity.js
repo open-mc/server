@@ -2,6 +2,9 @@ import { Item } from '../items/item.js'
 import { goto } from '../misc/ant.js'
 import { DataWriter } from '../utils/data.js'
 export let entityMap = new Map(), i = -1
+
+export const X = 1, Y = 2, NAME=4, STATE = 8, DX = 16, DY = 32, F = 64
+
 export class Entity{
 	constructor(x, y){
 		let f = floor(x)
@@ -17,7 +20,7 @@ export class Entity{
 		this.mv = 0
 		this._state = 0
 		this._id = -1
-		this.name = ''
+		this._name = ''
 		this.age = 0
 	}
 	place(world){
@@ -47,6 +50,8 @@ export class Entity{
 	get y(){return this._y}
 	get world(){return this._w}
 	set world(_){throw new Error('use entity.transport() to change dimension')}
+	get name(){return this._name}
+	set name(a){this._name=a;this.mv|=4}
 	transport(x, y, w){
 		this.mv |= 3
 		let f = floor(x)
@@ -101,22 +106,25 @@ export class Entity{
 		//.died() is only used for when the entity dies naturally (i.e not despawned / unloaded)
 	}
 	give(stack){
-		if(!this.inv) return
+		if(!this.inv) return false
 		const changed = []
 		for(let i = 0; i < this.inv.length; i++){
-			let amount = min(stack.count, stack.maxStack)
+			const amount = min(stack.count, stack.maxStack)
 			if(!this.inv[i]){
 				this.inv[i] = stack.constructor(amount)
 				stack.count -= amount
 			}else if(this.inv[i].constructor == stack.constructor && !stack.savedata){
-				amount = min(amount, this.inv[i].maxStack - this.inv[i].count)
-				this.inv[i].count += amount
-				stack.count -= amount
+				const amount2 = min(amount, this.inv[i].maxStack - this.inv[i].count)
+				if(!amount2) continue
+				this.inv[i].count += amount2
+				stack.count -= amount2
 			}else continue
 			changed.push(i)
 			if(!stack.count) break
 		}
+		if(!changed.length) return false
 		this.itemschanged(changed)
+		return true
 	}
 	itemschanged(slots){
 		const buf = new DataWriter()
@@ -155,17 +163,19 @@ export class Entity{
 			else this.sock.send(buf)
 		}
 	}
-	event(ev){
+	event(ev, fn){
 		if(!this.chunk){
 			if(this.sock){
 				this.sock.ebuf.short(ev & 0xff)
 				this.sock.ebuf.uint32(this._id); this.sock.ebuf.short(this._id / 4294967296 | 0)
+				if(fn) fn(this.sock.ebuf)
 			}
 			return
 		}
 		for(const {sock: {ebuf}} of this.chunk.players){
 			ebuf.short(ev & 0xff)
 			ebuf.uint32(this._id); ebuf.short(this._id / 4294967296 | 0)
+			if(fn) fn(this.sock.ebuf)
 		}
 	}
 	static savedata = null

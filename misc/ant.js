@@ -64,21 +64,33 @@ export function destroy(){
 		tbuf.short(Blocks.air.id)
 	}
 }
-let blockEventId = 0
-export function blockevent(ev, id = (blockEventId = blockEventId + 1 | 0) || (blockEventId = 1)){
+let gridEventId = 0
+export function blockevent(ev, fn){
 	if(!tiles || !ev) return
 	for(const {sock: {tbuf}} of chunk.players){
 		tbuf.byte(ev)
+		if(ev == 255) tbuf.byte(0)
+		tbuf.int(cx << 6 | (pos&63))
+		tbuf.int(cy << 6 | (pos>>6))
+		if(fn) fn(tbuf)
+	}
+}
+export function gridevent(ev, fn){
+	if(!tiles || !ev) return
+	const id = (gridEventId = gridEventId + 1 | 0) || (gridEventId = 1)
+	for(const {sock: {tbuf}} of chunk.players){
+		tbuf.short(65280|ev)
 		tbuf.int(cx << 6 | (pos&63))
 		tbuf.int(cy << 6 | (pos>>6))
 		tbuf.int(id)
+		if(fn) fn(tbuf)
 	}
 	return id
 }
-export function cancelblockevent(id){
+export function cancelgridevent(id){
 	if(!tiles || !id) return
 	for(const {sock: {tbuf}} of chunk.players){
-		tbuf.byte(255)
+		tbuf.short(65535)
 		tbuf.int(id)
 	}
 }
@@ -240,4 +252,4 @@ export function select(x0, y0, x1, y1){
 }
 const arr = []
 
-optimize(nc, npeek, nput, place, goto, peek, jump, peekat, placeat, right, left, up, down, peekright, peekleft, peekup, peekdown, placeright, placeleft, placeup, placedown, summon, blockevent, cancelblockevent, select)
+optimize(nc, npeek, nput, place, goto, peek, jump, peekat, placeat, right, left, up, down, peekright, peekleft, peekup, peekdown, placeright, placeleft, placeup, placedown, summon, gridevent, cancelgridevent, select)
