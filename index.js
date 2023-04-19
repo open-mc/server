@@ -5,6 +5,7 @@ import { setTPS } from './world/tick.js'
 import { close, httpServer, server } from './server.js'
 import { ready } from './internals.js'
 
+
 process.stdout.write('\x1bc\x1b[3J')
 progress('All modules loaded')
 
