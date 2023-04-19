@@ -34,18 +34,18 @@ function moved(e){
 			for(const pl of chunk.players){
 				if(ochunk && e == pl)continue
 				if(ochunk && ochunk.players.includes(pl)){encodeMove(e, pl);continue}
-				const buf = pl.sock.ebuf
-				buf.byte(255)
-				buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
-				buf.short(e.id)
-				buf.double(e.x)
-				buf.double(e.y)
-				buf.string(e.name)
-				buf.short(e.state)
-				buf.float(e.dx)
-				buf.float(e.dy)
-				buf.float(e.f)
-				buf.write(e.savedata, e)
+				const {ebuf} = pl.sock
+				ebuf.byte(255)
+				ebuf.int(e._id | 0), ebuf.short(e._id / 4294967296 | 0)
+				ebuf.short(e.id)
+				ebuf.double(e.x)
+				ebuf.double(e.y)
+				ebuf.string(e.name)
+				ebuf.short(e.state)
+				ebuf.float(e.dx)
+				ebuf.float(e.dy)
+				ebuf.float(e.f)
+				ebuf.write(e.savedata, e)
 			}
 		}
 		e.ochunk = chunk
@@ -63,10 +63,8 @@ export function tick(){
 		}
 	}
 	for(const e of entityMap.values()){
-		if(!e.chunk)continue
+		if(!e.chunk | !e.world)continue
 		if(e.mv) moved(e)
-		e.tick?.()
-		if(!e.world) continue
 		if(e.id) stepEntity(e)
 		const x0 = e.x - e.width - e.collisionTestPadding, x1 = e.x + e.width + e.collisionTestPadding
 		const y0 = e.y - e.collisionTestPadding, y1 = e.y + e.height + e.collisionTestPadding
@@ -85,6 +83,7 @@ export function tick(){
 			}
 		}
 		e.age++
+		e.tick?.()
 	}
 	for(const pl of players.values()){
 		const {packets, ebuf, tbuf} = pl.sock

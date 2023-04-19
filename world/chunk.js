@@ -4,7 +4,7 @@ import { optimize } from '../internals.js'
 import { DataReader } from '../utils/data.js'
 
 // Turns out that this is BY MILES the fastest way to allocate a large array, and it allocates exactly how much we need, no more no less
-const LIGHTNINGFASTALLOCATOR = eval('() => [' + 'null,'.repeat(4096) + ']')
+const LIGHTNINGFASTALLOCATOR = new Function('return[' + 'null,'.repeat(4096) + ']')
 
 export class Chunk{
 	constructor(buf, world, pl = []){

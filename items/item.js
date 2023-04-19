@@ -13,7 +13,7 @@ export class Item{
 	static maxStack = 64
 	breaktime(block){ return block.breaktime }
 	use(b = true){
-		if(b) blockevent(3)
+		if(b) blockevent(1)
 		this.count--
 	}
 	static decode(buf, target){

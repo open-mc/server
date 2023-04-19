@@ -60,11 +60,11 @@ export class World extends Map{
 		if(!ch)return false
 		ch.players.remove(pl)
 		if(!pl.sock || (ch instanceof Promise)) return false
-		const buf = pl.sock.ebuf
+		const {ebuf} = pl.sock
 		for(let e of ch.entities){
 			if(e == pl) continue
-			buf.short(0)
-			buf.int(e._id | 0), buf.short(e._id / 4294967296 | 0)
+			ebuf.short(0)
+			ebuf.int(e._id | 0), ebuf.short(e._id / 4294967296 | 0)
 		}
 		return true
 	}

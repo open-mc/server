@@ -114,7 +114,7 @@ export class DataWriter extends Array{
 	}
 	write(type, v){
 		if(!type) return
-		if(this.i > this.cur.byteLength - (type < 7 ? 1 << (type >> 1) : 4))this.allocnew()
+		if(typeof type == 'number' && this.i > this.cur.byteLength - (type < 7 ? 1 << (type >> 1) : 4))this.allocnew()
 		let buf = this.cur
 		switch(type){
 			case Uint8: buf.setUint8(this.i++, v); return

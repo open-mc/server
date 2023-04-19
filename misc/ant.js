@@ -40,7 +40,9 @@ export function place(block){
 export function destroy(){
 	if(!tiles) return
 	if(tiles[pos].destroyed?.()) return
-	const drop = tiles[pos].drops?.()
+	const tile = tiles[pos]
+	tiles[pos] = Blocks.air()
+	const drop = tile.drops?.()
 	if(drop instanceof Item){
 		const itm = Entities.item(cx<<6|(pos&63), cy<<6|pos>>6)
 		itm.item = drop
@@ -56,7 +58,6 @@ export function destroy(){
 			itm.place(world)
 		}
 	}
-	tiles[pos] = Blocks.air()
 	for(const {sock: {tbuf}} of chunk.players){
 		tbuf.byte(0)
 		tbuf.int(cx << 6 | (pos&63))
@@ -231,7 +232,7 @@ export function placeat(dx, dy, block){
 	}
 }
 
-export function select(x0, y0, x1, y1){
+export function select(x0, y0, x1, y1, cb){
 	x0 += cx<<6|(pos&63); x1 += (cx<<6|(pos&63)) + 1
 	y0 += cy<<6|pos>>6; y1 += (cy<<6|pos>>6) + 1
 	const cx0 = floor(x0) >>> 6, cx1 = ceil(x1 / 64) & 67108863
@@ -243,13 +244,10 @@ export function select(x0, y0, x1, y1){
 			if(!ch || !ch.entities) continue
 			for(const e2 of ch.entities){
 				if(e2.x < x0 || e2.x > x1 || e2.y < y0 || e2.y > y1) continue
-				arr[i++] = e2
+				cb(e2)
 			}
 		}
 	}
-	arr.length = i
-	return arr
 }
-const arr = []
 
 optimize(nc, npeek, nput, place, goto, peek, jump, peekat, placeat, right, left, up, down, peekright, peekleft, peekup, peekdown, placeright, placeleft, placeup, placedown, summon, gridevent, cancelgridevent, select)

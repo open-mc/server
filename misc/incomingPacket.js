@@ -30,7 +30,7 @@ function validateMove(sock, player, buf){
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
 	
-	let mx = (x - ox), my = (y - oy)
+	let mx = ifloat(x - ox), my = ifloat(y - oy)
 	if(mx >= 0){
 		const excess = mx - max(9, dx) / current_tps
 		sock.rx -= excess
@@ -84,9 +84,9 @@ function validateMove(sock, player, buf){
 function playerMovePacket(player, buf){
 	top: {
 		let t = Date.now() / 1000
-		if(t < (t = max(this.movePacketCd + 1 / current_tps, t - 2))) break top
+		if(t < (t = max(this.movePacketCd + 1 / current_tps, t - 2))) return
 		this.movePacketCd = t
-		if(buf.byte() != this.r || !player.chunk)break top
+		if(buf.byte() != this.r || !player.chunk) return
 
 		validateMove(this, player, buf)
 		
@@ -107,7 +107,7 @@ function playerMovePacket(player, buf){
 			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.players.includes(player)){
 				//hit e
 				const itm = player.inv[player.selected]
-				e.damage(itm?.damage?.(e) ?? 1, player)
+				e.damage?.(itm?.damage?.(e) ?? 1, player)
 			}
 			break top
 		}
@@ -140,6 +140,7 @@ function playerMovePacket(player, buf){
 			if(d >= reach) break top
 			const block = peek(), item = player.inv[sel & 127]
 			if(block.solid){
+				console.log(getX(), getY(), player.breakGridEvent)
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)

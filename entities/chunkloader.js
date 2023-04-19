@@ -1,10 +1,9 @@
 import { CONFIG } from '../config.js'
 import { DataWriter } from '../utils/data.js'
-import { Entity } from './entity.js'
 
-export class ChunkLoader extends Entity{
+export const ChunkLoader = T => class extends T{
 	radius = CONFIG.chunkloadingrange
-	placed(){ this.load(floor(this.x) >> 6, floor(this.y) >> 6, this._w) }
+	placed(){ this.load(floor(this.x) >> 6, floor(this.y) >> 6, this._w); super.placed() }
 	moved(ox, oy, ow){
 		let ocx = floor(ox) >> 6
 		let ocy = floor(oy) >> 6
@@ -53,6 +52,7 @@ export class ChunkLoader extends Entity{
 			}
 		}
 		trashed.pipe(this.sock)
+		super.moved(ox, oy, ow)
 	}
 	load(cx, cy, world){
 		for(let x=cx-this.radius+1;x<cx+this.radius;x++){
@@ -88,5 +88,6 @@ export class ChunkLoader extends Entity{
 		const cx = floor(this.x) >> 6
 		const cy = floor(this.y) >> 6
 		this.unload(cx, cy, this.world, false)
+		super.removed()
 	}
 }
