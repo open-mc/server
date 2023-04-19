@@ -13,3 +13,6 @@ Items.netherrack = class Netherrack extends Item{
 Items.obsidian = class Obsidian extends Item{
 	place(){ place(Blocks.obsidian); super.use(true) }
 }
+Items.glowing_obsidian = class extends Items.obsidian{
+	place(){ place(Blocks.glowing_obsidian); super.use(true) }
+}

@@ -1,6 +1,6 @@
 {
 	"type": "module",
-	"version": "0.0.7",
+	"version": "0.0.8-preview",
 	"scripts": {
 		"start": "[ -d node_modules ] || npm i; node ."
 	},

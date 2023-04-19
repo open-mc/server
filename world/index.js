@@ -7,6 +7,7 @@ export const Dimensions = {
 	end: new World('end'),
 	void: new World('void')
 }
+Object.setPrototypeOf(Dimensions, null)
 const dimCreate = []
 for(let i in Dimensions){
 	let d = Dimensions[i]

@@ -1,5 +1,8 @@
 import { WebSocket, WebSocketServer, Sender } from 'ws'
 
+async function a(){}
+globalThis.AsyncFunction = a.constructor
+
 Object.defineProperties(Array.prototype, {
 	winner: {enumerable: false, value(pred){
 		let best = -Infinity

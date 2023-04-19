@@ -24,6 +24,7 @@ Entities.item = class ItemEntity extends Entity{
 				this.item.count += maxRemovable
 				e.item.count -= maxRemovable
 			}
+			this.event(2, buf => buf.byte(this.item.count))
 			return
 		}
 		if(this.age < 10 || !e.inv) return

@@ -142,17 +142,6 @@ export class Entity{
 	moved(oldx, oldy, oldw){}
 	removed(){}
 	rubber(){}
-	damage(amount, dealer){
-		this.health -= amount
-		this.damageDealt?.(amount, dealer)
-		if(this.health <= 0){
-			this.died()
-			this.remove()
-		}else if(this.health > this.maxHealth){
-			this.health = this.maxHealth
-		}
-		//TODO health packet
-	}
 	emit(buf){
 		if(this.chunk){
 			if(buf instanceof DataWriter)
@@ -175,7 +164,7 @@ export class Entity{
 		for(const {sock: {ebuf}} of this.chunk.players){
 			ebuf.short(ev & 0xff)
 			ebuf.uint32(this._id); ebuf.short(this._id / 4294967296 | 0)
-			if(fn) fn(this.sock.ebuf)
+			if(fn) fn(ebuf)
 		}
 	}
 	static savedata = null

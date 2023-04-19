@@ -65,14 +65,14 @@ export function explode(entity, strength = 100, fire = false){
 		}
 	}
 	jump(-x,-y); x = getX(); y = getY()
-	for(const e of select(-LEFT, -LEFT, LEFT, LEFT)){
+	select(-LEFT, -LEFT, LEFT, LEFT, e => {
 		let dx = e.x - x, dy = e.y - y
 		const dmg = buffer[(floor(dx+LEFT)|0) + (floor(dy+LEFT)|0)*DIAMETER]
 		const d = sqrt(dx * dx + dy * dy)
 		dx /= d; dy /= d
 		e.dx += dx * dmg / 4; e.dy += dy * dmg / 4
-		e.damage(dmg / 4)
+		e.damage?.(dmg / 4)
 		if(e.rubber) e.rubber(48)
-	}
+	})
 }
 optimize(explode)

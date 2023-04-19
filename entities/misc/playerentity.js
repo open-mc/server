@@ -7,11 +7,11 @@ import { current_tps, encodeMove } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { PNG } from 'pngjs'
+import { LivingEntity } from '../living.js'
 
-Entities.player = class Player extends ChunkLoader{
+Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(36)
 	items = [null, null, null, null, null, null]
-	health = 20
 	selected = 0
 	skin = null
 	sock = null
@@ -44,33 +44,30 @@ Entities.player = class Player extends ChunkLoader{
 		}
 	}
 	tick(){
-		if(this.blockBreakLeft >= 0){
-			this.blockBreakLeft--
-			if(this.blockBreakLeft == 0){
-				goto(this.bx, this.by, this.world)
-				const drop = peek().drops?.(this.inv[this.selected])
-				if(drop instanceof Item){
+		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
+			goto(this.bx, this.by, this.world)
+			const tile = peek()
+			blockevent(2)
+			place(Blocks.air)
+			const drop = tile.drops?.(this.inv[this.selected])
+			if(drop instanceof Item){
+				const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
+				itm.item = drop
+				itm.dx = random() * 6 - 3
+				itm.dy = 6
+				itm.place(this.world)
+			}else if(drop instanceof Array){
+				for(const d of drop){
 					const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
-					itm.item = drop
+					itm.item = d
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
 					itm.place(this.world)
-				}else if(drop instanceof Array){
-					for(const d of drop){
-						const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
-						itm.item = d
-						itm.dx = random() * 6 - 3
-						itm.dy = 6
-						itm.place(this.world)
-					}
 				}
-				blockevent(2)
-				place(Blocks.air)
-				stat('player', 'blocks_broken')
-				cancelgridevent(this.breakGridEvent)
-				this.breakGridEvent = 0
-				this.blockBreakLeft = -1
 			}
+			stat('player', 'blocks_broken')
+			cancelgridevent(this.breakGridEvent)
+			this.breakGridEvent = 0
 		}
 	}
 	static savedata = {
@@ -97,7 +94,6 @@ Entities.player = class Player extends ChunkLoader{
 		return this._avatar = PNG.sync.write(png)
 	}
 	getName(){ return this.name }
-	damage(){}
 }
 let src, dest
 // Function for copying 3 bytes from an rgb u8 image buffer to a 5x5 area in an rgba u32 image buffer

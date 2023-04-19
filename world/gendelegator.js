@@ -6,7 +6,7 @@ let gen = new Worker(PATH + 'world/gen/genprocess.js', {argv: process.argv.slice
 const waiting = new Map()
 gen.on('message', function({key, buf}){
 	if(key == 'ready')return progress('WorldGen process loaded')
-	else if(key == 'stat')return gotStats('cpu2',arguments[0])
+	else if(key == 'stat')return gotStats(2,arguments[0])
 	stat('world', 'chunks_generated')
 	stat('world', 'chunk_revisits', -1)
 	waiting.get(key)(new DataReader(buf))

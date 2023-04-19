@@ -101,13 +101,13 @@ function snbt(s, i, t, T1, T2){
 	}
 }
 
-function parseCoords(x, y, d, t){
+function parseCoords(x = '~', y = '~', d = t.world || Dimensions.overworld, t){
 	let w = typeof d == 'string' ? Dimensions[d] : d
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
-		x = (+x.slice(1))/180*PI - t.facing
+		x = (+x.slice(1))/180*PI - t.f
 		y = +y.slice(1);
-		[x, y] = [t.x + sin(x) * y, t.y + cos(x) * y]
+		[x, y] = [t.x - sin(x) * y, t.y + cos(x) * y]
 	}else{
 		if(x[0] == "~")x = t.x + +x.slice(1)
 		else x -= 0
@@ -125,6 +125,12 @@ function log(who, msg){
 
 function selector(a, who){
 	if(!a)throw 'Selector missing!'
+	const id = +a
+	if(id === id){
+		const e = entityMap.get(id)
+		if(!e) throw 'No such entity with ID '+id
+		return [e]
+	}
 	if(a[0] == '@'){
 		if(a[1] == 's')return who instanceof Entity ? [who] : []
 		if(a[1] == 'e')return [...entityMap.values()]
@@ -224,6 +230,7 @@ export const commands = {
 		const e = Entities[type](x, y)
 		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
 		e.place(w)
+		return 'Summoned a(n) '+type+' with an ID of '+e._id
 	},
 	mutate(sel, data){
 		let i = 0
@@ -360,9 +367,10 @@ export const commands = {
 		return 'Set the spawn point successfully!'
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu.cpu1*100).toFixed(1)}%, RAM: ${(stats.mem.cpu1/1048576).toFixed(1)}MB` + (this.age ? '\nYou have been in this server for: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last respawn: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
 	},
 	tps(tps){
+		if(!tps) return 'The TPS is '+current_tps
 		setTPS(max(1, min((tps|0) || 20, 1000)))
 		for(const pl of players.values()){
 			let buf = new DataWriter()

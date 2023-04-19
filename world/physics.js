@@ -2,8 +2,6 @@ import { optimize } from "../internals.js"
 import { goto, peekat } from "../misc/ant.js"
 import { current_tps } from "./tick.js"
 
-const { floor, ceil, min, max, ifloat } = Math
-
 export function stepEntity(e, dt = 1 / current_tps){
 	e.state = (e.state & 0xffff) | (e.state << 8 & 0xff000000) | fastCollision(e, e.dx * dt, e.dy * dt) << 16
 	if(e.state & 1)e.dy = 0

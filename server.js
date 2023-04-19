@@ -14,7 +14,7 @@ import { deflateSync } from 'node:zlib'
 import { entityindex } from './entities/index.js'
 import { itemindex } from './items/index.js'
 import { blockindex } from './blocks/index.js'
-import { Entities } from './entities/entity.js'
+import { Entities, entityMap } from './entities/entity.js'
 import { Items } from './items/item.js'
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 
@@ -203,6 +203,7 @@ async function play(sock, username, skin){
 	}
 	player.interface = null; player.interfaceId = 0
 	player.skin = skin
+	player._avatar = null
 	player.sock = sock
 	player.name = username
 	sock.permissions = permissions
@@ -216,8 +217,7 @@ async function play(sock, username, skin){
 		stat('misc', 'sessions')
 		chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
 	}
-	sock.ebuf = new DataWriter()
-	sock.ebuf.byte(20)
+	void (sock.ebuf = new DataWriter()).byte(20)
 	sock.tbuf = new DataWriter()
 	sock.tbuf.byte(8)
 	sock.on('close', close)

@@ -50,16 +50,17 @@ performance.nodeTiming ??= {idleTime: 0}
 let idle2 = performance.nodeTiming.idleTime
 let time2 = performance.now()
 
-export let stats = {elu: {cpu1: 0}, mem: {cpu1: 0}}
+export let stats = {elu: [0], mem: [0]}
 export function gotStats(key, obj){
 	for(let k in stats){
+		if(stats[k].length <= key) stats[k].length = key + 1
 		stats[k][key] = obj[k]
 	}
 }
 setInterval(() => {
 	const f = (idle2 - (idle2 = performance.nodeTiming.idleTime)) / (time2 - (time2 = performance.now()))
-	stats.elu.cpu1 -= (stats.elu.cpu1 + f - 1) / 20
-	stats.mem.cpu1 = getHeapStatistics().used_heap_size
+	stats.elu[0] -= (stats.elu[0] + f - 1) / 20
+	stats.mem[0] = getHeapStatistics().used_heap_size
 }, 500)
 function composeStat(a, v){
 	const COLS = process.stdout.columns
@@ -79,16 +80,16 @@ function composeStat(a, v){
 export const MEMLIMIT = getHeapStatistics().heap_size_limit
 Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	let s = [], a = [], v = []
-	for(const k in stats.elu){
-		const elu = stats.elu[k]
-		a.push(`${k}: ${(elu*100).toFixed(1)}%`)
+	for(let i = 0; i < stats.elu.length; i++){
+		const elu = stats.elu[i]
+		a.push(`${i}: ${(elu*100).toFixed(1)}%`)
 		v.push(elu)
 	}
 	s.push(composeStat(a, v))
 	v = []
 	let j = true
-	for(const k in stats.mem){
-		const mem = stats.mem[k]
+	for(let i = 0; i < stats.mem.length; i++){
+		const mem = stats.mem[i]
 		v.push(j ? mem / MEMLIMIT : mem / 4294967296)
 		j = false
 	}
