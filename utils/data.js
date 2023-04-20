@@ -163,6 +163,7 @@ export class DataWriter extends Array{
 	bool(n){ if(this.i == this.cur.byteLength)this.allocnew(); this.cur.setUint8(this.i++, n) }
 	boolean(n){ if(this.i == this.cur.byteLength)this.allocnew(); this.cur.setUint8(this.i++, n) }
 	flint(n){
+		if(this.i > this.cur.byteLength - 4)this.allocnew()
 		if(n > 0x3FFF){
 			if(n > 0x7FFFFFFF)throw new RangeError('n > 2147483647')
 			else this.cur.setUint32((this.i += 4) - 4, n | 0x80000000)

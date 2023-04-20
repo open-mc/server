@@ -140,7 +140,6 @@ function playerMovePacket(player, buf){
 			if(d >= reach) break top
 			const block = peek(), item = player.inv[sel & 127]
 			if(block.solid){
-				console.log(getX(), getY(), player.breakGridEvent)
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
