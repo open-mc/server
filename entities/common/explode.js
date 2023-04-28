@@ -1,6 +1,7 @@
 import { stat } from "../../config.js"
 import { optimize } from "../../internals.js"
-import { getX, getY, up, jump, peek, right, destroy, select } from "../../misc/ant.js"
+import { getX, getY, up, jump, peek, right, destroy, select, goto } from "../../misc/ant.js"
+import { DXDY } from "../misc/playerentity.js"
 
 const DIAMETER = 41, LEFT = DIAMETER - 1 >>> 1
 const buffer = new Int32Array(DIAMETER * DIAMETER * 2)
@@ -12,7 +13,7 @@ export function explode(entity, strength = 100, fire = false){
 	stat('world', 'explosions')
 	buffer.fill(0); x = y = 0
 	if(entity){
-		entity.goto()
+		goto(entity)
 		entity.remove()
 	}
 	set(strength -= peek().blast)
@@ -71,8 +72,8 @@ export function explode(entity, strength = 100, fire = false){
 		const d = sqrt(dx * dx + dy * dy)
 		dx /= d; dy /= d
 		e.dx += dx * dmg / 4; e.dy += dy * dmg / 4
-		e.damage?.(dmg / 4)
-		if(e.rubber) e.rubber(48)
+		e.damage?.(round(dmg / 4))
+		e.rubber?.(DXDY)
 	})
 }
 optimize(explode)

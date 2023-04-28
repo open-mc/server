@@ -5,7 +5,7 @@ import { Block, Blocks } from '../block.js'
 
 Blocks.tnt = class extends Block{
 	static breaktime = 0
-	drops(){ return Items.tnt(2) }
+	drops(){ return Items.tnt(64) }
 	destroyed(){
 		place(Blocks.air)
 		const tnt = summon(Entities.tnt)

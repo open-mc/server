@@ -5,10 +5,13 @@ import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { Entities, Entity, entityMap } from '../entities/entity.js'
 import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
-import { goto, jump, place, right } from './ant.js'
+import { goto, jump, peek, place, right, up } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 import { current_tps, setTPS } from '../world/tick.js'
 import { started } from '../server.js'
+import { generator } from '../world/gendelegator.js'
+import { Chunk } from '../world/chunk.js'
+import { X, Y } from '../entities/misc/playerentity.js'
 
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
@@ -101,8 +104,8 @@ function snbt(s, i, t, T1, T2){
 	}
 }
 
-function parseCoords(x = '~', y = '~', d = t.world || Dimensions.overworld, t){
-	let w = typeof d == 'string' ? Dimensions[d] : d
+function parseCoords(x = '~', y = '~', d, t){
+	let w = typeof d == 'string' ? Dimensions[d] : d || t.world || Dimensions.overworld
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
 		x = (+x.slice(1))/180*PI - t.f
@@ -135,9 +138,9 @@ function selector(a, who){
 		if(a[1] == 's')return who instanceof Entity ? [who] : []
 		if(a[1] == 'e')return [...entityMap.values()]
 		if(a[1] == 'n'){
-			if(!who || !entityMap.delete(who._id))return [...entityMap.values()]
+			if(!who || !entityMap.delete(who.netId))return [...entityMap.values()]
 			const a = [...entityMap.values()]
-			entityMap.set(who._id, who)
+			entityMap.set(who.netId, who)
 			return a
 		}
 		const candidates = [...players.values()]
@@ -185,32 +188,36 @@ export const commands = {
 	},
 	tpe(a, b){
 		if(!b)b = a, a = '@s'
-		const players = selector(a, this)
+		const targets = selector(a, this)
 		const [target, _] = selector(b, this)
 		if(_ || !target)throw 'Selector must return exactly 1 target'
 		const {x, y, world} = target
-		for(const pl of players)pl.transport(x, y, world), pl.rubber()
-		if(players.length>1)log(this, `Teleported ${players.length} entities to ${target.name}`)
-		else log(this, `Teleported ${players[0].name} to ${target.name}`)
+		for(const e of targets)e.x = x, e.y = y, e.world = world, e.rubber?.(X | Y)
+		if(targets.length>1)log(this, `Teleported ${targets.length} entities to ${target.name}`)
+		else log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
 	tp(a, _x, _y, d = this.world || 'overworld'){
 		if(!_y)_y=_x,_x=a,a='@s'
-		const players = selector(a, this)
+		const targets = selector(a, this)
     const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(x != x || y != y)throw 'Invalid coordinates'
-		for(const pl of players)pl.transport(x, y, w), pl.rubber()
-		if(players.length>1)log(this, `Teleported ${players.length} entities to (${x}, ${y}) in the ${w.id}`)
-		else log(this, `Teleported ${players[0].name} to (${x}, ${y}) in the ${w.id}`)
+		for(const pl of targets)pl.x = x, pl.y = y, pl.world = w, pl.rubber?.(X | Y)
+		if(targets.length>1)log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
+		else log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')
-		let players = selector(a, this)
-		if(players.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
-		stat('misc', 'player_kicks', players.length)
-		for(const pl of players){
+		const targets = selector(a, this)
+		if(targets.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
+		stat('misc', 'player_kicks', targets.length)
+		let kicked = 0
+		for(const pl of targets){
+			if(!pl.sock) continue
 			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
 			pl.sock.close()
+			kicked++
 		}
+		return `Kicked ${kicked} player(s)`
 	},
 	give(sel, item, count = '1'){
 		let itm = Items[item], c = max(count | 0, 0)
@@ -218,19 +225,23 @@ export const commands = {
 		for(const player of selector(sel, this)){
 			const stack = itm(c)
 			player.give(stack)
-			if(stack.count){
-				const e = Entities.item(player.x, player.y)
-				e.x = player.x; e.y = player.y; e.place(player.world)
+			while(stack.count){
+				const e = Entities.item()
+				if(stack.count > 255)
+					e.item = stack.constructor(255), stack.count -= 255
+				else
+					e.item = stack.count, stack.count = 0
+				e.place(player.world, player.x, player.y + player.head - 0.5)
 			}
 		}
 	},
 	summon(type, _x = '~', _y = '~', data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(!(type in Entities))throw 'No such entity: ' + type
-		const e = Entities[type](x, y)
+		const e = Entities[type]()
 		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
-		e.place(w)
-		return 'Summoned a(n) '+type+' with an ID of '+e._id
+		e.place(w, x, y)
+		return 'Summoned a(n) '+type+' with an ID of '+e.netId
 	},
 	mutate(sel, data){
 		let i = 0
@@ -270,21 +281,21 @@ export const commands = {
 		return 'Filled '+count+' blocks' + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : '')
 	},
 	clear(sel, _item, _max = '2147483647'){
-		const Con = _item && Items[_item]?.constructor || Item
+		const Con = _item && Items[_item] || Item
 		let cleared = 0, es = 0
 		for(const e of selector(sel, this)){
 			let max = +_max
 			const changed = []
 			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
 				const item = e.inv[i]
-				if(!item || !(item instanceof Con)) continue
+				if(!item || !(item.constructor == Con)) continue
 				changed.push(i)
 				if(item.count <= max)max -= item.count, e.inv[i] = null
 				else item.count -= max, max = 0
 			}
 			if(e.items) for(let i = 0; max && i < e.items.length; i++){
 				const item = e.items[i]
-				if(!item || !(item instanceof Con)) continue
+				if(!item || !(item.constructor == Con)) continue
 				changed.push(i | 128)
 				if(item.count <= max)max -= item.count, e.items[i] = null
 				else item.count -= max, max = 0
@@ -375,11 +386,11 @@ export const commands = {
 		for(const pl of players.values()){
 			let buf = new DataWriter()
 			buf.byte(1)
-			buf.int(pl._id | 0)
-			buf.short(pl._id / 4294967296 | 0)
+			buf.int(pl.netId | 0)
+			buf.short(pl.netId / 4294967296 | 0)
 			buf.byte(pl.sock.r)
 			buf.float(current_tps)
-			pl.sock.packets.push(buf)
+			pl.sock.packets.push(buf.build())
 		}
 		return 'Set the TPS to '+current_tps
 	},
@@ -387,10 +398,28 @@ export const commands = {
 		let i = 0
 		for(const e of selector(t, this)){
 			if(cause != 'void') e.died()
-			e.remove()
+			if(e.sock) e.damage(Infinity)
+			else e.remove()
 			i++
 		}
 		return 'Killed '+i+' entities'
+	},
+	async regen(_x, _y, _w){
+		let {x, y, w} = parseCoords(_x, _y, _w, this)
+		x = floor(x) >>> 6; y = floor(y) >>> 6
+		let old = w.get(x+y*67108864)
+		if(old instanceof Promise) old = await old
+		if(old) old.t = 2147483647
+		const buf = await generator(x, y, w.id)
+		const newChunk = new Chunk(buf, w, old?.players ?? [])
+		for(const e of old.entities) newChunk.entities.push(e), e.chunk = newChunk
+		for(const {sock} of newChunk.players)
+			sock.send(buf)
+		goto(this)
+		let moved = false
+		while((floor(this.y)&63|!moved) && peek().solid)
+			this.y = floor(this.y) + 1, moved = true, up()
+		if(moved) this.rubber(Y)
 	}
 }
 

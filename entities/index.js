@@ -18,17 +18,17 @@ for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entity
 	else E.id = EntityIDs.length, E.className = name
 	EntityIDs.push(null)
 }
-for(const i in Entities){
-	const E = Entities[i]
+for(const name in Entities){
+	const E = Entities[name]
 	// Force extend
 	if(!(E.prototype instanceof Entity)){
-		console.warn('Class ' + i + ' does not extend Entity\n')
+		console.warn('Class ' + name + ' does not extend Entity\n')
 		Object.setPrototypeOf(E, Entity)
 		Object.setPrototypeOf(E.prototype, Entity.prototype)
 	}
 	if(!Object.hasOwn(E, 'id'))
-		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), E.className = i, modified = true
-	E.constructor = EntityIDs[E.id] = Entities[i] = (a, b) => new E(a, b)
+		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), E.className = name, modified = true
+	E.constructor = EntityIDs[E.id] = Entities[name] = (...e) => new E(...e)
 	if(E.otherIds) for(const i of E.otherIds) EntityIDs[i] = EntityIDs[E.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -39,7 +39,6 @@ for(const i in Entities){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	Object.setPrototypeOf(Entities[i], E.prototype)
 }
 if(modified){
 	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))

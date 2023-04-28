@@ -14,8 +14,25 @@ try{
 	optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
 }catch(e){}
 
+export const argv = []
+Object.setPrototypeOf(argv, null)
+
+for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args){
+	if(opt.startsWith('-')){
+		const i = opt.indexOf('=')
+		if(i < 0){
+			argv[opt.slice(1)] = true
+		}else{
+			const k = opt.slice(1, i), v = opt.slice(i + 1)
+			if(k==k>>>0) throw 'Invalid argument name: '+k
+			const nv = +v
+			argv[k] = nv == nv ? nv : v
+		}
+	}else if(opt) Array.prototype.push.call(argv, opt)
+}
+
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
-globalThis.WORLD = PATH + '../' + ((typeof Deno == 'undefined' ? process.argv[2] : Deno.args[0]) || 'world') + '/'
+globalThis.WORLD = PATH + '../' + (argv[0] || 'world') + '/'
 
 if(!await fs.exists(WORLD)){
 	await fs.mkdir(WORLD)
@@ -101,6 +118,11 @@ runInThisContext((_=>{
 
 const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat } = Math
 const Object = globalThis.Object
+
+const assert = condition => {
+	if(condition) return
+	console.error(new Error().stack.replace(/Error.*\n.*\n/, 'Assertion failed\n'))
+}
 
 }).toString().slice(6,-3))
 

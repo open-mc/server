@@ -30,11 +30,11 @@ export class Item{
 	}
 	static encode(buf, v){
 		if(buf.i > buf.cur.byteLength - 3)buf.allocnew();
-		if(!v){buf.cur.setUint8(buf.i++, 0); return}
+		if(!v || !v.count){buf.cur.setUint8(buf.i++, 0); return}
 		buf.cur.setUint8(buf.i++, v.count)
 		buf.cur.setUint16(buf.i, v.id); buf.i += 2
 		buf.string(v.name)
-		if(v.savedata)buf.write(v.savedatahistory[buf.flint()] || v.savedata, v)
+		if(v.savedata)buf.flint(v.savedatahistory.length), buf.write(v.savedata, v)
 	}
 }
 registerTypes({Item})

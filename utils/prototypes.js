@@ -37,8 +37,8 @@ WebSocket.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){retur
 WebSocketServer.prototype[Symbol.for('nodejs.util.inspect.custom')] = function(){return '<WebSocketServer clients: \x1b[33m'+this.clients.size+'\x1b[m>'}
 
 Math.ifloat = x => {
-	let f = Math.floor(x)
-	return (f >> 0) + (x - f)
+	const f = Math.floor(x)
+	return (f | 0) + (x - f)
 }
 
 /*//PERF!!!
@@ -97,7 +97,7 @@ Date.formatTime = function(t){
 		else return t*1000+'ms'
 	}else{
 		if(t < 86400)return floor(t/3600)+'h '+floor(t%3600/60)+'m'
-		else if(t < 864000)return floor(t/86400)+'d '+floor(t%86400/3600)+'h'
+		else if(t < 8640000)return floor(t/86400)+'d '+floor(t%86400/3600)+'h'
 		else return floor(t/86400)+'d'
 	}
 }

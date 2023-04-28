@@ -1,8 +1,8 @@
-import { Worker } from '../internals.js'
+import { Worker, argv } from '../internals.js'
 import { CONFIG, stat } from '../config.js'
 import { gotStats } from '../internals.js'
 import { DataReader } from '../utils/data.js'
-let gen = new Worker(PATH + 'world/gen/genprocess.js', {argv: process.argv.slice(2)})
+let gen = new Worker(PATH + 'world/gen/genprocess.js', { argv })
 const waiting = new Map()
 gen.on('message', function({key, buf}){
 	if(key == 'ready')return progress('WorldGen process loaded')

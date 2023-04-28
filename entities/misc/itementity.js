@@ -13,18 +13,19 @@ Entities.item = class ItemEntity extends Entity{
 			this.remove()
 			return
 		}
-		if(e instanceof ItemEntity && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
+		if(e instanceof ItemEntity && e.age >= 10 && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
 			const maxRemovable = 255 - this.item.count
 			if(maxRemovable >= e.item.count){
-				e.remove()
 				if(this.item.count < e.item.count)
-				this.x = e.x, this.y = e.y
+					this.x = e.x, this.y = e.y
 				this.item.count += e.item.count
+				this.event(2, buf => buf.byte(this.item.count))
+				e.remove()
 			}else{
 				this.item.count += maxRemovable
+				this.event(2, buf => buf.byte(this.item.count))
 				e.item.count -= maxRemovable
 			}
-			this.event(2, buf => buf.byte(this.item.count))
 			return
 		}
 		if(this.age < 10 || !e.inv) return

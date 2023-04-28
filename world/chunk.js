@@ -19,12 +19,12 @@ export class Chunk{
 		let palettelen = (x >>> 26) + (y >>> 26) * 64 + 1
 		let id = buf.short()
 		while(id){
-			const e = EntityIDs[id](buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
-			e.place(world)
-			e.ochunk = e.chunk
-			e.mv = 0
-			buf.setUint32(buf.i, e._id)
-			buf.setUint16((buf.i += 6) - 2, e._id / 4294967296)
+			const e = EntityIDs[id]()
+			e.place(world, buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
+			e.chunk = this
+			this.entities.push(e)
+			buf.setUint32(buf.i, e.netId)
+			buf.setUint16((buf.i += 6) - 2, e.netId / 4294967296)
 			e.name = buf.string()
 			e.state = buf.short()
 			e.dx = buf.float()
@@ -101,8 +101,8 @@ export class Chunk{
 			buf.short(e.id)
 			buf.short((e.x % 64 + 64) * 1024)
 			buf.short((e.y % 64 + 64) * 1024)
-			buf.int(e._id | 0)
-			buf.short(e._id / 4294967296 | 0)
+			buf.int(e.netId | 0)
+			buf.short(e.netId / 4294967296 | 0)
 			buf.string(e.name)
 			buf.short(e.state)
 			buf.float(e.dx)

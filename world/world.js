@@ -28,7 +28,7 @@ export class World extends Map{
 					for(const e of ch.entities)if(!e.id){
 						buf.double(e.x)
 						buf.double(e.y)
-						buf.uint32(e._id), buf.short(e._id / 4294967296 | 0)
+						buf.uint32(e.netId), buf.short(e.netId / 4294967296 | 0)
 						buf.string(e.name)
 						buf.short(e.state)
 						buf.float(e.dx)
@@ -63,8 +63,8 @@ export class World extends Map{
 		const {ebuf} = pl.sock
 		for(let e of ch.entities){
 			if(e == pl) continue
-			ebuf.short(0)
-			ebuf.int(e._id | 0), ebuf.short(e._id / 4294967296 | 0)
+			ebuf.byte(0)
+			ebuf.int(e.netId | 0), ebuf.short(e.netId / 4294967296 | 0)
 		}
 		return true
 	}
@@ -83,7 +83,7 @@ export class World extends Map{
 		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
 			super.delete(k) //Completely unloaded with no re-loads, delete chunk
-			for(const e of ch.entities) if(e.id) entityMap.delete(e._id)
+			for(const e of ch.entities) if(e.id) entityMap.delete(e.netId)
 		})
 	}
 	save(ch){
@@ -94,39 +94,6 @@ export class World extends Map{
 		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
 		const b = ch.toBuf(new DataWriter).build()
 		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
-	}
-	
-	putEntity(e, x, y, force = false){
-		let ch = super.get((floor(x)>>>6)+(floor(y)>>>6)*67108864)
-		const oldw = e._w
-		e._w = this
-		if(oldw)e.moved(e._x, e._y, (e._x = x, e._y = y, oldw))
-		else e.placed()
-		if(e.sock && oldw != this){
-			let buf = new DataWriter()
-			buf.byte(2)
-			buf.string(e.world.id)
-			buf.float(this.gx)
-			buf.float(this.gy)
-			buf.double(this.tick)
-			buf.pipe(e.sock)
-		}
-		if(e.chunk)e.chunk.entities.remove(e)
-		if(!ch || ch instanceof Promise){
-			if(!force)return false
-			e.chunk = null
-			if(!ch)ch = this.load(floor(x)>>6, floor(y)>>6)
-			ch.then(ch => {
-				if(floor(e._x) >>> 6 != ch.x || floor(e._y) >>> 6 != ch.y || e._w != this)return
-				e.chunk = ch
-				ch.entities.push(e)
-				e.mv = 255
-			})
-			return true
-		}
-		ch.entities.push(e)
-		e.chunk = ch
-		return true
 	}
 	at(x, y, p = null){
 		let ch = super.get((x>>>6)+(y>>>6)*67108864)

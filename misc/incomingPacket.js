@@ -1,12 +1,12 @@
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
-import { CONFIG, MOD, stat, statRecord } from '../config.js'
-import { DX, DY, Entities, X, Y, entityMap } from '../entities/entity.js'
+import { CONFIG, GAMERULES, MOD, stat, statRecord } from '../config.js'
+import { Entities, entityMap } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
 import { current_tps } from '../world/tick.js'
 import { stepEntity } from '../world/physics.js'
-import { players } from '../world/index.js'
+import { Dimensions } from '../world/index.js'
 
 const REACH = 10
 
@@ -71,14 +71,6 @@ function validateMove(sock, player, buf){
 		player.dy = my * current_tps
 		stepEntity(player)
 	}else player.rubber()
-
-	/*if(rubber)return void player.rubber()
-
-	if(abs(dx) < 9 || withinD(dx, odx, player.dx))player.dx = dx
-	else rubber = true
-
-	if((dy / tV < 1 && (tV > 0 || dy < 10)) || withinD(dy, ody, player.dy))player.dy = dy
-	else rubber = true*/
 }
 
 function playerMovePacket(player, buf){
@@ -88,6 +80,8 @@ function playerMovePacket(player, buf){
 		this.movePacketCd = t
 		if(buf.byte() != this.r || !player.chunk) return
 
+		if(!player.health) break top
+
 		validateMove(this, player, buf)
 		
 		statRecord('player', 'max_speed', Math.sqrt(player.dx * player.dx + player.dy * player.dy))
@@ -96,7 +90,7 @@ function playerMovePacket(player, buf){
 		if(player.selected != (player.selected = (sel & 127) % 9)){
 			const res = new DataWriter()
 			res.byte(15)
-			res.uint32(player._id); res.short(player._id / 4294967296 | 0)
+			res.uint32(player.netId); res.short(player.netId / 4294967296 | 0)
 			res.byte(player.selected)
 			player.emit(res)
 		}
@@ -189,6 +183,15 @@ function playerMovePacket(player, buf){
 	}
 }
 
+function respawnPacket(player, _){
+	player.x = GAMERULES.spawnX
+	player.y = GAMERULES.spawnY
+	player.world = Dimensions[GAMERULES.spawnWorld]
+	player.rubber()
+	player.damage(-Infinity, null)
+	player.dx = player.dy = 0
+	player.f = PI / 2
+}
 
 function openContainerPacket(player, buf){
 	if(player.interface) return
@@ -204,7 +207,7 @@ function openEntityPacket(player, buf){
 	player.interfaceId = 0
 	const res = new DataWriter()
 	res.byte(13)
-	res.uint32(e._id); res.short(e._id / 4294967296 | 0)
+	res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
 	res.byte(0)
 	res.pipe(player.sock)
 }
@@ -288,10 +291,10 @@ function altInventoryPacket(player, buf){
 
 function dropItemPacket(player, buf){
 	if(!player.inv[player.selected]) return
-	const e = Entities.item(player.x, player.y + player.head - 0.5)
+	const e = Entities.item()
 	e.item = player.inv[player.selected]
 	e.dx = player.dx + player.f > 0 ? 7 : -7
-	e.place(player.world)
+	e.place(player.world, player.x, player.y + player.head - 0.5)
 	player.inv[player.selected] = null
 	player.itemschanged([player.selected])
 }
@@ -299,10 +302,10 @@ function dropItemPacket(player, buf){
 function closeInterfacePacket(player, _){
 	player.interface = null
 	if(player.items[0]){
-		const e = Entities.item(player.x, player.y + player.head - 0.5)
+		const e = Entities.item()
 		e.item = player.items[0]
 		e.dx = player.dx + player.f > 0 ? 7 : -7
-		e.place(player.world)
+		e.place(player.world, player.x, player.y + player.head - 0.5)
 		player.items[0] = null
 		player.itemschanged([128])
 	}
@@ -310,6 +313,7 @@ function closeInterfacePacket(player, _){
 
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
+	5: respawnPacket,
 	12: openContainerPacket,
 	13: openEntityPacket,
 	15: closeInterfacePacket,
@@ -333,10 +337,10 @@ export function onstring(player, text){
 			}else if(player.permission == MOD && !mod_help[match[0]])throw "You do not have permission to use /"+match[0]
 			stat('misc', 'commands_used')
 			let res = commands[match[0]].apply(player, match.slice(1))
-			res && player.chat(res)
-		}catch(e){
-			player.chat(err(e), 9)
-		}
+			if(res)
+				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e), 9))
+				else player.chat(res)
+		}catch(e){player.chat(err(e), 9)}
 	}else{
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
@@ -345,4 +349,4 @@ export function onstring(player, text){
 	}
 }
 
-export const PROTOCOL_VERSION = 1
+export const PROTOCOL_VERSION = 2

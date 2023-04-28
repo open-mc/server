@@ -18,17 +18,17 @@ for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(iteminde
 	else I.id = ItemIDs.length, I.className = name
 	ItemIDs.push(null)
 }
-for(const i in Items){
-	const I = Items[i]
+for(const name in Items){
+	const I = Items[name]
 	// Force extend
 	if(!(I.prototype instanceof Item)){
-		console.warn('Class ' + i + ' does not extend Item\n')
+		console.warn('Class ' + name + ' does not extend Item\n')
 		Object.setPrototypeOf(I, Item)
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
 	if(!Object.hasOwn(I, 'id'))
-		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = i, modified = true
-	I.constructor = ItemIDs[I.id] = Items[i] = c => new I(c)
+		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = name, modified = true
+	I.constructor = ItemIDs[I.id] = Items[name] = (...c) => new I(...c)
 	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -39,8 +39,6 @@ for(const i in Items){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	Object.setPrototypeOf(Items[i], I.prototype)
-	Object.defineProperties(Items[i], Object.getOwnPropertyDescriptors(new I(1)))
 }
 if(modified){
 	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.className + I.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.savedata ? ' '+typeToJson(I.savedata) : '')).join('\n'))

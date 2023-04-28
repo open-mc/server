@@ -1,4 +1,4 @@
-import { fs, stats } from './internals.js'
+import { argv, fs, stats } from './internals.js'
 import util from 'node:util'
 import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
@@ -86,7 +86,7 @@ server.once('listening', () => {
 				}
 				if(!(match[0] in commands))throw 'No such command: /'+match[0]
 				stat('misc', 'commands_used')
-				let res = commands[match[0]].apply(server, match.slice(1))
+				let res = await commands[match[0]].apply(server, match.slice(1))
 				if(res)console.log(res)
 			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
 		}else{
@@ -98,9 +98,8 @@ server.once('listening', () => {
 	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
 })
 
-
 WebSocket.prototype.logMalicious = function(reason){
-	if(!CONFIG.logMalicious) return
+	if(!argv.log) return
 	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
 }
 
@@ -158,15 +157,13 @@ async function play(sock, username, skin){
 		sock.close()
 		return
 	}
-	let player, dim
+	let player, dim, x, y
 	let other = players.get(username)
 	if(other){
 		other.sock.send('-119You are logged in from another session')
 		other.sock.player = null
 		other.sock.close()
 		other.sock = null
-		dim = other.world
-		other.remove()
 		player = other
 	}else if(playersConnecting.has(username)){
 		sock.send('-119You are still logging in/out from another session')
@@ -178,7 +175,8 @@ async function play(sock, username, skin){
 		const buf = await HANDLERS.LOADFILE('players/'+username).reader()
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
-		player = Entities.player(buf.double(), buf.double())
+		player = Entities.player()
+		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]
 		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
@@ -186,7 +184,8 @@ async function play(sock, username, skin){
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
-		player = Entities.player(GAMERULES.spawnX, GAMERULES.spawnY)
+		player = Entities.player()
+		x = GAMERULES.spawnX; y = GAMERULES.spawnY
 		dim = Dimensions[GAMERULES.spawnWorld]
 		player.inv[0] = Items.stone(20)
 		player.inv[1] = Items.oak_log(20)
@@ -208,10 +207,10 @@ async function play(sock, username, skin){
 	player.name = username
 	sock.permissions = permissions
 	sock.movePacketCd = Date.now() / 1000 - 1
-	player.place(dim)
+	if(dim) player.place(dim, x, y)
 	players.set(username, player)
 	sock.r = 255
-	player.rubber(0)
+	player.rubber()
 	sock.player = player
 	if(!other){
 		stat('misc', 'sessions')
