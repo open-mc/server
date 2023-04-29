@@ -9,7 +9,7 @@ Items.tnt = class extends Item{
 
 Items.end_crystal = class extends Item{
 	interact(b){
-		if(b.constructor != Blocks.obsidian && b.constructor != Blocks.bedrock) return
+		if(b != Blocks.obsidian && b != Blocks.bedrock) return
 		up()
 		if(peek().constructor != Blocks.air) return
 		summon(Entities.end_crystal)
@@ -24,6 +24,9 @@ Items.flint_and_steel = class extends Item{
 			const e = summon(Entities.tnt)
 			e.dy = 5
 			e.dx = random() * 4 - 2
-		}
+		}else return true
+	}
+	place(){
+		place(Blocks.fire)
 	}
 }

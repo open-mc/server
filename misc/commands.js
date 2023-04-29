@@ -259,7 +259,7 @@ export const commands = {
 		snbt(data, 0, b, b.savedata)
 		goto(floor(x), floor(y), w)
 		place(b)
-		return 'Set block at ('+ifloat(x)+', '+ifloat(y)+')'
+		return 'Set block at ('+(floor(x)|0)+', '+(floor(y)|0)+')'
 	},
 	fill(_x, _y, _x2, _y2, type, d = this.world || 'overworld'){
 		let n = performance.now()
@@ -413,8 +413,11 @@ export const commands = {
 		const buf = await generator(x, y, w.id)
 		const newChunk = new Chunk(buf, w, old?.players ?? [])
 		for(const e of old.entities) newChunk.entities.push(e), e.chunk = newChunk
+		const delw = new DataWriter()
+		delw.byte(17), delw.int(x), delw.int(y)
+		const del = delw.build()
 		for(const {sock} of newChunk.players)
-			sock.send(buf)
+			sock.send(buf), sock.send(del)
 		goto(this)
 		let moved = false
 		while((floor(this.y)&63|!moved) && peek().solid)

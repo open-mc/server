@@ -152,8 +152,7 @@ function playerMovePacket(player, buf){
 		let b = peek()
 		const item = player.inv[sel]
 		if(b.solid){
-			if(item && item.interact){
-				item.interact(b)
+			if(item && item.interact && !item.interact(b)){
 				if(!item.count) player.inv[sel] = null
 				player.itemschanged([sel])
 				return

@@ -50,7 +50,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 		this.sock.packets.push(buf.build())
 		this.rubberMv |= mv
 	}
-	tick(){
+	update(){
 		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
 			goto(this.bx, this.by, this.world)
 			const tile = peek()

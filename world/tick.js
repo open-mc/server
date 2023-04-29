@@ -37,7 +37,7 @@ export function tick(){
 			}
 		}
 		e.age++
-		e.tick?.()
+		e.update?.()
 	}
 	for(const pl of players.values()){
 		const {packets, ebuf, tbuf} = pl.sock

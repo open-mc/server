@@ -9,40 +9,53 @@ let cx = 0, cy = 0, pos = 0
 let tiles = undefined, chunk = undefined
 export let world = null
 // Our functions run on so little overhead that array or map caching becomes a big burden for close-together world access
-let cachet = undefined, cachec = undefined, cachex = 0, cachey = 0
+let cachec = undefined, cachex = 0, cachey = 0
 
 export const getX = () => cx<<6|(pos&63)
 export const getY = () => cy<<6|pos>>6
 
+export const save = () => ({cx,cy,pos,chunk,world})
+export const load = o => void ({cx,cy,pos,chunk,world} = o, tiles = chunk?.tiles)
+
 export function gotozero(w){
 	cx = cy = pos = 0
-	cachet = cachec = undefined; cachex = cachey = 67108864
+	cachec = undefined; cachex = cachey = 67108864
 	chunk = (world = w).get(0); tiles = chunk?.tiles
 }
 
 export function goto(x, y, w){
 	if(typeof x == 'object')w=x.world,y=floor(x.y)|0,x=floor(x.x)|0
 	cx = x >>> 6; cy = y >>> 6; world = w; pos = (x & 63) | (y & 63) << 6
-	cachet = undefined; cachex = cachey = 67108864;
+	cachex = cachey = 67108864;
 	chunk = world.get(cx+cy*67108864); tiles = chunk?.tiles
 }
 export function place(bl){
-	if(!tiles) return bl()
-	const block = tiles[pos] = bl()
-	for(const {sock: {tbuf}} of chunk.players){
+	const _t = tiles, _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
+	if(!_t) return bl()
+	if(_t[_pos].unset){
+		_t[_pos].unset()
+		tiles = _t; world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
+	}
+	const block = _t[_pos] = bl()
+	for(const {sock: {tbuf}} of _chunk.players){
 		tbuf.byte(0)
-		tbuf.int(cx << 6 | (pos&63))
-		tbuf.int(cy << 6 | (pos>>6))
+		tbuf.int(_cx << 6 | (_pos&63))
+		tbuf.int(_cy << 6 | (_pos>>6))
 		tbuf.short(block.id)
 		if(block.savedata) tbuf.write(block.savedata, block)
 	}
+	if(block.set){
+		block.set()
+		tiles = _t; world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
+	}
 	return block
 }
+
 export function destroy(){
 	if(!tiles) return
-	if(tiles[pos].destroyed?.()) return
 	const tile = tiles[pos]
-	tiles[pos] = Blocks.air()
+	if(tile.destroyed?.()) return
+	place(Blocks.air)
 	const drop = tile.drops?.()
 	if(drop instanceof Item){
 		const itm = Entities.item()
@@ -59,13 +72,13 @@ export function destroy(){
 			itm.place(world, cx<<6|(pos&63), cy<<6|pos>>6)
 		}
 	}
-	for(const {sock: {tbuf}} of chunk.players){
-		tbuf.byte(0)
-		tbuf.int(cx << 6 | (pos&63))
-		tbuf.int(cy << 6 | (pos>>6))
-		tbuf.short(Blocks.air.id)
-	}
 }
+
+export function breakBlock(){
+	blockevent(2)
+	place(Blocks.air)
+}
+
 let gridEventId = 0
 export function blockevent(ev, fn){
 	if(!tiles || !ev) return
@@ -105,10 +118,9 @@ export function summon(fn){
 
 export const peek = () => tiles ? tiles[pos] : Blocks.air
 
-// V8, I beg you please inline!
-function nc(x,y){if(x==cachex&&y==cachey){cachex=cx;cachey=cy;cx=x;cy=y;const t=cachet,c=cachec;cachet=tiles;cachec=chunk;tiles=t;chunk=c}else{cachex=cx;cachey=cy;cachet=tiles;cachec=chunk;chunk=world.get((cx=x)+(cy=y)*67108864);tiles=chunk?.tiles}}
-function npeek(x,y,p){if(x==cachex&&y==cachey)return cachet?cachet[p]:Blocks.air;else{const c=world.get(x+y*67108864),t=c?.tiles;return t?t[p]:Blocks.air}}
-function nput(x,y,p,b){const c=x==cachex&&y==cachey?cachec:world.get(x+y*67108864),t=c?.tiles;if(!t)return b;t[p]=b;for(const {sock:{tbuf:tb}} of c.players){tb.byte(0);tb.int(cx<<6|(p&63));tb.int(cy<<6|(p>>6));tb.short(b.id);if(b.savedata)tb.write(b.savedata,t[p])}return b}
+// V8, I beg you, please inline!
+function nc(x,y){if(x==cachex&&y==cachey){cachex=cx;cachey=cy;cx=x;cy=y;const c=cachec;cachec=chunk;tiles=(chunk=c)?.tiles}else{cachex=cx;cachey=cy;cachec=chunk;chunk=world.get((cx=x)+(cy=y)*67108864);tiles=chunk?.tiles}}
+function npeek(x,y,p){if(x==cachex&&y==cachey)return cachec&&cachec.tiles?cachec.tiles[p]:Blocks.air;else{const c=world.get(x+y*67108864),t=c?.tiles;return t?t[p]:Blocks.air}}
 
 export function left(){
 	if(pos & 63){ pos--; return }
@@ -144,67 +156,6 @@ export function peekup(){
 	return npeek(cx,cy+1 & 67108863, pos & 63)
 }
 
-export function placeleft(bl){
-	if(pos & 63){
-		if(!tiles)return bl()
-		const block = tiles[pos-1] = bl()
-		for(const {sock: {tbuf}} of chunk.players){
-			tbuf.byte(0)
-			tbuf.int(cx << 6 | (pos&63)-1)
-			tbuf.int(cy << 6 | (pos>>6))
-			tbuf.short(block.id)
-			if(block.savedata) tbuf.write(block.savedata, block)
-		}
-		return block
-	}
-	return nput(cx-1 & 67108863, cy, pos | 63, bl())
-}
-export function placeright(bl){
-	if((pos & 63) != 63){
-		if(!tiles)return bl()
-		const block = tiles[pos+1] = bl()
-		for(const {sock: {tbuf}} of chunk.players){
-			tbuf.byte(0)
-			tbuf.int(cx << 6 | (pos&63)+1)
-			tbuf.int(cy << 6 | (pos>>6))
-			tbuf.short(block.id)
-			if(block.savedata) tbuf.write(block.savedata, block)
-		}
-		return block
-	}
-	return nput(cx+1 & 67108863, cy, pos & 4032, bl())
-}
-export function placedown(bl){
-	if(pos & 4032){
-		if(!tiles)return bl()
-		const block = tiles[pos-64] = bl()
-		for(const {sock: {tbuf}} of chunk.players){
-			tbuf.byte(0)
-			tbuf.int(cx << 6 | (pos&63))
-			tbuf.int(cy << 6 | (pos>>6)-1)
-			tbuf.short(block.id)
-			if(block.savedata) tbuf.write(block.savedata, block)
-		}
-		return block
-	}
-	return nput(cx,cy-1 & 67108863, pos | 4032, bl())
-}
-export function placeup(bl){
-	if((pos & 4032) != 4032){
-		if(!tiles)return bl()
-		const block = tiles[pos+64] = bl()
-		for(const {sock: {tbuf}} of chunk.players){
-			tbuf.byte(0)
-			tbuf.int(cx << 6 | (pos&63))
-			tbuf.int(cy << 6 | (pos>>6)+1)
-			tbuf.short(block.id)
-			if(block.savedata) tbuf.write(block.savedata, block)
-		}
-		return block
-	}
-	return nput(cx,cy+1 & 67108863, pos & 63, bl())
-}
-
 export function jump(dx, dy){
 	dx = (pos & 63) + dx | 0; dy = (pos >> 6) + dy | 0
 	if((dx | dy) >>> 6){ nc(cx + (dx >>> 6) & 67108863, cy + (dy >>> 6) & 67108863); pos = (dx & 63) | (dy & 63) << 6; return }
@@ -216,21 +167,6 @@ export function peekat(dx, dy){
 	if(!((nx | ny) >>> 6) && tiles)return tiles[nx | ny << 6]
 	const c = world.get((cx + (nx >>> 6) & 67108863) + (cy + (ny >>> 6) & 67108863) * 67108864), t = c?.tiles
 	return t ? t[(nx & 63) | (ny & 63) << 6] : Blocks.air
-}
-export function placeat(dx, dy, bl){
-	const nx = (pos & 63) + dx, ny = (pos >> 6) + dy
-	if((nx | ny) >>> 6)return nput(cx + (nx >>> 6) & 67108863, cy + (ny >>> 6) & 67108863, (nx & 63) | (ny & 63) << 6, bl())
-	if(!tiles)return bl()
-	dx = nx | ny << 6
-	const block = tiles[dx] = bl()
-	for(const {sock: {tbuf}} of chunk.players){
-		tbuf.byte(0)
-		tbuf.int(cx << 6 | (dx&63))
-		tbuf.int(cy << 6 | (dx>>6))
-		tbuf.short(block.id)
-		if(block.savedata) tbuf.write(block.savedata, block)
-	}
-	return block
 }
 
 export function select(x0, y0, x1, y1, cb){
@@ -244,11 +180,11 @@ export function select(x0, y0, x1, y1, cb){
 			const ch = (cxa == cx & cya == cy) && chunk || world.get(cxa+cya*67108864)
 			if(!ch || !ch.entities) continue
 			for(const e2 of ch.entities){
-				if(e2.x < x0 || e2.x > x1 || e2.y < y0 || e2.y > y1) continue
+				if((e2.x < x0 | e2.x > x1) || (e2.y < y0 | e2.y > y1) || e2.world != world) continue
 				cb(e2)
 			}
 		}
 	}
 }
 
-optimize(nc, npeek, nput, place, goto, peek, jump, peekat, placeat, right, left, up, down, peekright, peekleft, peekup, peekdown, placeright, placeleft, placeup, placedown, summon, gridevent, cancelgridevent, select)
+optimize(nc, npeek, place, goto, peek, jump, peekat, right, left, up, down, peekright, peekleft, peekup, peekdown, summon, gridevent, cancelgridevent, select)
