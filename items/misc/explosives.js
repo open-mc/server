@@ -1,6 +1,6 @@
 import { Blocks } from "../../blocks/block.js"
 import { Entities } from "../../entities/entity.js"
-import { peek, place, up, summon, getY } from "../../misc/ant.js"
+import { peek, place, up, summon, getY, blockevent } from "../../misc/ant.js"
 import { Item, Items } from "../item.js"
 
 Items.tnt = class extends Item{
@@ -28,5 +28,6 @@ Items.flint_and_steel = class extends Item{
 	}
 	place(){
 		place(Blocks.fire)
+		blockevent(1)
 	}
 }

@@ -2,6 +2,9 @@
 import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
 import { BlockIDs, Blocks, Block } from './block.js'
+
+const loaded = task('Loading blocks...')
+
 // Monstrosity for importing all ./*/*.js
 await Promise.all((await fs.readdir(PATH + 'blocks/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'blocks/' + name).then(a => Promise.all(a.map(file => import(PATH + 'blocks/' + name + '/' + file))))))
 let modified = false
@@ -48,4 +51,4 @@ if(modified){
 	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(def => def.className + def.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (def.savedata ? ' ' + typeToJson(def.savedata) : '')).join('\n'))
 }
 
-progress(`${BlockIDs.length} Blocks loaded`)
+loaded(`${BlockIDs.length} Blocks loaded`)

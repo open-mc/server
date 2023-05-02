@@ -1,6 +1,9 @@
 import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
-//import all entity files
+
+const loaded = task('Loading entities...')
+
+// Monstrosity for importing all ./*/*.js
 import { Entities, Entity, EntityIDs } from './entity.js'
 await Promise.all((await fs.readdir(PATH + 'entities/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'entities/' + name).then(a => Promise.all(a.map(file => import(PATH + 'entities/' + name + '/' + file))))))
 let modified = false
@@ -44,4 +47,4 @@ if(modified){
 	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))
 }
 
-progress(`${EntityIDs.length} Entities loaded`)
+loaded(`${EntityIDs.length} Entities loaded`)

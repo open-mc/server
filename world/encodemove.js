@@ -14,7 +14,7 @@ export function calculateMv(e){
 	}else if(mv & 3) e.moved?.()
 	e._x = e.x; e._y = e.y
 	if(e.state != e._state | e.f != e._f) e._state = e.state, e._f = e.f, mv |= 8
-	if(e.name != e._name) mv |= 16
+	if(e.name != e._name) e._name = e.name, mv |= 16
 	if(e.pendingEvents.length) mv |= 32
 	
 	const cx = floor(e.x)>>>6, cy = floor(e.y)>>>6
@@ -82,12 +82,12 @@ export function mirrorEntity(e){
 	for(const pl of chunk.players){
 		if(e == pl){
 			if(_chunk && _chunk.players.includes(pl)){
-				const emv = e.rubberMv & mv
+				const emv = e.rubberMv & -33 | mv & 32
 				if(emv) encodeMove(e, pl, emv)
-				e.rubberMv = EVENTS
+				e.rubberMv = 0
 				continue
 			}
-			e.rubberMv = EVENTS
+			e.rubberMv = 0
 		}else if(_chunk && _chunk.players.includes(pl)){
 			if(mv) encodeMove(e, pl, mv)
 			continue

@@ -20,7 +20,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	breakGridEvent = 0
 	blockBreakLeft = -1
 	bx = 0; by = 0
-	rubberMv = EVENTS
+	rubberMv = 0
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
 	get head(){return this.state & 2 ? 1.4 : 1.6}

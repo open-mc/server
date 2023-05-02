@@ -1,22 +1,43 @@
 # Everything after a # is a comment and ignored
 
-# Commonly used
-
+# Server stuff
 name: Test Server
-seed: 6969420 # 32 bit
 maxplayers: 500
 chunkloadingrange: 3 # recommended: 3
-gamemode: survival # possible values: survival, creative
 
-generators: # Terrain generation
+# Gameplay stuff
+world:
+  # Change gamemode by doing /gamerule spawnGamemode <gamemode>
+  seed: 6969420 # 32 bit seed
+
+# Terrain generators
+generators:
+  # All generators have these options:
+  # default -> normal terrain generation
+  # flat -> normal biomes and foliage, structures, etc but all terrain is the same height (no oceans)
+  # perlin -> epic amplified-ish shapes
+  # void -> no blocks except some critical structures (e.g starting platform, end portal, etc)
+  # supervoid -> no blocks whatsoever
+
+  # Overworld also has:
+  # superflat -> 1 layer of grass, 3 layers of dirt, stone below that. No features whatsoever
   overworld: default
+
+  # Nether also has:
+  # superflat -> netherrack below Y=-128 and above Y=128, air in between
+  # opensky -> no nether roof
   nether: default
+
+  # End's "flat" is identical to "void"
   end: default
+
+  # void is a special dimension with no generation, however you can chose to force it to generate like any other, in the format dimension/generatorname
+  void: overworld/default
 
 # Related to network configuration
 
 port: 27277
-# Key and certificate files for encrypted server (recommended). Paths are relative to
+# Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
 key: 
 pem: 
 
@@ -38,4 +59,17 @@ motd:
   - 44 Hours without sleep!
   - "!!!!!"
 
-ban_appeal_info: # info displayed on the banned notice screen
+# info displayed on the banned notice screen
+ban_appeal_info: 
+
+# Do not touch this section for multiplayer servers unless you ABSOLUTELY know what you're doing!
+# You have been warned!
+socket:
+  # Check for suspicious movement packets
+  # Recommended: true
+  # Setting to false will allow any player to move at any speed and teleport anywhere without creative or operator
+  # which may allow any player to load an excessive amount of chunks and crash the server
+  movementchecks: true
+
+  # Blocks player can stray before being rubberbanded
+  movementcheckmercy: 10

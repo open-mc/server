@@ -1,17 +1,24 @@
-import { fs } from '../../internals.js'
-import { parentPort } from 'worker_threads'
-import { jsonToType } from '../../utils/data.js'
+import { fs, parentPort } from '../internals.js'
+import { jsonToType } from '../utils/data.js'
 import { Blocks, chunk, chunkBiomes, Items, setSeed } from './vars.js'
-parentPort?.on('message', async function({x, y, d, seed, name = 'default'}){
-	setSeed(seed)
-	await (GENERATORS[d]?.[name]||dfgen)(x, y)
-	parentPort.postMessage({key: x+' '+y+' '+d, buf: toPacket(x, y, chunk)})
+parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
+	if(d == 'void') [d, name] = name.split('/', 2)
+	let D = GENERATORS[d]
+	if(!D) D = GENERATORS[d] = Object.create(null), console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mNo such dimension: "'+d+'"!')
+	let gen = D[name]
+	if(!gen){
+		gen = D[name] = () => void chunk.fill(Blocks.air),
+		chunk.fill(Blocks.air)
+		console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mDimension "'+d+'" doesn\'t have a generator named "'+name+'"!')
+	}else{
+		setSeed(seed)
+		const pr = gen(x, y)
+		if(pr && pr.then) pr.then(() => parentPort.postMessage({key, buf: toPacket(x, y, chunk)}))
+		else parentPort.postMessage({key, buf: toPacket(x, y, chunk)})
+	}
 })
-async function all(o){for(let i in o)o[i]=await o[i];return o}
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
-
 let i = 0
-for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/blockindex.txt')).split('\n')){
+for(let a of (''+await fs.readFile(WORLD+'/defs/blockindex.txt')).split('\n')){
 	a = a.split(' ')
 	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
 	const f = def.savedata ? (data = {}) => Object.assign(data, def) : () => def
@@ -19,7 +26,7 @@ for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')
 	Blocks[a[0]] = f
 }
 i = 0
-for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')+'/defs/itemindex.txt')).split('\n')){
+for(let a of (''+await fs.readFile(WORLD+'/defs/itemindex.txt')).split('\n')){
 	a = a.split(' ')
 	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
 	const f = (count, data = {}) => (data.count = count, Object.assign(data, def))
@@ -27,13 +34,12 @@ for(let a of (''+await fs.readFile(PATH + '../../../'+(process.argv[2]||'world')
 	Items[a[0]] = f
 }
 
-const GENERATORS = await all({
-	overworld: import('./overworld.js'),
-	nether: import('./nether.js'),
-})
-let dfgen = (_1, _2) => chunk.fill(Blocks.air)
-Object.setPrototypeOf(GENERATORS, null)
-parentPort && parentPort.postMessage({key: 'ready'})
+const GENERATORS = Object.create(null)
+const loaded = []
+for(const gen of await fs.readdir(PATH+'worldgen/dimensions'))
+	loaded.push(import('./dimensions/'+gen).then(m => GENERATORS[gen.replace('.js','')] = m))
+await Promise.all(loaded)
+parentPort?.postMessage({key:-1})
 function toPacket(x, y, tiles){
 	let palette = [], palette2 = Object.create(null)
 	for(let i = 0; i < 4096; i++){
@@ -111,5 +117,5 @@ export let threadUsage = 0
 setInterval(() => {
 	const f = (idle2 - (idle2 = performance.nodeTiming.idleTime)) / (time2 - (time2 = performance.now()))
 	threadUsage -= (threadUsage + f - 1) / 20
-	parentPort.postMessage({key:'stat', elu: threadUsage, mem: process.memoryUsage().heapTotal})
+	parentPort.postMessage({key:-2, elu: threadUsage, mem: process.memoryUsage().heapTotal})
 }, 500)

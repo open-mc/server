@@ -1,10 +1,7 @@
-import { argv, fs, stats } from './internals.js'
-import util from 'node:util'
+import { argv, fs } from './internals.js'
 import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
-import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
-import { commands, err } from './misc/commands.js'
-import { input, repl } from 'basic-repl'
+import { chat, YELLOW } from './misc/chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, GAMERULES, HANDLERS, packs, PERMISSIONS, stat, STATS } from './config.js'
 import { DataReader, DataWriter } from './utils/data.js'
@@ -14,7 +11,7 @@ import { deflateSync } from 'node:zlib'
 import { entityindex } from './entities/index.js'
 import { itemindex } from './items/index.js'
 import { blockindex } from './blocks/index.js'
-import { Entities, entityMap } from './entities/entity.js'
+import { Entities } from './entities/entity.js'
 import { Items } from './items/item.js'
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 
@@ -65,38 +62,12 @@ export const httpServer = key && pem ? (await import('https')).createServer({
 	key: await fs.readFile(key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key),
 	cert: await fs.readFile(pem[0]=='/'||pem[0]=='~' ? pem : PATH + '../' + pem)
 }, handler) : (await import('http')).createServer(handler)
+export const secure = !!(key && pem)
 
 export const server = new WebSocketServer({server: httpServer, perMessageDeflate: false})
 
 export let started = 0
-
-server.once('listening', () => {
-	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port+(key&&pem?' (secure)':'')}\x1b[m\nType /help for a list of commands, or press tab to switch to repl`)
-	started = Date.now()
-	stat('misc', 'restarts')
-	repl('[server] ', async text => {
-		if(text == 'clear') return clear()
-		if(text[0] == '/'){
-			try{
-				const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
-				if(!match) return void console.log('Slash, yes, very enlightening.')
-				for(let i = 0; i < match.length; i++){
-					const a = match[i]
-					try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
-				}
-				if(!(match[0] in commands))throw 'No such command: /'+match[0]
-				stat('misc', 'commands_used')
-				let res = await commands[match[0]].apply(server, match.slice(1))
-				if(res)console.log(res)
-			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
-		}else{
-			process.stdout.write('\x1b[A')
-			input(false)
-			chat('[server] ' + text, LIGHT_GREY + ITALIC)
-		}
-	})
-	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
-})
+server.once('listening', () => started = Date.now())
 
 WebSocket.prototype.logMalicious = function(reason){
 	if(!argv.log) return
@@ -119,7 +90,7 @@ server.on('connection', function(sock, {url, headers, socket}){
 	sock.username = username
 	sock.packets = []
 	sock.pubKey = pubKey
-	sock.rx = 10; sock.ry = 10
+	sock.ry = sock.rx = CONFIG.socket.movementcheckmercy
 	if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
 		return sock.logMalicious('Invalid public key signature'), sock.close()
 	crypto.randomBytes(32, (err, rnd) => {

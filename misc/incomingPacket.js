@@ -29,42 +29,45 @@ function validateMove(sock, player, buf){
 
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
-	
+
 	let mx = ifloat(x - ox), my = ifloat(y - oy)
-	if(mx >= 0){
-		const excess = mx - max(9, dx) / current_tps
-		sock.rx -= excess
-		if(sock.rx < 0){
-			mx += sock.rx
-			sock.rx = 0
-			rubber = true
-		}else if(sock.rx > 10) sock.rx = 10
-	}else{
-		const excess = mx - min(-9, dx) / current_tps
-		sock.rx += excess
-		if(sock.rx < 0){
-			mx -= sock.rx
-			sock.rx = 0
-			rubber = true
-		}else if(sock.rx > 10) sock.rx = 10
-	}
-	if(my >= 0){
-		const excess = my - max(9, dy) / current_tps
-		sock.ry -= excess
-		if(sock.ry < 0){
-			my += sock.ry
-			sock.ry = 0
-			rubber = true
-		}else if(sock.ry > 10) sock.ry = 10
-	}else{
-		const tV = player.world.gy * player.gy / (1 - player.yDrag)
-		const excess = my - min(tV * 1.2, dy) / current_tps
-		sock.ry += excess
-		if(sock.ry < 0){
-			my -= sock.ry
-			sock.ry = 0
-			rubber = true
-		}else if(sock.ry > 10) sock.ry = 10
+	if(CONFIG.socket.movementchecks){
+		const {movementcheckmercy: mercy} = CONFIG.socket
+		if(mx >= 0){
+			const excess = mx - max(9, dx) / current_tps
+			sock.rx -= excess
+			if(sock.rx < 0){
+				mx += sock.rx
+				sock.rx = 0
+				rubber = true
+			}else if(sock.rx > mercy) sock.rx = mercy
+		}else{
+			const excess = mx - min(-9, dx) / current_tps
+			sock.rx += excess
+			if(sock.rx < 0){
+				mx -= sock.rx
+				sock.rx = 0
+				rubber = true
+			}else if(sock.rx > mercy) sock.rx = mercy
+		}
+		if(my >= 0){
+			const excess = my - max(9, dy) / current_tps
+			sock.ry -= excess
+			if(sock.ry < 0){
+				my += sock.ry
+				sock.ry = 0
+				rubber = true
+			}else if(sock.ry > mercy) sock.ry = mercy
+		}else{
+			const tV = player.world.gy * player.gy / (1 - player.yDrag)
+			const excess = my - min(tV * 1.2, dy) / current_tps
+			sock.ry += excess
+			if(sock.ry < 0){
+				my -= sock.ry
+				sock.ry = 0
+				rubber = true
+			}else if(sock.ry > mercy) sock.ry = mercy
+		}
 	}
 	if(!rubber){
 		player.dx = mx * current_tps

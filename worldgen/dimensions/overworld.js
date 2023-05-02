@@ -1,8 +1,8 @@
-import { veins } from './ores.js'
-import { biomesheet } from './util/biomes.js'
-import { fill } from './util/perlin.js'
-import { imxs32_2 } from './util/random.js'
-import { Blocks, chunk } from './vars.js'
+import { veins } from '../ores.js'
+import { biomesheet } from '../util/biomes.js'
+import { fill } from '../util/perlin.js'
+import { imxs32_2 } from '../util/random.js'
+import { Blocks, chunk } from '../vars.js'
 
 export const flat = function(cx, cy){
 	const filler = cy > -1 ? Blocks.air : Blocks.stone

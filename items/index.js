@@ -1,6 +1,9 @@
 import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
-//import all item files
+
+const loaded = task('Loading items...')
+
+// Monstrosity for importing all ./*/*.js
 import { Item, ItemIDs, Items } from './item.js'
 await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import(PATH + 'items/' + name + '/' + file))))))
 let modified = false
@@ -44,4 +47,4 @@ if(modified){
 	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.className + I.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.savedata ? ' '+typeToJson(I.savedata) : '')).join('\n'))
 }
 
-progress(`${ItemIDs.length} Items loaded`)
+loaded(`${ItemIDs.length} Items loaded`)

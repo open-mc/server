@@ -1,16 +1,49 @@
 import { Dimensions } from './world/index.js'
 import './utils/prototypes.js'
-import { CONFIG, HANDLERS, STATS, DEFAULT_TPS } from './config.js'
+import { CONFIG, HANDLERS, STATS, DEFAULT_TPS, stat } from './config.js'
 import { setTPS } from './world/tick.js'
-import { close, httpServer, server } from './server.js'
-import { ready } from './internals.js'
-
+import { close, httpServer, secure, server } from './server.js'
+import { argv, ready, stats } from './internals.js'
+import util from 'node:util'
+import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
+import { commands, err } from './misc/commands.js'
+import { input, repl } from 'basic-repl'
+import { entityMap } from './entities/entity.js'
 
 process.stdout.write('\x1bc\x1b[3J')
-progress('All modules loaded')
 
 await ready
-httpServer.listen(CONFIG.port || 27277)
+task.done('Modules loaded')
+
+const serverLoaded = task('Starting server...')
+httpServer.once('listening', () => {
+	serverLoaded(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port+(secure?' (secure)':'')}\x1b[m\nType /help for a list of commands, or hit tab to switch to JS repl`)
+	stat('misc', 'restarts')
+	repl('[server] ', async text => {
+		if(text == 'clear') return clear()
+		if(text[0] == '/'){
+			try{
+				const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
+				if(!match) return void console.log('Slash, yes, very enlightening.')
+				for(let i = 0; i < match.length; i++){
+					const a = match[i]
+					try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
+				}
+				if(!(match[0] in commands))throw 'No such command: /'+match[0]
+				stat('misc', 'commands_used')
+				let res = await commands[match[0]].apply(server, match.slice(1))
+				if(res)console.log(res)
+			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
+		}else{
+			process.stdout.write('\x1b[A')
+			input(false)
+			chat('[server] ' + text, LIGHT_GREY + ITALIC)
+		}
+	})
+	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
+})
+
+httpServer.listen(argv.port || CONFIG.port || 27277)
 setTPS(DEFAULT_TPS)
 
 globalThis.exiting = false

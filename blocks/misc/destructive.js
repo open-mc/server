@@ -17,12 +17,15 @@ Blocks.tnt = class extends Block{
 Blocks.fire = class extends Block{
 	static solid = false
 	set(){
-		if(peekdown() == Blocks.obsidian){
+		const b = peekdown()
+		if(b == Blocks.obsidian){
 			let i = -1
 			while(++i < 32 & !(up(), peek().solid));
 			if(peek() != Blocks.obsidian) return
 			if(i < 3) return
 			while(--i>-2) down(), place(Blocks.portal)
+		}else if(!b.solid){
+			place(Blocks.air)
 		}
 	}
 }
