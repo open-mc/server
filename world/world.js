@@ -73,7 +73,7 @@ export class World extends Map{
 		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
 		if(ch.players.length){
 			if(ch.t <= 0) ch.t = -1 //-1 == chunk has had a player loading it and the chunk will need saving again
-			else ch.t = 20 //Reset the timer
+			else ch.t = 20, ch.tick() //Reset the timer
 			return
 		}
 		if(ch.t <= 0) return

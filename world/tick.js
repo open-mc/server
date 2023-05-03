@@ -17,27 +17,9 @@ export function tick(){
 		}
 	}
 	for(const e of entityMap.values()){
+		if(e.id & !(!e.chunk | !e.world))
+			stepEntity(e)
 		mirrorEntity(e)
-		if(!e.chunk | !e.world)continue
-		if(e.id) stepEntity(e)
-		const x0 = e.x - e.width - e.collisionTestPadding, x1 = e.x + e.width + e.collisionTestPadding
-		const y0 = e.y - e.collisionTestPadding, y1 = e.y + e.height + e.collisionTestPadding
-		const cx0 = floor(x0 - 16) >>> 6, cx1 = ceil((x1 + 16) / 64) & 67108863
-		const cy0 = floor(y0) >>> 6, cy1 = ceil((y1 + 32) / 64) & 67108863
-		for(let cx = cx0; cx != cx1; cx = cx + 1 & 67108863){
-			for(let cy = cy0; cy != cy1; cy = cy + 1 & 67108863){
-				const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world && e.world.get(cx+cy*67108864)
-				if(!chunk || !chunk.tiles) continue
-				for(const e2 of chunk.entities){
-					const {collisionTestPadding: ctp} = e2
-					if(e2.netId <= e.netId || e2.x + e2.width + ctp < x0 || e2.x - e2.width - ctp > x1 || e2.y + e2.height + ctp < y0 || e2.y - ctp > y1) continue
-					e.touch?.(e2)
-					e2.touch?.(e)
-				}
-			}
-		}
-		e.age++
-		e.update?.()
 	}
 	for(const pl of players.values()){
 		const {packets, ebuf, tbuf} = pl.sock

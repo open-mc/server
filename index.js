@@ -1,4 +1,4 @@
-import { Dimensions } from './world/index.js'
+import { Dimensions, players } from './world/index.js'
 import './utils/prototypes.js'
 import { CONFIG, HANDLERS, STATS, DEFAULT_TPS, stat } from './config.js'
 import { setTPS } from './world/tick.js'

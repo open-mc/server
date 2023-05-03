@@ -1,6 +1,7 @@
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { EntityIDs } from '../entities/entity.js'
 import { optimize } from '../internals.js'
+import { gotochunk, peek, peekpos } from '../misc/ant.js'
 import { DataReader } from '../utils/data.js'
 
 // Turns out that this is BY MILES the fastest way to allocate a large array, and it allocates exactly how much we need, no more no less
@@ -166,6 +167,21 @@ export class Chunk{
 		return new DataReader(Uint8Array.of(16, x << 6 >>> 30, x >>> 16, x >>> 8, x, y << 6 >>> 30, y >>> 16, y >>> 8, y, 0, 0, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, block.id >> 8, block.id))
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return '<Chunk x: \x1b[33m'+(this.x<<6>>6)+'\x1b[m, y: \x1b[33m'+(this.y<<6>>6)+'\x1b[m>'}
+	blockupdates = new Set
+	blockupdates2 = new Set
+	tick(){
+		const pos = floor(random() * 4096)
+		gotochunk(this, pos)
+		const s = this.blockupdates
+		this.blockupdates = this.blockupdates2
+		this.blockupdates2 = s
+		peek().randomtick?.()
+		for(const p of s){
+			peekpos(p).update?.()
+			if(!--i) break // prevent accidentally updating things from this tick
+		}
+		if(s.size) s.clear()
+	}
 }
 
 optimize(Chunk, Chunk.prototype.toBuf)

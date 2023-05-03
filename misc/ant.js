@@ -14,8 +14,8 @@ let cachec = undefined, cachex = 0, cachey = 0
 export const getX = () => cx<<6|(pos&63)
 export const getY = () => cy<<6|pos>>6
 
-export const save = () => ({cx,cy,pos,chunk,world})
-export const load = o => void ({cx,cy,pos,chunk,world} = o, tiles = chunk?.tiles)
+export const push = () => ({cx,cy,pos,chunk,world})
+export const pop = o => void ({cx,cy,pos,chunk,world} = o, tiles = chunk?.tiles)
 
 export function gotozero(w){
 	cx = cy = pos = 0
@@ -29,6 +29,14 @@ export function goto(x, y, w){
 	cachex = cachey = 67108864;
 	chunk = world.get(cx+cy*67108864); tiles = chunk?.tiles
 }
+
+export function gotochunk(ch, p){
+	cx = ch.x; cy = ch.y; world = ch.world; pos = p
+	cachex = cachey = 67108864;
+	chunk = ch; tiles = chunk.tiles
+}
+export const peekpos = p => tiles ? tiles[pos = p] : Blocks.air
+
 export function place(bl){
 	const _t = tiles, _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
 	if(!_t) return bl()
