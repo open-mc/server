@@ -1,31 +1,30 @@
-import { pop, peek, peekdown, place, push, up, destroy } from "../../misc/ant.js";
+import { Items } from "../../items/item.js";
+import { load, peek, peekdown, place, save, up, down } from "../../misc/ant.js";
 import { Block, Blocks } from "../block.js";
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
-	static solid = false
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1
-			push()
+			const a = save()
 				down()
 				while(peek() == Blocks.sugar_cane)
 					length++, down()
-			pop()
+			load(a)
 			up()
 			if(length < 3 && peek() == Blocks.air)
 				place(Blocks.sugar_cane)
 		}
 	}
 	update(){
-		if(!peekdown().solid) destroy() // drops item
+		if(!peekdown().solid) this.destroy() // drops item
 	}
 	// Single liners on one line unless you think you'll need to expand it in the future
 	drops(){ return Items.sugar_cane(1) }
 }
 class PumpkinLeaf extends Block{
 	static breaktime = 0
-	static solid = false
 }
 Blocks.pumpkin_leaf = class extends PumpkinLeaf{
 	randomtick(){
@@ -44,12 +43,11 @@ Blocks.pumpkin_leaf2 = class extends PumpkinLeaf{
 }
 Blocks.pumpkin_leaf3 = class extends PumpkinLeaf{
 	randomtick(){
-		push()
-			if (right(), peek() == Blocks.pumpkin) return
-		pop()
-		push()
-			if (left(), peek() == Blocks.pumpkin) return
-		pop()
+		right()
+		if (peek() == Blocks.pumpkin) return
+		left(); left()
+			if (peek() == Blocks.pumpkin) return
+		right()
 
 		random() < .5 ? left() : right()
 		if(peek() == Blocks.air)
@@ -57,11 +55,36 @@ Blocks.pumpkin_leaf3 = class extends PumpkinLeaf{
 	}
 }
 
-//testing + gtg eat
-function growthrate(){
-	down()
-	let soil = peek()
-	if(soil != Blocks.farmland) return
-	let points = soil.hydrated ? 4 : 2
+Blocks.farmland = class extends Block{
+	
+}
+Blocks.hydrated_farmland = class extends Block{
 
+}
+
+function growthRate(){
+	down()
+	const middle = save()
+	// . . . . . . X . . . . . .
+	let points = peek() == Blocks.hydrated_farmland ? 4 : 2
+	let i = 6; while(i-- > 0){
+		left()
+		if (peek() == Blocks.hydrated_farmland)
+			points += 1.5
+		else if (peek() == Blocks.farmland)
+			points += 1
+		else break
+	}
+	// v v v v v v X . . . . . .
+	load(middle)
+	i = 6; while(i-- > 0){
+		right()
+		if (peek() == Blocks.hydrated_farmland)
+			points += 1.5
+		else if (peek() == Blocks.farmland)
+			points += 1
+		else break
+	}
+	// v v v v v v X v v v v v v
+	return 1/(22/floor(points) + 1) //okay all crops need this algo
 }

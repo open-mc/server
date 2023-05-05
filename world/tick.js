@@ -17,7 +17,7 @@ export function tick(){
 		}
 	}
 	for(const e of entityMap.values()){
-		if(e.id & !(!e.chunk | !e.world))
+		if(!!e.id & !(!e.chunk | !e.world))
 			stepEntity(e)
 		mirrorEntity(e)
 	}

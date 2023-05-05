@@ -172,6 +172,7 @@ export function err(e){
 }
 
 const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
+const ITEMCOMMONDATA = {count: Uint8}
 
 export const commands = {
 	list(){
@@ -219,11 +220,12 @@ export const commands = {
 		}
 		return `Kicked ${kicked} player(s)`
 	},
-	give(sel, item, count = '1'){
+	give(sel, item, count = '1', dat){
 		let itm = Items[item], c = max(count | 0, 0)
 		if(!itm)throw 'No such item: '+item
 		for(const player of selector(sel, this)){
 			const stack = itm(c)
+			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
 			player.give(stack)
 			while(stack.count){
 				const e = Entities.item()
@@ -359,6 +361,7 @@ export const commands = {
 		if(!a){
 			return 'List of gamerules:\n' + Object.entries(GAMERULES).map(([k, v]) => k + ': ' + typeof v).join('\n')
 		}
+		a = a.toLowerCase()
 		if(!b){
 			if(!(a in GAMERULES)) throw 'No such gamerule: ' + a
 			return 'Gamerule ' + a + ': ' + JSON.stringify(GAMERULES[a])
@@ -373,8 +376,8 @@ export const commands = {
 	},
 	spawnpoint(x='~',y='~',d=this.world||'overworld'){
 		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
-			return commands.tp.call(this, y || '@s', GAMERULES.spawnX, GAMERULES.spawnY, GAMERULES.spawnWorld)
-		void ({x: GAMERULES.spawnX, y: GAMERULES.spawnY, w: {id: GAMERULES.spawnWorld}} = parseCoords(x,y,d,this))
+			return commands.tp.call(this, y || '@s', GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
+		void ({x: GAMERULES.spawnx, y: GAMERULES.spawny, w: {id: GAMERULES.spawnworld}} = parseCoords(x,y,d,this))
 		return 'Set the spawn point successfully!'
 	},
 	info(){
@@ -407,7 +410,7 @@ export const commands = {
 	async regen(_x, _y, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
 		x = floor(x) >>> 6; y = floor(y) >>> 6
-		let old = w.get(x+y*67108864)
+		let old = w.get(x+y*0x4000000)
 		if(old instanceof Promise) old = await old
 		if(old) old.t = 2147483647
 		const buf = await generator(x, y, w.id)
@@ -432,9 +435,11 @@ commands.i = commands.info
 export const anyone_help = {
 	help: '<cmd> -- Help for a command',
 	list: '-- List online players',
-	info: '-- Info about the server and yourself'
+	info: '-- Info about the server and yourself',
+	i: ' (alias for /info)'
 }, mod_help = {
 	...anyone_help,
+	give: '[player] [item] (count) ',
 	kick: '[player] -- Kick a player',
 	say: '[style] [msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
@@ -442,10 +447,12 @@ export const anyone_help = {
 	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
 	summon: '[entity_type] (x) (y) (snbt_data) (dimension) -- Summon an entity',
 	setblock: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Place a block somewhere',
-	clear: '[player] (filter_item) (max_amount) -- Remove items from a player'
+	clear: '[player] (filter_item) (max_amount) -- Remove items from a player',
+	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
+	regen: '(x) (y) -- Re-generate this chunk with fresh terrain',
+	kill: '[target] (cause) -- Kill a player or entity'
 }, help = {
 	...mod_help,
-	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
 	tps: '[tps] -- Set server-side tps',

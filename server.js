@@ -156,8 +156,8 @@ async function play(sock, username, skin){
 		other = null
 	}catch(e){
 		player = Entities.player()
-		x = GAMERULES.spawnX; y = GAMERULES.spawnY
-		dim = Dimensions[GAMERULES.spawnWorld]
+		x = GAMERULES.spawnx; y = GAMERULES.spawny
+		dim = Dimensions[GAMERULES.spawnworld]
 		player.inv[0] = Items.stone(20)
 		player.inv[1] = Items.oak_log(20)
 		player.inv[2] = Items.oak_planks(20)

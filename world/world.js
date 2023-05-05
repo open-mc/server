@@ -13,7 +13,7 @@ export class World extends Map{
 		this.tick = 0
 	}
 	load(cx, cy, pl = null){
-		let k = (cx&67108863)+(cy&67108863)*67108864
+		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(ch instanceof Promise){
 			if(pl) ch.players.push(pl)
@@ -56,7 +56,7 @@ export class World extends Map{
 		return pr
 	}
 	unlink(cx, cy, pl){
-		let ch = super.get((cx&67108863)+(cy&67108863)*67108864)
+		let ch = super.get((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000)
 		if(!ch)return false
 		ch.players.remove(pl)
 		if(!pl.sock || (ch instanceof Promise)) return false
@@ -78,7 +78,7 @@ export class World extends Map{
 		}
 		if(ch.t <= 0) return
 		if(--ch.t) return //Count down timer
-		let k = ch.x+ch.y*67108864
+		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter).build()
 		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
@@ -91,19 +91,19 @@ export class World extends Map{
 		//Save a chunk to disk, but don't unload it
 		if(ch.t <= 0) return //Already saving
 		ch.t = 0 //Whoops, chunk timer "ended"
-		let k = (ch.x&67108863)+(ch.y&67108863)*67108864
+		let k = (ch.x&0x3FFFFFF)+(ch.y&0x3FFFFFF)*0x4000000
 		const b = ch.toBuf(new DataWriter).build()
 		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
 	}
 	at(x, y, p = null){
-		let ch = super.get((x>>>6)+(y>>>6)*67108864)
+		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
 		if(!ch || ch instanceof Promise)return null
 		if(p && !ch.players.includes(p))return null
 		return ch.tiles[(x & 63) + ((y & 63) << 6)]
 	}
-	chunk(x, y){ return super.get((x&67108863)+(y&67108863)*67108864) }
+	chunk(x, y){ return super.get((x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000) }
 	put(x, y, b){
-		let ch = super.get((x>>>6)+(y>>>6)*67108864)
+		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
 		if(!ch)return
 		ch.tiles[(x & 63) + ((y & 63) << 6)] = b
 		let buf = new DataWriter()

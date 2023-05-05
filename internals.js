@@ -116,9 +116,9 @@ process.on('unhandledRejection', uncaughtErr)
 let total = 0, loaded = 0
 let resolvePromise = null
 const started = Date.now()
-const print = desc => parentPort || console.log(
-	`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}`
-)
+const print = parentPort ? _ => {} : desc => {
+	process.stdout.write(`\x1b[6n\x1b[9999A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}\n`)
+}
 globalThis.task = function(desc = ''){
 	total++
 	let called = false

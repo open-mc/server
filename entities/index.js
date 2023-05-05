@@ -32,6 +32,7 @@ for(const name in Entities){
 	if(!Object.hasOwn(E, 'id'))
 		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), E.className = name, modified = true
 	E.constructor = EntityIDs[E.id] = Entities[name] = (...e) => new E(...e)
+	E.constructor.prototype = E.prototype
 	if(E.otherIds) for(const i of E.otherIds) EntityIDs[i] = EntityIDs[E.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -44,7 +45,7 @@ for(const name in Entities){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.className + E.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.savedata ? ' ' + typeToJson(E.savedata) : '')).join('\n'))
+	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.prototype.className + E.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.prototype.savedata ? ' ' + typeToJson(E.prototype.savedata) : '')).join('\n'))
 }
 
 loaded(`${EntityIDs.length} Entities loaded`)

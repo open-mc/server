@@ -6,17 +6,17 @@ import { Block, Blocks } from '../block.js'
 Blocks.tnt = class extends Block{
 	static breaktime = 0
 	drops(){ return Items.tnt(4) }
-	destroyed(){
-		place(Blocks.air)
+	destroy(){
+		super.destroy(false, false)
 		const tnt = summon(Entities.tnt)
 		tnt.age = floor(random() * 20) + 55
-		return true
+		return
 	}
 }
 
 Blocks.fire = class extends Block{
 	static solid = false
-	set(){
+	update(){
 		const b = peekdown()
 		if(b == Blocks.obsidian){
 			let i = -1

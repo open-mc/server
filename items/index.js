@@ -32,6 +32,7 @@ for(const name in Items){
 	if(!Object.hasOwn(I, 'id'))
 		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = name, modified = true
 	I.constructor = ItemIDs[I.id] = Items[name] = (...c) => new I(...c)
+	I.constructor.prototype = I.prototype
 	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -44,7 +45,7 @@ for(const name in Items){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.className + I.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.savedata ? ' '+typeToJson(I.savedata) : '')).join('\n'))
+	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
 }
 
 loaded(`${ItemIDs.length} Items loaded`)

@@ -186,9 +186,9 @@ function playerMovePacket(player, buf){
 }
 
 function respawnPacket(player, _){
-	player.x = GAMERULES.spawnX
-	player.y = GAMERULES.spawnY
-	player.world = Dimensions[GAMERULES.spawnWorld]
+	player.x = GAMERULES.spawnx
+	player.y = GAMERULES.spawny
+	player.world = Dimensions[GAMERULES.spawnworld]
 	player.rubber()
 	player.damage(-Infinity, null)
 	player.dx = player.dy = 0

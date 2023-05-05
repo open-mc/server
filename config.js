@@ -98,9 +98,10 @@ export const [
 	loadConfig(), loadPermissions()
 ])
 GAMERULES.commandlogs ??= true
-GAMERULES.spawnX ??= 0
-GAMERULES.spawnY ??= 20
-GAMERULES.spawnWorld ??= 'overworld'
+GAMERULES.spawnx ??= 0
+GAMERULES.spawny ??= 20
+GAMERULES.spawnworld ??= 'overworld'
+GAMERULES.randomtickspeed ??= 2
 
 export function stat(cat, name, v = 1){
 	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})

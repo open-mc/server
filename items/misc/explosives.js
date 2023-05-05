@@ -4,7 +4,7 @@ import { peek, place, up, summon, getY, blockevent } from "../../misc/ant.js"
 import { Item, Items } from "../item.js"
 
 Items.tnt = class extends Item{
-	place(){ place(Blocks.tnt); super.use(true) }
+	place(){ place(Blocks.tnt); super.use() }
 }
 
 Items.end_crystal = class extends Item{

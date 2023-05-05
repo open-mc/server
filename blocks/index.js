@@ -34,6 +34,7 @@ for(const name in Blocks){
 	if(!Object.hasOwn(B, 'id'))
 		B.id = BlockIDs.length, B.savedatahistory = [], BlockIDs.push(null), B.className = name, modified = true
 	B.constructor = BlockIDs[B.id] = Blocks[name] = B.savedata ? (...a) => new B(...a) : function a(){return a}
+	B.constructor.prototype = B.prototype
 	if(B.otherIds) for(const i of B.otherIds) BlockIDs[i] = BlockIDs[B.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -48,7 +49,7 @@ for(const name in Blocks){
 	Object.defineProperties(Blocks[name], Object.getOwnPropertyDescriptors(new B()))
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(def => def.className + def.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (def.savedata ? ' ' + typeToJson(def.savedata) : '')).join('\n'))
+	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
 }
 
 loaded(`${BlockIDs.length} Blocks loaded`)

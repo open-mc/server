@@ -19,7 +19,7 @@ export function calculateMv(e){
 	
 	const cx = floor(e.x)>>>6, cy = floor(e.y)>>>6
 	if(!e.chunk || (cx^e.chunk.x | cy^e.chunk.y)){
-		const chunk = e.world.get(cx+cy*67108864)
+		const chunk = e.world.get(cx+cy*0x4000000)
 		if(chunk instanceof Chunk){
 			if(e.chunk) e.chunk.entities.remove(e)
 			void (e.chunk = chunk).entities.push(e)

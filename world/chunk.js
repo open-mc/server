@@ -1,4 +1,5 @@
 import { BlockIDs, Blocks } from '../blocks/block.js'
+import { GAMERULES } from '../config.js'
 import { EntityIDs } from '../entities/entity.js'
 import { optimize } from '../internals.js'
 import { gotochunk, peek, peekpos } from '../misc/ant.js'
@@ -11,7 +12,7 @@ export class Chunk{
 	constructor(buf, world, pl = []){
 		if(!buf.left || buf.byte() != 16)throw new TypeError("Invalid chunk data")
 		const x = buf.int(), y = buf.int()
-		world.set((this.x = x & 67108863)+(this.y = y & 67108863)*67108864, this)
+		world.set((this.x = x & 0x3FFFFFF)+(this.y = y & 0x3FFFFFF)*0x4000000, this)
 		this.world = world
 		this.tiles = LIGHTNINGFASTALLOCATOR()
 		this.entities = []
@@ -170,15 +171,14 @@ export class Chunk{
 	blockupdates = new Set
 	blockupdates2 = new Set
 	tick(){
-		const pos = floor(random() * 4096)
-		gotochunk(this, pos)
+		gotochunk(this)
 		const s = this.blockupdates
 		this.blockupdates = this.blockupdates2
 		this.blockupdates2 = s
-		peek().randomtick?.()
+		let i = GAMERULES.randomtickspeed + 1
+		while(--i) peekpos(floor(random() * 4096)).randomtick?.()
 		for(const p of s){
 			peekpos(p).update?.()
-			if(!--i) break // prevent accidentally updating things from this tick
 		}
 		if(s.size) s.clear()
 	}
