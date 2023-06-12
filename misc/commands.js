@@ -233,8 +233,7 @@ export const commands = {
 				const e = Entities.item()
 				if(stack.count > 255)
 					e.item = stack.constructor(255), stack.count -= 255
-				else
-					e.item = stack.count, stack.count = 0
+				else e.item = stack
 				e.place(player.world, player.x, player.y + player.head - 0.5)
 			}
 		}
