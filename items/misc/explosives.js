@@ -19,15 +19,13 @@ Items.end_crystal = class extends Item{
 
 Items.flint_and_steel = class extends Item{
 	interact(){
-		if(peek().constructor == Blocks.tnt){
-			place(Blocks.air)
-			const e = summon(Entities.tnt)
-			e.dy = 5
-			e.dx = random() * 4 - 2
-		}else return true
+		if(peek() != Blocks.tnt) return true
+		place(Blocks.air)
+		const e = summon(Entities.tnt)
+		e.dy = 5
+		e.dx = random() * 4 - 2
 	}
 	place(){
 		place(Blocks.fire)
-		blockevent(1)
 	}
 }

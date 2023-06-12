@@ -1,5 +1,5 @@
 import { optimize } from "../internals.js"
-import { goto, peekat } from "../misc/ant.js"
+import { goto, load, peekat, save } from "../misc/ant.js"
 import { current_tps } from "./tick.js"
 
 export function stepEntity(e, dt = 1 / current_tps){
@@ -100,10 +100,13 @@ function fastCollision(e, dt){
 	{
 		const x0 = floor(x - e.width + EPSILON), xw = ceil(x + e.width - EPSILON) - x0
 		const y0 = floor(y + EPSILON), yh = ceil(y + e.height - EPSILON) - y0
-		goto(x0,y0,e.world)
+		goto(x0, y0, e.world)
+		const p = save()
 		a: for(let y = yh - 1; y >= 0; y--)
-			for(let x = xw - 1; x >= 0; x--)
-				if(peekat(x, y).touched?.(e)) break a
+			for(let x = xw - 1; x >= 0; x--){
+				const b = peekat(x, y)
+				if(b.touched)if(b.touched(e)){load(p);break a}else load(p)
+			}
 	}
 	e.state = e.state & 0xffff | flags << 16
 }

@@ -1,17 +1,34 @@
 import { veins } from '../ores.js'
-import { biomesheet } from '../util/biomes.js'
-import { fill } from '../util/perlin.js'
+import { biomesFor } from '../util/biomes.js'
+import { filler } from '../util/perlin.js'
 import { imxs32_2 } from '../util/random.js'
-import { Blocks, chunk } from '../vars.js'
+import { Blocks, air, chunk } from '../vars.js'
 
-export const flat = function(cx, cy){
-	const filler = cy > -1 ? Blocks.air : Blocks.stone
-	chunk.fill(filler)
-	if(cy == -1) for(let i = 3712; i < 4096; i++)chunk[i] = i >= 4032 ? Blocks.grass : Blocks.dirt
+const generation = (filler) => (cx, cy) => {
+	filler(cx,cy)
+	let rand = imxs32_2(cx, cy, 139827386, -1012498625)
+	rand = veins(rand, Blocks.coal_ore)
+	rand = veins(rand, Blocks.iron_ore, 2, 2)
 }
-export default function(cx, cy){
+
+export function superflat(_,cy){
+	if(cy>=0) chunk.fill(Blocks.air)
+	else chunk.fill(Blocks.stone)
+	if(cy==-1){
+		let i = 3840
+		while(i<4032)chunk[i++]=Blocks.dirt
+		while(i<4096)chunk[i++]=Blocks.grass
+	}
+}
+
+export const fill = generation(() => void(chunk.fill(Blocks.stone)))
+export const flat = generation(superflat)
+export const perlin = generation(filler(Blocks.stone, Blocks.water, 0, biomesFor, 1))
+
+const defaultFiller = filler(Blocks.stone, Blocks.water, 0, biomesFor)
+export default generation(function(cx,cy){
 	if(cy > 3){
-		chunk.fill(Blocks.air)
+		air()
 		return
 	}
 	if(cy < -2){
@@ -23,11 +40,5 @@ export default function(cx, cy){
 				}
 			}
 		}
-	}else{
-		//PERLIN
-		fill(cx, cy)
-	}
-	let rand = imxs32_2(cx, cy, 139827386, -1012498625)
-	rand = veins(rand, Blocks.coal_ore)
-	rand = veins(rand, Blocks.iron_ore, 2, 2)
-}
+	}else defaultFiller(cx,cy)
+}, 3, -2)

@@ -1,6 +1,7 @@
-export const chunk = []
+export let chunk
 export const chunkBiomes = new Uint8Array(10)
 
+export const air = () => chunk = empty.slice(0)
 
 export const Blocks = {}
 export const Items = {}
@@ -10,4 +11,4 @@ export let seed = 0
 
 export function setSeed(a){ seed = a ^ 0xC0FFEBAD }
 
-for(let i = 0; i < 4096; i++)chunk.push(Blocks.air)
+export const empty = new Array(4096)

@@ -103,6 +103,7 @@ GAMERULES.spawnx ??= 0
 GAMERULES.spawny ??= 20
 GAMERULES.spawnworld ??= 'overworld'
 GAMERULES.randomtickspeed ??= 2
+GAMERULES.globalEvents ??= true
 
 export function stat(cat, name, v = 1){
 	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})

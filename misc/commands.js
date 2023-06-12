@@ -409,13 +409,15 @@ export const commands = {
 		}
 		return 'Killed '+i+' entities'
 	},
-	async regen(_x, _y, _w){
+	async regen(_x, _y, type, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
 		x = floor(x) >>> 6; y = floor(y) >>> 6
+		let [a, b] = type ? type.split('/',2) : [w.gend,w.genn]
+		if(!b)b=a,a=w.id
 		const chunk = w.chunk(x, y)
 		if(!chunk) throw 'Chunk not loaded'
 		chunk.t = 2147483647
-		const buf = await generator(x, y, w.id)
+		const buf = await generator(x, y, a, b)
 		chunk.parse(buf)
 		const delw = new DataWriter()
 		delw.byte(17), delw.int(x), delw.int(y)

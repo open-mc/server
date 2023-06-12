@@ -1,14 +1,19 @@
 import { fs, parentPort } from '../internals.js'
 import { jsonToType } from '../utils/data.js'
-import { Blocks, chunk, chunkBiomes, Items, setSeed } from './vars.js'
+import { air, Blocks, chunk, chunkBiomes, empty, Items, setSeed } from './vars.js'
 parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
-	if(d == 'void') [d, name] = name.split('/', 2)
+	if(name=='void'){
+		air()
+		parentPort.postMessage({key, buf: buildBuffer()})
+		return
+	}
 	let D = GENERATORS[d]
 	if(!D) D = GENERATORS[d] = Object.create(null), console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mNo such dimension: "'+d+'"!')
 	let gen = D[name]
 	if(!gen){
-		gen = D[name] = () => void chunk.fill(Blocks.air),
-		chunk.fill(Blocks.air)
+		D[name] = air,
+		air()
+		parentPort.postMessage({key, buf: buildBuffer()})
 		console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mDimension "'+d+'" doesn\'t have a generator named "'+name+'"!')
 	}else{
 		setSeed(seed)
@@ -40,16 +45,18 @@ for(let a of (''+await fs.readFile(WORLD+'/defs/itemindex.txt')).split('\n')){
 const GENERATORS = Object.create(null)
 const loaded = []
 for(const gen of await fs.readdir(PATH+'worldgen/dimensions'))
-	loaded.push(import('./dimensions/'+gen).then(m => GENERATORS[gen.replace('.js','')] = m))
+	loaded.push(import('./dimensions/'+gen).then(m => GENERATORS[gen.replace('.js','')] = {...m}))
 await Promise.all(loaded)
+
+empty.fill(Blocks.air)
+air()
+
 parentPort?.postMessage({key:-1})
-
-
 const PM = new Uint16Array(blockCount).fill(65535)
 function buildBuffer(){
-	let palette = []
+	const palette = []
 	for(let i = 0; i < 4096; i++){
-		let id = chunk[i].id
+		const id = chunk[i].id
 		if(PM[id] === 65535){
 			PM[id] = palette.length
 			palette.push(id)

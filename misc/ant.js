@@ -26,12 +26,12 @@ export function goto(x, y, w){
 	if(typeof x == 'object')w=x.world,y=floor(x.y)|0,x=floor(x.x)|0
 	cx = x >>> 6; cy = y >>> 6; world = w; pos = (x & 0b000000111111) | (y & 0b000000111111) << 6
 	cachex = cachey = 0x4000000;
-	chunk = world.get(cx+cy*0x4000000); tiles = chunk.tiles
+	chunk = world.get(cx+cy*0x4000000); tiles = chunk?.tiles
 }
 
 export function gotochunk(ch){
 	cx = ch.x; cy = ch.y; world = ch.world
-	cachex = cachey = 0x4000000;
+	cachex = cachey = 0x4000000
 	chunk = ch; tiles = chunk.tiles
 }
 export const peekpos = p => tiles ? tiles[pos = p] : Blocks.air

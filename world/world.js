@@ -1,4 +1,4 @@
-import { HANDLERS, stat } from '../config.js'
+import { HANDLERS, stat, CONFIG } from '../config.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { DataWriter } from '../utils/data.js'
@@ -12,13 +12,17 @@ export class World extends Map{
 		this.gx = 0
 		this.gy = -32
 		this.tick = 0
+
+		const [a, b] = CONFIG.generators[this.id].split('/', 2)
+		if(!b) this.gend = this.id, this.genn = a
+		else this.gend = a, this.genn = b
 	}
 	load(cx, cy){
 		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(!ch){
 			super.set(k, ch = new Chunk(cx, cy, this))
-			HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.id)).then(buf => {
+			HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
@@ -36,7 +40,7 @@ export class World extends Map{
 		let ch = super.get(k)
 		if(!ch){
 			super.set(k, ch = new Chunk(cx, cy, this))
-			HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.id)).then(buf => {
+			HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
