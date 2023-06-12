@@ -4,9 +4,9 @@ import { Chunk } from "./chunk.js"
 
 export function calculateMv(e){
 	let mv = 0
-	const {_x, _y} = e
 	if(e.x != e._x) e.x = ifloat(e.x), mv |= 1
 	if(e.y != e._y) e.y = ifloat(e.y), mv |= 2
+	if(e.dx != e._dx | e.dy != e._dy) e._dx = e.dx, e._dy = e.dy, mv |= 4
 	if(e.world != e._world){
 		e.changedWorld?.()
 		e.moved?.()
