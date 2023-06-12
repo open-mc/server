@@ -10,6 +10,7 @@ export function calculateMv(e){
 	if(e.world != e._world){
 		e.changedWorld?.()
 		e.moved?.()
+		mv |= 256
 		e._world = e.world
 	}else if(mv & 3) e.moved?.()
 	e._x = e.x; e._y = e.y
@@ -18,14 +19,14 @@ export function calculateMv(e){
 	if(e.pendingEvents.length) mv |= 32
 	
 	const cx = floor(e.x)>>>6, cy = floor(e.y)>>>6
-	if(!e.chunk || (cx^e.chunk.x | cy^e.chunk.y)){
+	if(!e.chunk || (mv & 256 | cx^e.chunk.x | cy^e.chunk.y)){
 		const chunk = e.world.get(cx+cy*0x4000000)
 		if(chunk instanceof Chunk){
 			if(e.chunk) e.chunk.entities.remove(e)
 			void (e.chunk = chunk).entities.push(e)
-		}
+		}else e.chunk = null
 	}
-	return mv
+	return mv & 255
 }
 
 export function encodeMove(e, pl, mv){
@@ -75,10 +76,9 @@ export function mirrorEntity(e){
 	const {chunk} = e
 	if(!chunk){
 		if(_chunk) for(const {sock:{ebuf}} of _chunk.players)
-			ebuf.byte(0), ebuf.uint32(e.netId), ebuf.short(e.netId / 4294967296 | 0)
+			ebuf.byte(0), ebuf.uint32(e.netId), ebuf.uint16(e.netId / 4294967296 | 0)
 		return
 	}
-	
 	for(const pl of chunk.players){
 		if(e == pl){
 			if(_chunk && _chunk.players.includes(pl)){
@@ -93,6 +93,10 @@ export function mirrorEntity(e){
 			continue
 		}
 		encodeMove(e, pl, 127)
+	}
+	if(_chunk) for(const pl of _chunk.players){
+		if(chunk.players.includes(pl))continue
+		pl.sock.ebuf.byte(0), pl.sock.ebuf.uint32(e.netId), pl.sock.ebuf.uint16(e.netId / 4294967296 | 0)
 	}
 	e.pendingEvents.length = 0
 }

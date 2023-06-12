@@ -100,6 +100,10 @@ Date.formatTime = function(t){
 
 const [info, stats] = [SERVER_INSERT];
 
+stats.misc ??= {}
+stats.world ??= {}
+stats.player ??= {}
+
 const Entry = (n, v = 0) => {
 	const el = document.createElement('entry')
 	el.setAttribute('name', n+': ')

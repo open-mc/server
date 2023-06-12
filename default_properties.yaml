@@ -9,13 +9,14 @@ chunkloadingrange: 3 # recommended: 3
 world:
   # Change gamemode by doing /gamerule spawnGamemode <gamemode>
   seed: 6969420 # 32 bit seed
+  netherscale: 16
 
 # Terrain generators
 generators:
   # All generators have these options:
   # default -> normal terrain generation
   # flat -> normal biomes and foliage, structures, etc but all terrain is the same height (no oceans)
-  # perlin -> epic amplified-ish shapes
+  # perlin -> akin to java amplified
   # void -> no blocks except some critical structures (e.g starting platform, end portal, etc)
   # supervoid -> no blocks whatsoever
 
@@ -53,11 +54,12 @@ magic_word: bread # Home page will count how often this word is said in chat
 icon: https://i.imgur.com/jLnrxWt.png
 motd:
   - One of the servers of all time
-  - Potassium-Free!
+  - Potassium-free!
   - New motd every day! (maybe)
   - Zero warranty!
   - 44 Hours without sleep!
-  - "!!!!!"
+  - "! ! ! ! !"
+  - <b>xss</b>
 
 # info displayed on the banned notice screen
 ban_appeal_info: 

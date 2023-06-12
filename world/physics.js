@@ -11,7 +11,6 @@ export function stepEntity(e, dt = 1 / current_tps){
 		e.dx += dt * e.world.gx * e.gx
 	}
 	e.dx = e.dx * (e.state & 0x10000 ? e.groundDrag : e.airDrag) ** dt
-
 	// Entity collision
 	const x0 = e.x - e.width - e.collisionTestPadding, x1 = e.x + e.width + e.collisionTestPadding
 	const y0 = e.y - e.collisionTestPadding, y1 = e.y + e.height + e.collisionTestPadding
@@ -34,21 +33,18 @@ export function stepEntity(e, dt = 1 / current_tps){
 }
 
 export const EPSILON = .0001
-
 function fastCollision(e, dt){
-	const blocksTouched = new Set
 	const dx = e.dx * dt, dy = e.dy * dt
 	let x = e.x, y = e.y
 	let flags = 0
-	const x0 = floor(x - e.width + EPSILON), x1 = ceil(x + e.width - EPSILON) - x0
-	const y0 = floor(y + EPSILON), y1 = ceil(y + e.height - EPSILON) - y0
+	const x0 = floor(x - e.width + EPSILON), xw = ceil(x + e.width - EPSILON) - x0
+	const y0 = floor(y + EPSILON), yh = ceil(y + e.height - EPSILON) - y0
 	goto(x0, y0, e.world)
 	y: if(dy > 0){
 		const ey = ceil(e.y + e.height + dy - EPSILON) + 1 - y0
-		for(let y = y1; y < ey; y++){
-			for(let x = 0; x < x1; x++){
+		for(let y = yh; y < ey; y++){
+			for(let x = 0; x < xw; x++){
 				const block = peekat(x, y - 1)
-				blocksTouched.add(block)
 				const ys = y - block.solid
 				if(ys == y | ys + y0 < e.y + e.height - EPSILON)continue
 				e.y = min(ys + y0 - e.height, e.y + dy)
@@ -60,9 +56,8 @@ function fastCollision(e, dt){
 	}else if(dy < 0){
 		const ey = floor(e.y + dy + EPSILON) - 1 - y0
 		for(let y = 0; y > ey; y--){
-			for(let x = 0; x < x1; x++){
+			for(let x = 0; x < xw; x++){
 				const block = peekat(x, y)
-				blocksTouched.add(block)
 				const ys = y + block.solid
 				if(ys == y | ys + y0 > e.y + EPSILON)continue
 				e.y = max(ys + y0, e.y + dy)
@@ -75,10 +70,9 @@ function fastCollision(e, dt){
 	}
 	x: if(dx > 0){
 		const ex = ceil(e.x + e.width + dx - EPSILON) + 1 - x0
-		for(let x = x1; x < ex; x++){
-			for(let y = 0; y < y1; y++){
+		for(let x = xw; x < ex; x++){
+			for(let y = 0; y < yh; y++){
 				const block = peekat(x - 1, y)
-				blocksTouched.add(block)
 				const xs = x - block.solid
 				if(xs == x | xs + x0 < e.x + e.width - EPSILON)continue
 				e.x = min(xs + x0 - e.width, e.x + dx)
@@ -90,9 +84,8 @@ function fastCollision(e, dt){
 	}else if(dx < 0){
 		const ex = floor(e.x - e.width + dx + EPSILON) - 1 - x0
 		for(let x = 0; x > ex; x--){
-			for(let y = 0; y < y1; y++){
+			for(let y = 0; y < yh; y++){
 				const block = peekat(x, y)
-				blocksTouched.add(block)
 				const xs = x + block.solid
 				if(xs == x | xs + x0 > e.x - e.width + EPSILON)continue
 				e.x = max(xs + x0 + e.width, e.x + dx)
@@ -104,8 +97,15 @@ function fastCollision(e, dt){
 	}
 	e.x = x
 	e.y = y
+	{
+		const x0 = floor(x - e.width + EPSILON), xw = ceil(x + e.width - EPSILON) - x0
+		const y0 = floor(y + EPSILON), yh = ceil(y + e.height - EPSILON) - y0
+		goto(x0,y0,e.world)
+		a: for(let y = yh - 1; y >= 0; y--)
+			for(let x = xw - 1; x >= 0; x--)
+				if(peekat(x, y).touched?.(e)) break a
+	}
 	e.state = e.state & 0xffff | flags << 16
-	return blocksTouched
 }
 
 optimize(stepEntity)

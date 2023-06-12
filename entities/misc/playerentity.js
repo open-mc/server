@@ -7,7 +7,7 @@ import { current_tps } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { PNG } from 'pngjs'
-import { LivingEntity } from '../living.js'
+import { LivingEntity } from './living.js'
 
 export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
@@ -51,6 +51,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 		this.rubberMv |= mv
 	}
 	update(){
+		super.update()
 		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
 			goto(this.bx, this.by, this.world)
 			const tile = peek()

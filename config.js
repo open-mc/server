@@ -64,7 +64,8 @@ if(!await fs.exists(WORLD)){
 		fs.mkdir(WORLD + 'defs').then(() => Promise.all([
 			fs.writeFile(WORLD + 'defs/blockindex.txt', 'air'),
 			fs.writeFile(WORLD + 'defs/itemindex.txt', 'stone'),
-			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}')
+			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}'),
+			fs.writeFile(WORLD + 'defs/miscindex.txt', '{}')
 		])),
 		fs.writeFile(WORLD + 'stats.json', `{}`),
 		fs.writeFile(WORLD + 'permissions.yaml', `# permission settings

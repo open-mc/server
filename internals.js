@@ -33,7 +33,7 @@ for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args)
 	}else if(opt) Array.prototype.push.call(argv, opt)
 }
 
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
+globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
 globalThis.WORLD = argv[0] || PATH + '../world/'
 if(!WORLD.endsWith('/')) WORLD += '/'
 
@@ -91,7 +91,7 @@ Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 
 runInThisContext((_=>{
 
-const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat } = Math
+const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat, clz32 } = Math
 const Object = globalThis.Object
 
 const assert = condition => {
@@ -135,6 +135,4 @@ task.done = desc => {
 	total++; loaded++
 	print(desc)
 }
-export const ready = {then(r){
-	resolvePromise = r
-}}
+export const ready = {then:r => resolvePromise = r }

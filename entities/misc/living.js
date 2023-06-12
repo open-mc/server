@@ -1,4 +1,4 @@
-import { Entity } from "./entity.js"
+import { Entity } from "../entity.js"
 
 export class LivingEntity extends Entity{
 	health = 20
@@ -10,4 +10,5 @@ export class LivingEntity extends Entity{
 			this.died?.()
 		}
 	}
+	
 }

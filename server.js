@@ -13,7 +13,7 @@ import { itemindex } from './items/index.js'
 import { blockindex } from './blocks/index.js'
 import { Entities } from './entities/entity.js'
 import { Items } from './items/item.js'
-const clear = () => process.stdout.write('\x1bc\x1b[3J')
+import { index } from './misc/miscdefs.js'
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -74,7 +74,7 @@ WebSocket.prototype.logMalicious = function(reason){
 	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
 }
 
-const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + packs.map(a=>'\0'+a).join(''))))
+const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + packs.map(a=>'\0'+a).join(''))))
 
 const playersConnecting = new Set()
 export let wsHost = '', httpHost = ''
@@ -243,5 +243,5 @@ const message = function(_buf, isBinary){
 		const code = buf.byte()
 		if(!codes[code]) return
 		codes[code].call(this, player, buf)
-	}catch(e){ this.logMalicious('Caused an error: \n'+e.stack) }
+	}catch(e){ this.logMalicious('Caused an error: \n'+(e.stack??e)) }
 }

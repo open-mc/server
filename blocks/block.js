@@ -1,6 +1,6 @@
 import { Entities } from "../entities/entity.js"
 import { Item } from "../items/item.js"
-import { blockevent, getX, getY, place, world as antworld } from "../misc/ant.js"
+import { blockevent, getX, getY, place, antWorld } from "../misc/ant.js"
 
 export class Block{
 	[Symbol.for('nodejs.util.inspect.custom')](){ return `Blocks.${this.className}${this.savedata ? ' {...}' : ''}` }
@@ -18,14 +18,14 @@ export class Block{
 			itm.item = drop
 			itm.dx = random() * 6 - 3
 			itm.dy = 6
-			itm.place(antworld, getX(), getY())
+			itm.place(antWorld, getX(), getY())
 		}else if(drop instanceof Array){
 			for(const d of drop){
 				const itm = Entities.item()
 				itm.item = d
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
-				itm.place(antworld, getX(), getY())
+				itm.place(antWorld, getX(), getY())
 			}
 		}
 	}

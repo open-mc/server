@@ -11,7 +11,10 @@ Object.setPrototypeOf(Dimensions, null)
 const dimCreate = []
 for(let i in Dimensions){
 	let d = Dimensions[i]
-	dimCreate.push(fs.readFile(WORLD + 'dimensions/' + d.id + '.json').then(a => Object.assign(d, JSON.parse(a.toString()))).catch(e => null))
+	dimCreate.push(fs.readFile(WORLD + 'dimensions/' + d.id + '/meta').then(a => {
+		const buf = new DataReader(a)
+		return buf.read(d.constructor.savedatahistory[buf.flint()] || d.constructor.savedata, d)
+	}).catch(e => null))
 	dimCreate.push(fs.exists(WORLD + 'dimensions/' + d.id).then(a => a || fs.mkdir(WORLD + 'dimensions/' + d.id)))
 }
 await Promise.all(dimCreate)

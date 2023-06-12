@@ -8,13 +8,14 @@ import util from 'node:util'
 import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
 import { commands, err } from './misc/commands.js'
 import { input, repl } from 'basic-repl'
-import { entityMap } from './entities/entity.js'
-
+import { Entities, entityMap } from './entities/entity.js'
+import { Blocks } from './blocks/block.js'
+import { Items } from './items/item.js'
 process.stdout.write('\x1bc\x1b[3J')
 
 await ready
 task.done('Modules loaded')
-
+const clear = () => process.stdout.write('\x1bc\x1b[3J')
 const serverLoaded = task('Starting server...')
 httpServer.once('listening', () => {
 	serverLoaded(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port+(secure?' (secure)':'')}\x1b[m\nType /help for a list of commands, or hit tab to switch to JS repl`)
@@ -60,10 +61,13 @@ process.on('SIGINT', _ => {
 		saveAll(() => process.exit(0))
 	})
 })
-function saveAll(cb){	
+function saveAll(cb){
 	for(const name in Dimensions){
 		const d = Dimensions[name]
-		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'.json', JSON.stringify({tick: d.tick})))
+		const buf = new DataWriter()
+		buf.flint(d.constructor.savedatahistory.length)
+		buf.write(d.constructor.savedata, d)
+		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'/meta', buf.build()))
 		for (const ch of d.values()) d.save(ch)
 	}
 	promises.push(HANDLERS.SAVEFILE('stats.json', JSON.stringify(STATS)))

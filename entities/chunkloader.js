@@ -39,7 +39,7 @@ export const ChunkLoader = T => class extends T{
 		trashed.byte(17)
 		for(let y = y0; y < y1; y++){
 			for(let x=cx-radius+1;x<XT;x++){
-				this.world.load(x, y, this)
+				this.world.link(x, y, this)
 				if(this.world.unlink(tx-x, ty-y, this)){
 					trashed.int(tx-x)
 					trashed.int(ty-y)
@@ -49,7 +49,7 @@ export const ChunkLoader = T => class extends T{
 		
 		for(let x = x0; x < x1; x++){
 			for(let y=max(cy,ocy)-radius+1;y<YT;y++){
-				this.world.load(x, y, this)
+				this.world.link(x, y, this)
 				if(this.world.unlink(tx-x, ty-y, this)){
 					trashed.int(tx-x)
 					trashed.int(ty-y)
@@ -63,7 +63,7 @@ export const ChunkLoader = T => class extends T{
 		const {radius} = this
 		for(let x=cx-radius+1;x<cx+radius;x++){
 			for(let y=cy-radius+1;y<cy+radius;y++){
-				world.load(x, y, this)
+				world.link(x, y, this)
 			}
 		}
 	}

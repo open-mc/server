@@ -1,13 +1,12 @@
 import { Blocks } from '../blocks/block.js'
-import { Entities } from '../entities/entity.js'
 import { optimize } from '../internals.js'
-import { Item } from '../items/item.js'
 
 // TODO: wasm
 
 let cx = 0, cy = 0, pos = 0
-let tiles = undefined, chunk = undefined
-export let world = null
+let tiles = undefined
+let world = null, chunk = undefined
+export {pos as chunkTileIndex, world as antWorld, chunk as antChunk}
 // Our functions run on so little overhead that array or map caching becomes a big burden for close-together world access
 let cachec = undefined, cachex = 0, cachey = 0
 
@@ -20,14 +19,14 @@ export const load = o => void ({cx,cy,pos,chunk,world} = o, tiles = chunk?.tiles
 export function gotozero(w){
 	cx = cy = pos = 0
 	cachec = undefined; cachex = cachey = 0x4000000
-	chunk = (world = w).get(0); tiles = chunk?.tiles
+	chunk = (world = w).get(0); tiles = chunk.tiles
 }
 
 export function goto(x, y, w){
 	if(typeof x == 'object')w=x.world,y=floor(x.y)|0,x=floor(x.x)|0
 	cx = x >>> 6; cy = y >>> 6; world = w; pos = (x & 0b000000111111) | (y & 0b000000111111) << 6
 	cachex = cachey = 0x4000000;
-	chunk = world.get(cx+cy*0x4000000); tiles = chunk?.tiles
+	chunk = world.get(cx+cy*0x4000000); tiles = chunk.tiles
 }
 
 export function gotochunk(ch){
@@ -53,21 +52,21 @@ export function place(bl){
 		if(block.savedata) tbuf.write(block.savedata, block)
 	}
 	const {blockupdates} = chunk
-	if(pos & 0b000000111111 == 0b000000111111){
+	if((pos & 0b000000111111) == 0b000000111111){
 		const ncx = cx+1&0x3FFFFFF
-		void (ncx==cachex&cy==cachey ? cachec : world.get(ncx+cy*0x4000000)).blockupdates.add(pos|0b000000111111)
+		void (ncx==cachex&cy==cachey ? cachec : world.get(ncx+cy*0x4000000))?.blockupdates.add(pos|0b000000111111)
 	}else blockupdates.add(pos+1)
-	if(pos & 0b000000111111 == 0){
+	if((pos & 0b000000111111) == 0){
 		const ncx = cx-1&0x3FFFFFF
-		void (ncx==cachex&cy==cachey ? cachec : world.get(ncx+cy*0x4000000)).blockupdates.add(pos&0b111111000000)
+		void (ncx==cachex&cy==cachey ? cachec : world.get(ncx+cy*0x4000000))?.blockupdates.add(pos&0b111111000000)
 	}else blockupdates.add(pos-1)
-	if(pos >> 6 == 0b000000111111){
+	if((pos >> 6) == 0b000000111111){
 		const ncy = cy+1&0x3FFFFFF
-		void (cx==cachex&ncy==cachey ? cachec : world.get(cx+ncy*0x4000000)).blockupdates.add(pos&0b000000111111)
+		void (cx==cachex&ncy==cachey ? cachec : world.get(cx+ncy*0x4000000))?.blockupdates.add(pos&0b000000111111)
 	}else blockupdates.add(pos+64)
-	if(pos >> 6 == 0){
+	if((pos >> 6) == 0){
 		const ncy = cy-1&0x3FFFFFF
-		void (cx==cachex&ncy==cachey ? cachec : world.get(cx+ncy*0x4000000)).blockupdates.add(pos|0b111111000000)
+		void (cx==cachex&ncy==cachey ? cachec : world.get(cx+ncy*0x4000000))?.blockupdates.add(pos|0b111111000000)
 	}else blockupdates.add(pos-64)
 	blockupdates.add(pos)
 	return block

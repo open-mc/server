@@ -13,10 +13,11 @@ parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'})
 	}else{
 		setSeed(seed)
 		const pr = gen(x, y)
-		if(pr && pr.then) pr.then(() => parentPort.postMessage({key, buf: toPacket(x, y, chunk)}))
-		else parentPort.postMessage({key, buf: toPacket(x, y, chunk)})
+		if(pr && pr.then) pr.then(() => parentPort.postMessage({key, buf: buildBuffer()}))
+		else parentPort.postMessage({key, buf: buildBuffer()})
 	}
 })
+let blockCount = 0, itemCount = 0
 let i = 0
 for(let a of (''+await fs.readFile(WORLD+'/defs/blockindex.txt')).split('\n')){
 	a = a.split(' ')
@@ -24,6 +25,7 @@ for(let a of (''+await fs.readFile(WORLD+'/defs/blockindex.txt')).split('\n')){
 	const f = def.savedata ? (data = {}) => Object.assign(data, def) : () => def
 	Object.assign(f, def)
 	Blocks[a[0]] = f
+	blockCount++
 }
 i = 0
 for(let a of (''+await fs.readFile(WORLD+'/defs/itemindex.txt')).split('\n')){
@@ -32,6 +34,7 @@ for(let a of (''+await fs.readFile(WORLD+'/defs/itemindex.txt')).split('\n')){
 	const f = (count, data = {}) => (data.count = count, Object.assign(data, def))
 	Object.assign(f, def)
 	Items[a[0]] = f
+	itemCount++
 }
 
 const GENERATORS = Object.create(null)
@@ -40,69 +43,78 @@ for(const gen of await fs.readdir(PATH+'worldgen/dimensions'))
 	loaded.push(import('./dimensions/'+gen).then(m => GENERATORS[gen.replace('.js','')] = m))
 await Promise.all(loaded)
 parentPort?.postMessage({key:-1})
-function toPacket(x, y, tiles){
-	let palette = [], palette2 = Object.create(null)
+
+
+const PM = new Uint16Array(blockCount).fill(65535)
+function buildBuffer(){
+	let palette = []
 	for(let i = 0; i < 4096; i++){
-		let id = tiles[i].id
-		if(!(id in palette2)){
-			palette2[id] = palette.length
+		let id = chunk[i].id
+		if(PM[id] === 65535){
+			PM[id] = palette.length
 			palette.push(id)
+			if(palette.length == 1024) break
 		}
 	}
-	let buf = new Uint8Array(21 + palette.length * 2), view = new DataView(buf.buffer)
+	let buf = new Uint8Array(15 + palette.length * 2)
 	let buffers = [buf]
-	buf[0] = 16
-	view.setInt32(1, (x & 0x3ffffff) + ((palette.length-1) << 26))
-	view.setInt32(5, (y & 0x3ffffff) + ((palette.length-1) >> 6 << 26))
-	buf.set(chunkBiomes, 11)
-	for(let i = 0; i < palette.length; i++) view.setUint16(21 + i * 2, palette[i])
+	buf[1] = palette.length-1 >> 8; buf[2] = palette.length-1
+	buf[3] = buf[4] = 255
+	buf.set(chunkBiomes, 5)
+	if(palette.length < 1024)
+		for(let i = 0; i < palette.length; i++) buf[15 + (i << 1)] = palette[i] >> 8, buf[16 + (i << 1)] = palette[i] 
 	//encode data
 	if(palette.length < 2);
 	else if(palette.length == 2){
 		buffers.push(buf = new Uint8Array(512))
 		for(let i = 0; i < 4096; i+=8){
-			buf[i>>3] = ((tiles[i].id == palette[1]) << 0)
-			| ((tiles[i + 1].id == palette[1]) << 1)
-			| ((tiles[i + 2].id == palette[1]) << 2)
-			| ((tiles[i + 3].id == palette[1]) << 3)
-			| ((tiles[i + 4].id == palette[1]) << 4)
-			| ((tiles[i + 5].id == palette[1]) << 5)
-			| ((tiles[i + 6].id == palette[1]) << 6)
-			| ((tiles[i + 7].id == palette[1]) << 7)
+			buf[i>>3] = ((chunk[i].id == palette[1]) << 0)
+			| ((chunk[i + 1].id == palette[1]) << 1)
+			| ((chunk[i + 2].id == palette[1]) << 2)
+			| ((chunk[i + 3].id == palette[1]) << 3)
+			| ((chunk[i + 4].id == palette[1]) << 4)
+			| ((chunk[i + 5].id == palette[1]) << 5)
+			| ((chunk[i + 6].id == palette[1]) << 6)
+			| ((chunk[i + 7].id == palette[1]) << 7)
 		}
 	}else if(palette.length <= 4){
 		buffers.push(buf = new Uint8Array(1024))
 		for(let i = 0; i < 4096; i+=4){
-			buf[i>>2] = palette2[tiles[i].id]
-			| (palette2[tiles[i + 1].id] << 2)
-			| (palette2[tiles[i + 2].id] << 4)
-			| (palette2[tiles[i + 3].id] << 6)
+			buf[i>>2] = PM[chunk[i].id]
+			| (PM[chunk[i + 1].id] << 2)
+			| (PM[chunk[i + 2].id] << 4)
+			| (PM[chunk[i + 3].id] << 6)
 		}
 	}else if(palette.length <= 16){
 		buffers.push(buf = new Uint8Array(2048))
 		for(let i = 0; i < 4096; i+=2){
-			buf[i>>1] = palette2[tiles[i].id]
-			| (palette2[tiles[i + 1].id] << 4)
+			buf[i>>1] = PM[chunk[i].id]
+			| (PM[chunk[i + 1].id] << 4)
 		}
 	}else if(palette.length <= 256){
 		buffers.push(buf = new Uint8Array(4096))
 		for(let i = 0; i < 4096; i++){
-			buf[i] = palette2[tiles[i].id]
+			buf[i] = PM[chunk[i].id]
 		}
-	}else{
+	}else if(palette.length < 1024){
 		buffers.push(buf = new Uint8Array(6144))
 		let j = 0
 		for(let i = 0; i < 6144; i+=3, j+=2){
-			buf[i] = palette2[tiles[j].id]
-			buf[i+2] = palette2[tiles[j + 1].id]
-			buf[i+1] = (palette2[tiles[j].id] >> 8) | ((palette2[tiles[j + 1].id] >> 4) & 0xF0)
+			buf[i] = PM[chunk[j].id]
+			buf[i+2] = PM[chunk[j + 1].id]
+			buf[i+1] = (PM[chunk[j].id] >> 8) | ((PM[chunk[j + 1].id] >> 4) & 0xF0)
 		}
+	}else for(let i = 0; i < 4096; i++){
+		buf[i<<1] = chunk[i].id>>8
+		buf[i<<1|1] = chunk[i].id
 	}
 	//save block entities
 	/*for(let i = 0; i < 4096; i++){
-		let type = tiles[i].savedata
+		let type = chunk[i].savedata
 		if(!type)continue
 	}*/
+	for(let i of palette) PM[i] = 65535
+
 	let final = new Uint8Array(buffers.reduce((a, b) => a + b.byteLength, 0)), i = 0
 	for(const b of buffers){
 		final.set(b, i)

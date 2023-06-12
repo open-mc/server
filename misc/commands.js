@@ -193,7 +193,8 @@ export const commands = {
 		const [target, _] = selector(b, this)
 		if(_ || !target)throw 'Selector must return exactly 1 target'
 		const {x, y, world} = target
-		for(const e of targets)e.x = x, e.y = y, e.world = world, e.rubber?.(X | Y)
+		for(const e of targets)
+			e.x = x, e.y = y, e.world = world, e.rubber?.(X | Y)
 		if(targets.length>1)log(this, `Teleported ${targets.length} entities to ${target.name}`)
 		else log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
@@ -202,7 +203,8 @@ export const commands = {
 		const targets = selector(a, this)
     const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(x != x || y != y)throw 'Invalid coordinates'
-		for(const pl of targets)pl.x = x, pl.y = y, pl.world = w, pl.rubber?.(X | Y)
+		for(const e of targets)
+			e.x = x, e.y = y, e.world = w, e.rubber?.(X | Y)
 		if(targets.length>1)log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
 		else log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
 	},
@@ -220,7 +222,7 @@ export const commands = {
 		}
 		return `Kicked ${kicked} player(s)`
 	},
-	give(sel, item, count = '1', dat){
+	give(sel, item, count = '1', dat = '{}'){
 		let itm = Items[item], c = max(count | 0, 0)
 		if(!itm)throw 'No such item: '+item
 		for(const player of selector(sel, this)){
@@ -381,7 +383,7 @@ export const commands = {
 		return 'Set the spawn point successfully!'
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last respawn: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime spent on this server: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+current_tps
@@ -397,7 +399,7 @@ export const commands = {
 		}
 		return 'Set the TPS to '+current_tps
 	},
-	kill(t, cause = 'void'){
+	kill(t = '@s', cause = 'void'){
 		let i = 0
 		for(const e of selector(t, this)){
 			if(cause != 'void') e.died()
@@ -410,17 +412,16 @@ export const commands = {
 	async regen(_x, _y, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
 		x = floor(x) >>> 6; y = floor(y) >>> 6
-		let old = w.get(x+y*0x4000000)
-		if(old instanceof Promise) old = await old
-		if(old) old.t = 2147483647
+		const chunk = w.chunk(x, y)
+		if(!chunk) throw 'Chunk not loaded'
+		chunk.t = 2147483647
 		const buf = await generator(x, y, w.id)
-		const newChunk = new Chunk(buf, w, old?.players ?? [])
-		for(const e of old.entities) newChunk.entities.push(e), e.chunk = newChunk
+		chunk.parse(buf)
 		const delw = new DataWriter()
 		delw.byte(17), delw.int(x), delw.int(y)
 		const del = delw.build()
-		for(const {sock} of newChunk.players)
-			sock.send(buf), sock.send(del)
+		for(const {sock} of chunk.players)
+			sock.send(del), sock.send(Chunk.diskBufToPacket(buf, x, y))
 		goto(this)
 		let moved = false
 		while((floor(this.y)&63|!moved) && peek().solid)

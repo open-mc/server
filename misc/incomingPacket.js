@@ -198,7 +198,6 @@ function respawnPacket(player, _){
 function openContainerPacket(player, buf){
 	if(player.interface) return
 	const x = buf.int(), y = buf.int()
-	player.world.at(x, y, player)
 }
 function openEntityPacket(player, buf){
 	if(player.interface) return

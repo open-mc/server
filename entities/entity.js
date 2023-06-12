@@ -1,6 +1,9 @@
+import { Blocks } from '../blocks/block.js'
+import { CONFIG } from '../config.js'
 import { Item } from '../items/item.js'
-import { goto } from '../misc/ant.js'
+import { antChunk, chunkTileIndex, down, goto, jump, peek, place, up } from '../misc/ant.js'
 import { DataWriter } from '../utils/data.js'
+import { Dimensions } from '../world/index.js'
 export let entityMap = new Map(), i = -1
 
 export class Entity{
@@ -91,6 +94,11 @@ export class Entity{
 	static collisionTestPadding = 0
 	static gx = 1
 	static gy = 1
+
+	flags = 0
+	update(){
+		this.flags = (this.flags&-4) | (this.flags&1)<<1
+	}
 }
 
 Object.setPrototypeOf(Entity.prototype, null)
