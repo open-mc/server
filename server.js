@@ -1,10 +1,7 @@
-import { fs, stats } from './internals.js'
-import util from 'node:util'
+import { argv, fs } from './internals.js'
 import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players } from './world/index.js'
-import { chat, LIGHT_GREY, ITALIC, YELLOW } from './misc/chat.js'
-import { commands, err } from './misc/commands.js'
-import { input, repl } from 'basic-repl'
+import { chat, YELLOW } from './misc/chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './misc/incomingPacket.js'
 import { CONFIG, GAMERULES, HANDLERS, packs, PERMISSIONS, stat, STATS } from './config.js'
 import { DataReader, DataWriter } from './utils/data.js'
@@ -14,9 +11,9 @@ import { deflateSync } from 'node:zlib'
 import { entityindex } from './entities/index.js'
 import { itemindex } from './items/index.js'
 import { blockindex } from './blocks/index.js'
-import { Entities, entityMap } from './entities/entity.js'
+import { Entities } from './entities/entity.js'
 import { Items } from './items/item.js'
-const clear = () => process.stdout.write('\x1bc\x1b[3J')
+import { index } from './misc/miscdefs.js'
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -65,46 +62,19 @@ export const httpServer = key && pem ? (await import('https')).createServer({
 	key: await fs.readFile(key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key),
 	cert: await fs.readFile(pem[0]=='/'||pem[0]=='~' ? pem : PATH + '../' + pem)
 }, handler) : (await import('http')).createServer(handler)
+export const secure = !!(key && pem)
 
 export const server = new WebSocketServer({server: httpServer, perMessageDeflate: false})
 
 export let started = 0
-
-server.once('listening', () => {
-	progress(`Everything Loaded. \x1b[1;33mServer listening on port ${server.address().port+(key&&pem?' (secure)':'')}\x1b[m\nType /help for a list of commands, or press tab to switch to repl`)
-	started = Date.now()
-	stat('misc', 'restarts')
-	repl('[server] ', async text => {
-		if(text == 'clear') return clear()
-		if(text[0] == '/'){
-			try{
-				const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
-				if(!match) return void console.log('Slash, yes, very enlightening.')
-				for(let i = 0; i < match.length; i++){
-					const a = match[i]
-					try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
-				}
-				if(!(match[0] in commands))throw 'No such command: /'+match[0]
-				stat('misc', 'commands_used')
-				let res = commands[match[0]].apply(server, match.slice(1))
-				if(res)console.log(res)
-			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
-		}else{
-			process.stdout.write('\x1b[A')
-			input(false)
-			chat('[server] ' + text, LIGHT_GREY + ITALIC)
-		}
-	})
-	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
-})
-
+server.once('listening', () => started = Date.now())
 
 WebSocket.prototype.logMalicious = function(reason){
-	if(!CONFIG.logMalicious) return
+	if(!argv.log) return
 	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
 }
 
-const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + packs.map(a=>'\0'+a).join(''))))
+const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + packs.map(a=>'\0'+a).join(''))))
 
 const playersConnecting = new Set()
 export let wsHost = '', httpHost = ''
@@ -120,7 +90,7 @@ server.on('connection', function(sock, {url, headers, socket}){
 	sock.username = username
 	sock.packets = []
 	sock.pubKey = pubKey
-	sock.rx = 10; sock.ry = 10
+	sock.ry = sock.rx = CONFIG.socket.movementcheckmercy
 	if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig, 'base64')))
 		return sock.logMalicious('Invalid public key signature'), sock.close()
 	crypto.randomBytes(32, (err, rnd) => {
@@ -158,15 +128,13 @@ async function play(sock, username, skin){
 		sock.close()
 		return
 	}
-	let player, dim
+	let player, dim, x, y
 	let other = players.get(username)
 	if(other){
 		other.sock.send('-119You are logged in from another session')
 		other.sock.player = null
 		other.sock.close()
 		other.sock = null
-		dim = other.world
-		other.remove()
 		player = other
 	}else if(playersConnecting.has(username)){
 		sock.send('-119You are still logging in/out from another session')
@@ -178,7 +146,8 @@ async function play(sock, username, skin){
 		const buf = await HANDLERS.LOADFILE('players/'+username).reader()
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
-		player = Entities.player(buf.double(), buf.double())
+		player = Entities.player()
+		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]
 		player.state = buf.short()
 		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
@@ -186,8 +155,9 @@ async function play(sock, username, skin){
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
-		player = Entities.player(GAMERULES.spawnX, GAMERULES.spawnY)
-		dim = Dimensions[GAMERULES.spawnWorld]
+		player = Entities.player()
+		x = GAMERULES.spawnx; y = GAMERULES.spawny
+		dim = Dimensions[GAMERULES.spawnworld]
 		player.inv[0] = Items.stone(20)
 		player.inv[1] = Items.oak_log(20)
 		player.inv[2] = Items.oak_planks(20)
@@ -208,10 +178,10 @@ async function play(sock, username, skin){
 	player.name = username
 	sock.permissions = permissions
 	sock.movePacketCd = Date.now() / 1000 - 1
-	player.place(dim)
+	if(dim) player.place(dim, x, y)
 	players.set(username, player)
 	sock.r = 255
-	player.rubber(0)
+	player.rubber()
 	sock.player = player
 	if(!other){
 		stat('misc', 'sessions')
@@ -273,5 +243,5 @@ const message = function(_buf, isBinary){
 		const code = buf.byte()
 		if(!codes[code]) return
 		codes[code].call(this, player, buf)
-	}catch(e){ this.logMalicious('Caused an error: \n'+e.stack) }
+	}catch(e){ this.logMalicious('Caused an error: \n'+(e.stack??e)) }
 }

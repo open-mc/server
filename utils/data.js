@@ -26,18 +26,18 @@ export class DataReader extends DataView{
 		}
 		if(typeof type.decode == 'function') return type.decode(this, target)
 		if(Array.isArray(type)){
-			let len = 0
+			let len = 0; target = target || []
 			if(type.length > 1){
-				len = type[1] >>> 0
+				target.length = len = type[1] >>> 0
+				Object.seal(target)
 			}else{
 				len = this.getUint8(this.i)
 				if(len >= 64){
 					if(len >= 128)len = this.getUint32(this.i) & 0x7FFFFFFF, this.i += 4
 					else len = this.getUint16(this.i) & 0x3FFF, this.i += 2
 				}else this.i++
+				target.length = len
 			}
-			target = (target || []); target.length = len
-			Object.seal(target)
 			let i = 0
 			while(i < len)target[i++] = this.read(type[0])
 			return target
@@ -163,6 +163,7 @@ export class DataWriter extends Array{
 	bool(n){ if(this.i == this.cur.byteLength)this.allocnew(); this.cur.setUint8(this.i++, n) }
 	boolean(n){ if(this.i == this.cur.byteLength)this.allocnew(); this.cur.setUint8(this.i++, n) }
 	flint(n){
+		if(this.i > this.cur.byteLength - 4)this.allocnew()
 		if(n > 0x3FFF){
 			if(n > 0x7FFFFFFF)throw new RangeError('n > 2147483647')
 			else this.cur.setUint32((this.i += 4) - 4, n | 0x80000000)

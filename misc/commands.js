@@ -5,10 +5,13 @@ import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { Entities, Entity, entityMap } from '../entities/entity.js'
 import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
-import { goto, jump, place, right } from './ant.js'
+import { goto, jump, peek, place, right, up } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 import { current_tps, setTPS } from '../world/tick.js'
 import { started } from '../server.js'
+import { generator } from '../world/gendelegator.js'
+import { Chunk } from '../world/chunk.js'
+import { X, Y } from '../entities/misc/playerentity.js'
 
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
@@ -101,8 +104,8 @@ function snbt(s, i, t, T1, T2){
 	}
 }
 
-function parseCoords(x = '~', y = '~', d = t.world || Dimensions.overworld, t){
-	let w = typeof d == 'string' ? Dimensions[d] : d
+function parseCoords(x = '~', y = '~', d, t){
+	let w = typeof d == 'string' ? Dimensions[d] : d || t.world || Dimensions.overworld
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
 		x = (+x.slice(1))/180*PI - t.f
@@ -135,9 +138,9 @@ function selector(a, who){
 		if(a[1] == 's')return who instanceof Entity ? [who] : []
 		if(a[1] == 'e')return [...entityMap.values()]
 		if(a[1] == 'n'){
-			if(!who || !entityMap.delete(who._id))return [...entityMap.values()]
+			if(!who || !entityMap.delete(who.netId))return [...entityMap.values()]
 			const a = [...entityMap.values()]
-			entityMap.set(who._id, who)
+			entityMap.set(who.netId, who)
 			return a
 		}
 		const candidates = [...players.values()]
@@ -169,6 +172,7 @@ export function err(e){
 }
 
 const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
+const ITEMCOMMONDATA = {count: Uint8}
 
 export const commands = {
 	list(){
@@ -185,52 +189,63 @@ export const commands = {
 	},
 	tpe(a, b){
 		if(!b)b = a, a = '@s'
-		const players = selector(a, this)
+		const targets = selector(a, this)
 		const [target, _] = selector(b, this)
 		if(_ || !target)throw 'Selector must return exactly 1 target'
 		const {x, y, world} = target
-		for(const pl of players)pl.transport(x, y, world), pl.rubber()
-		if(players.length>1)log(this, `Teleported ${players.length} entities to ${target.name}`)
-		else log(this, `Teleported ${players[0].name} to ${target.name}`)
+		for(const e of targets)
+			e.x = x, e.y = y, e.world = world, e.rubber?.(X | Y)
+		if(targets.length>1)log(this, `Teleported ${targets.length} entities to ${target.name}`)
+		else log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
 	tp(a, _x, _y, d = this.world || 'overworld'){
 		if(!_y)_y=_x,_x=a,a='@s'
-		const players = selector(a, this)
+		const targets = selector(a, this)
     const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(x != x || y != y)throw 'Invalid coordinates'
-		for(const pl of players)pl.transport(x, y, w), pl.rubber()
-		if(players.length>1)log(this, `Teleported ${players.length} entities to (${x}, ${y}) in the ${w.id}`)
-		else log(this, `Teleported ${players[0].name} to (${x}, ${y}) in the ${w.id}`)
+		for(const e of targets)
+			e.x = x, e.y = y, e.world = w, e.rubber?.(X | Y)
+		if(targets.length>1)log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
+		else log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')
-		let players = selector(a, this)
-		if(players.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
-		stat('misc', 'player_kicks', players.length)
-		for(const pl of players){
+		const targets = selector(a, this)
+		if(targets.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
+		stat('misc', 'player_kicks', targets.length)
+		let kicked = 0
+		for(const pl of targets){
+			if(!pl.sock) continue
 			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
 			pl.sock.close()
+			kicked++
 		}
+		return `Kicked ${kicked} player(s)`
 	},
-	give(sel, item, count = '1'){
+	give(sel, item, count = '1', dat = '{}'){
 		let itm = Items[item], c = max(count | 0, 0)
 		if(!itm)throw 'No such item: '+item
 		for(const player of selector(sel, this)){
 			const stack = itm(c)
+			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
 			player.give(stack)
-			if(stack.count){
-				const e = Entities.item(player.x, player.y)
-				e.x = player.x; e.y = player.y; e.place(player.world)
+			while(stack.count){
+				const e = Entities.item()
+				if(stack.count > 255)
+					e.item = stack.constructor(255), stack.count -= 255
+				else
+					e.item = stack.count, stack.count = 0
+				e.place(player.world, player.x, player.y + player.head - 0.5)
 			}
 		}
 	},
 	summon(type, _x = '~', _y = '~', data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(!(type in Entities))throw 'No such entity: ' + type
-		const e = Entities[type](x, y)
+		const e = Entities[type]()
 		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
-		e.place(w)
-		return 'Summoned a(n) '+type+' with an ID of '+e._id
+		e.place(w, x, y)
+		return 'Summoned a(n) '+type+' with an ID of '+e.netId
 	},
 	mutate(sel, data){
 		let i = 0
@@ -248,7 +263,7 @@ export const commands = {
 		snbt(data, 0, b, b.savedata)
 		goto(floor(x), floor(y), w)
 		place(b)
-		return 'Set block at ('+ifloat(x)+', '+ifloat(y)+')'
+		return 'Set block at ('+(floor(x)|0)+', '+(floor(y)|0)+')'
 	},
 	fill(_x, _y, _x2, _y2, type, d = this.world || 'overworld'){
 		let n = performance.now()
@@ -270,21 +285,21 @@ export const commands = {
 		return 'Filled '+count+' blocks' + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : '')
 	},
 	clear(sel, _item, _max = '2147483647'){
-		const Con = _item && Items[_item]?.constructor || Item
+		const Con = _item && Items[_item] || Item
 		let cleared = 0, es = 0
 		for(const e of selector(sel, this)){
 			let max = +_max
 			const changed = []
 			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
 				const item = e.inv[i]
-				if(!item || !(item instanceof Con)) continue
+				if(!item || !(item.constructor == Con)) continue
 				changed.push(i)
 				if(item.count <= max)max -= item.count, e.inv[i] = null
 				else item.count -= max, max = 0
 			}
 			if(e.items) for(let i = 0; max && i < e.items.length; i++){
 				const item = e.items[i]
-				if(!item || !(item instanceof Con)) continue
+				if(!item || !(item.constructor == Con)) continue
 				changed.push(i | 128)
 				if(item.count <= max)max -= item.count, e.items[i] = null
 				else item.count -= max, max = 0
@@ -348,6 +363,7 @@ export const commands = {
 		if(!a){
 			return 'List of gamerules:\n' + Object.entries(GAMERULES).map(([k, v]) => k + ': ' + typeof v).join('\n')
 		}
+		a = a.toLowerCase()
 		if(!b){
 			if(!(a in GAMERULES)) throw 'No such gamerule: ' + a
 			return 'Gamerule ' + a + ': ' + JSON.stringify(GAMERULES[a])
@@ -362,12 +378,12 @@ export const commands = {
 	},
 	spawnpoint(x='~',y='~',d=this.world||'overworld'){
 		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
-			return commands.tp.call(this, y || '@s', GAMERULES.spawnX, GAMERULES.spawnY, GAMERULES.spawnWorld)
-		void ({x: GAMERULES.spawnX, y: GAMERULES.spawnY, w: {id: GAMERULES.spawnWorld}} = parseCoords(x,y,d,this))
+			return commands.tp.call(this, y || '@s', GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
+		void ({x: GAMERULES.spawnx, y: GAMERULES.spawny, w: {id: GAMERULES.spawnworld}} = parseCoords(x,y,d,this))
 		return 'Set the spawn point successfully!'
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last respawn: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime spent on this server: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+current_tps
@@ -375,22 +391,44 @@ export const commands = {
 		for(const pl of players.values()){
 			let buf = new DataWriter()
 			buf.byte(1)
-			buf.int(pl._id | 0)
-			buf.short(pl._id / 4294967296 | 0)
+			buf.int(pl.netId | 0)
+			buf.short(pl.netId / 4294967296 | 0)
 			buf.byte(pl.sock.r)
 			buf.float(current_tps)
-			pl.sock.packets.push(buf)
+			pl.sock.packets.push(buf.build())
 		}
 		return 'Set the TPS to '+current_tps
 	},
-	kill(t, cause = 'void'){
+	kill(t = '@s', cause = 'void'){
 		let i = 0
 		for(const e of selector(t, this)){
 			if(cause != 'void') e.died()
-			e.remove()
+			if(e.sock) e.damage(Infinity)
+			else e.remove()
 			i++
 		}
 		return 'Killed '+i+' entities'
+	},
+	async regen(_x, _y, type, _w){
+		let {x, y, w} = parseCoords(_x, _y, _w, this)
+		x = floor(x) >>> 6; y = floor(y) >>> 6
+		let [a, b] = type ? type.split('/',2) : [w.gend,w.genn]
+		if(!b)b=a,a=w.id
+		const chunk = w.chunk(x, y)
+		if(!chunk) throw 'Chunk not loaded'
+		chunk.t = 2147483647
+		const buf = await generator(x, y, a, b)
+		chunk.parse(buf)
+		const delw = new DataWriter()
+		delw.byte(17), delw.int(x), delw.int(y)
+		const del = delw.build()
+		for(const {sock} of chunk.players)
+			sock.send(del), sock.send(Chunk.diskBufToPacket(buf, x, y))
+		goto(this)
+		let moved = false
+		while((floor(this.y)&63|!moved) && peek().solid)
+			this.y = floor(this.y) + 1, moved = true, up()
+		if(moved) this.rubber(Y)
 	}
 }
 
@@ -400,9 +438,11 @@ commands.i = commands.info
 export const anyone_help = {
 	help: '<cmd> -- Help for a command',
 	list: '-- List online players',
-	info: '-- Info about the server and yourself'
+	info: '-- Info about the server and yourself',
+	i: ' (alias for /info)'
 }, mod_help = {
 	...anyone_help,
+	give: '[player] [item] (count) ',
 	kick: '[player] -- Kick a player',
 	say: '[style] [msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
@@ -410,10 +450,12 @@ export const anyone_help = {
 	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
 	summon: '[entity_type] (x) (y) (snbt_data) (dimension) -- Summon an entity',
 	setblock: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Place a block somewhere',
-	clear: '[player] (filter_item) (max_amount) -- Remove items from a player'
+	clear: '[player] (filter_item) (max_amount) -- Remove items from a player',
+	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
+	regen: '(x) (y) -- Re-generate this chunk with fresh terrain',
+	kill: '[target] (cause) -- Kill a player or entity'
 }, help = {
 	...mod_help,
-	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
 	tps: '[tps] -- Set server-side tps',

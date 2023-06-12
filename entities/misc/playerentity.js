@@ -3,11 +3,13 @@ import { stat } from '../../config.js'
 import { Item } from '../../items/item.js'
 import { blockevent, cancelgridevent, goto, peek, place } from '../../misc/ant.js'
 import { DataWriter } from '../../utils/data.js'
-import { current_tps, encodeMove } from '../../world/tick.js'
+import { current_tps } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { PNG } from 'pngjs'
-import { LivingEntity } from '../living.js'
+import { LivingEntity } from './living.js'
+
+export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
 Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(36)
@@ -18,6 +20,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	breakGridEvent = 0
 	blockBreakLeft = -1
 	bx = 0; by = 0
+	rubberMv = 0
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
 	get head(){return this.state & 2 ? 1.4 : 1.6}
@@ -27,23 +30,28 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	chat(msg, style = 15){
 		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
 	}
-	rubber(mv = 127){
+	changedWorld(){
+		let buf = new DataWriter()
+		buf.byte(2)
+		buf.string(this.world.id)
+		buf.float(this.world.gx)
+		buf.float(this.world.gy)
+		buf.double(this.world.tick)
+		buf.pipe(this.sock)
+	}
+	rubber(mv = 63){
 		this.sock.r = (this.sock.r + 1) & 0xff
 		let buf = new DataWriter()
 		buf.byte(1)
-		buf.int(this._id | 0)
-		buf.short(this._id / 4294967296 | 0)
+		buf.int(this.netId | 0)
+		buf.short(this.netId / 4294967296 | 0)
 		buf.byte(this.sock.r)
 		buf.float(current_tps)
-		this.sock.packets.push(buf)
-		if(mv){
-			const mv2 = this.mv
-			this.mv = mv
-			encodeMove(this, this)
-			this.mv = mv2
-		}
+		this.sock.packets.push(buf.build())
+		this.rubberMv |= mv
 	}
-	tick(){
+	update(){
+		super.update()
 		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
 			goto(this.bx, this.by, this.world)
 			const tile = peek()
@@ -51,18 +59,18 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			place(Blocks.air)
 			const drop = tile.drops?.(this.inv[this.selected])
 			if(drop instanceof Item){
-				const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
+				const itm = Entities.item()
 				itm.item = drop
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
-				itm.place(this.world)
+				itm.place(this.world, this.bx + 0.5, this.by + 0.375)
 			}else if(drop instanceof Array){
 				for(const d of drop){
-					const itm = Entities.item(this.bx + 0.5, this.by + 0.375)
+					const itm = Entities.item()
 					itm.item = d
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
-					itm.place(this.world)
+					itm.place(this.world, this.bx + 0.5, this.by + 0.375)
 				}
 			}
 			stat('player', 'blocks_broken')

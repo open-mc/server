@@ -1,6 +1,9 @@
 import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from '../utils/data.js'
-//import all item files
+
+const loaded = task('Loading items...')
+
+// Monstrosity for importing all ./*/*.js
 import { Item, ItemIDs, Items } from './item.js'
 await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import(PATH + 'items/' + name + '/' + file))))))
 let modified = false
@@ -18,17 +21,18 @@ for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(iteminde
 	else I.id = ItemIDs.length, I.className = name
 	ItemIDs.push(null)
 }
-for(const i in Items){
-	const I = Items[i]
+for(const name in Items){
+	const I = Items[name]
 	// Force extend
 	if(!(I.prototype instanceof Item)){
-		console.warn('Class ' + i + ' does not extend Item\n')
+		console.warn('Class ' + name + ' does not extend Item\n')
 		Object.setPrototypeOf(I, Item)
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
 	if(!Object.hasOwn(I, 'id'))
-		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = i, modified = true
-	I.constructor = ItemIDs[I.id] = Items[i] = c => new I(c)
+		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = name, modified = true
+	I.constructor = ItemIDs[I.id] = Items[name] = (...c) => new I(...c)
+	I.constructor.prototype = I.prototype
 	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -39,11 +43,9 @@ for(const i in Items){
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
 	}
-	Object.setPrototypeOf(Items[i], I.prototype)
-	Object.defineProperties(Items[i], Object.getOwnPropertyDescriptors(new I(1)))
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.className + I.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.savedata ? ' '+typeToJson(I.savedata) : '')).join('\n'))
+	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
 }
 
-progress(`${ItemIDs.length} Items loaded`)
+loaded(`${ItemIDs.length} Items loaded`)

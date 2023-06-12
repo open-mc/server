@@ -1,5 +1,5 @@
 {
-	"editor.tabSize": 2,
+	"editor.tabSize": 3, // compromise
 	"editor.insertSpaces": false,
 	"editor.indentSize": "tabSize",
 	"editor.detectIndentation": false

@@ -1,12 +1,14 @@
 import { promises as fs, exists } from 'node:fs'
 fs.exists = a => new Promise(r => exists(a, r))
 
-export { Worker } from 'node:worker_threads'
+export { Worker, parentPort } from 'node:worker_threads'
+import { parentPort } from 'node:worker_threads'
 export { fs }
+
+import './utils/prototypes.js'
 
 import { setFlagsFromString, getHeapStatistics } from 'node:v8'
 import { runInThisContext } from 'node:vm'
-import './utils/prototypes.js'
 export let optimize = Function.prototype
 try{
 	setFlagsFromString('--allow-natives-syntax')
@@ -14,36 +16,26 @@ try{
 	optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
 }catch(e){}
 
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*(\.js)?$/,"").replace(/file:\/\/(\w+:\/)?/y,'')
-globalThis.WORLD = PATH + '../' + ((typeof Deno == 'undefined' ? process.argv[2] : Deno.args[0]) || 'world') + '/'
+export const argv = []
+Object.setPrototypeOf(argv, null)
 
-if(!await fs.exists(WORLD)){
-	await fs.mkdir(WORLD)
-	await Promise.all([
-		fs.mkdir(WORLD + 'players'),
-		fs.mkdir(WORLD + 'dimensions'),
-		fs.mkdir(WORLD + 'defs').then(() => Promise.all([
-			fs.writeFile(WORLD + 'defs/blockindex.txt', 'air'),
-			fs.writeFile(WORLD + 'defs/itemindex.txt', 'stone'),
-			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}')
-		])),
-		fs.writeFile(WORLD + 'stats.json', `{}`),
-		fs.writeFile(WORLD + 'permissions.yaml', `# permission settings
-# possible permissions: op, mod, normal, spectate, deny, banned(ban_end)
-
-# "Spectate" players may move around, load chunks and see the world
-# but cannot place, break or otherwise interact with the world.
-# They are also not visible to other players, but do show up /list
-
-# Example permissions (without the #):
-# cyarty: op
-# zekiah: mod
-
-default_permissions: normal`),
-		fs.writeFile(WORLD + 'gamerules.json', '{}'),
-		fs.copyFile(PATH + 'default_properties.yaml', WORLD + 'properties.yaml')
-	])
+for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args){
+	if(opt.startsWith('-')){
+		const i = opt.indexOf('=')
+		if(i < 0){
+			argv[opt.slice(1)] = true
+		}else{
+			const k = opt.slice(1, i), v = opt.slice(i + 1)
+			if(k==k>>>0) throw 'Invalid argument name: '+k
+			const nv = +v
+			argv[k] = nv == nv ? nv : v
+		}
+	}else if(opt) Array.prototype.push.call(argv, opt)
 }
+
+globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
+globalThis.WORLD = argv[0] || PATH + '../world/'
+if(!WORLD.endsWith('/')) WORLD += '/'
 
 performance.nodeTiming ??= {idleTime: 0}
 
@@ -99,8 +91,13 @@ Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 
 runInThisContext((_=>{
 
-const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat } = Math
+const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat, clz32 } = Math
 const Object = globalThis.Object
+
+const assert = condition => {
+	if(condition) return
+	console.error(new Error().stack.replace(/Error.*\n.*\n/, 'Assertion failed\n'))
+}
 
 }).toString().slice(6,-3))
 
@@ -116,14 +113,26 @@ function uncaughtErr(e){
 process.on('uncaughtException', uncaughtErr)
 process.on('unhandledRejection', uncaughtErr)
 
-
-let total = 5, loaded = -1
+let total = 0, loaded = 0
 let resolvePromise = null
 const started = Date.now()
-
-export const ready = new Promise(r => resolvePromise = r)
-globalThis.progress = function(desc){
-	loaded++
-	console.log(`\x1b[1A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}`)
-	if(total == loaded + 1)resolvePromise()
+const print = parentPort ? _ => {} : desc => {
+	process.stdout.write(`\x1b[6n\x1b[9999A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}\n`)
 }
+globalThis.task = function(desc = ''){
+	total++
+	let called = false
+	print(desc)
+	return (desc) => {
+		if(called) return
+		called = true
+		loaded++
+		print(desc)
+		if(total == loaded && resolvePromise)resolvePromise(), resolvePromise = null
+	}
+}
+task.done = desc => {
+	total++; loaded++
+	print(desc)
+}
+export const ready = {then:r => resolvePromise = r }

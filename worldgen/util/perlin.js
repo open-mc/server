@@ -56,8 +56,8 @@ const lerpLookup = [
 ]
 const facs = new Float64Array(64)
 const heights = new Float64Array(64)
-export function fill(cx, cy, fill = Blocks.stone, liquid = Blocks.water, level = 0){
-	const biomes = fill == Blocks.stone ? biomesFor(cx) : cy < 0 ? cy < -10 ? constantBiome(Biomes.netherfloor) : constantBiome(Biomes.nether) : constantBiome(Biomes.netherinverted)
+export const filler = (fill = Blocks.stone, liquid = Blocks.water, level = 0, biomer, flags = 0) => (cx, cy) => {
+	const biomes = biomer(cx, cy)
 	const g = imxs32_2(cx, cy)
 	makeVector(0, g)
 	const g_up = imxs32_2(cx, cy + 1)
@@ -78,13 +78,18 @@ export function fill(cx, cy, fill = Blocks.stone, liquid = Blocks.water, level =
 	}
 	for(let i = 0; i < 4160;){
 		if(i < 64){
-			let {offset, height} = biomes[i >> 4 & 3]
-			const {offset: o2, height: h2} = biomes[(i >> 4 & 3) + 1]
-			const lerp = lerpLookup[i & 15]
-			offset = (1 - lerp) * offset + lerp * o2
-			height = (1 - lerp) * height + lerp * h2
-			facs[i] = ((cy << 6) - offset) / height
-			heights[i] = height
+			if(flags&1){
+				heights[i] = Infinity
+				facs[i] = 0
+			}else{
+				let {offset, height} = biomes[i >> 4 & 3]
+				const {offset: o2, height: h2} = biomes[(i >> 4 & 3) + 1]
+				const lerp = lerpLookup[i & 15]
+				offset = (1 - lerp) * offset + lerp * o2
+				height = (1 - lerp) * height + lerp * h2
+				facs[i] = ((cy << 6) - offset) / height
+				heights[i] = height
+			}
 		}
 		const height = heights[i & 63]
 		const fac = facs[i & 63]
