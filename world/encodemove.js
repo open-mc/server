@@ -21,10 +21,10 @@ export function calculateMv(e){
 	const cx = floor(e.x)>>>6, cy = floor(e.y)>>>6
 	if(!e.chunk || (mv & 256 | cx^e.chunk.x | cy^e.chunk.y)){
 		const chunk = e.world.get(cx+cy*0x4000000)
-		if(chunk instanceof Chunk){
+		if(chunk){
 			if(e.chunk) e.chunk.entities.remove(e)
 			void (e.chunk = chunk).entities.push(e)
-		}else e.chunk = null
+		}
 	}
 	return mv & 255
 }
