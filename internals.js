@@ -12,7 +12,6 @@ import { runInThisContext } from 'node:vm'
 export let optimize = Function.prototype
 try{
 	setFlagsFromString('--allow-natives-syntax')
-	// TODO: research on %CompileOptimized_Concurrent
 	optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
 }catch(e){}
 

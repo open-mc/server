@@ -6,7 +6,7 @@ class Grass extends Block{
 	static tool = 'shovel'
 	static breaktime = 1.5
 	drops(){
-		return Items.grass(1)
+		return Items.dirt(1)
 	}
 	randomtick(){
 		if(peekup().solid)

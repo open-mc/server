@@ -94,9 +94,9 @@ Blocks.end_portal = class extends Block{
 					place(Blocks.air), right()
 			}
 		}else{
-			e.world = GAMERULES.spawnWorld
-			e.x = GAMERULES.spawnX
-			e.y = GAMERULES.spawnY
+			e.world = Dimensions[GAMERULES.spawnworld] ?? Dimensions.overworld
+			e.x = GAMERULES.spawnx
+			e.y = GAMERULES.spawny
 			e.rubber?.(X | Y)
 		}
 		return true

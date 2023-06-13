@@ -1,8 +1,6 @@
 import { Blocks } from '../blocks/block.js'
 import { optimize } from '../internals.js'
 
-// TODO: wasm
-
 let cx = 0, cy = 0, pos = 0
 let tiles = undefined
 let world = null, chunk = undefined
