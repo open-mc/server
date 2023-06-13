@@ -2,21 +2,20 @@ import { Blocks } from '../../blocks/block.js'
 import { stat } from '../../config.js'
 import { Item } from '../../items/item.js'
 import { blockevent, cancelgridevent, goto, peek, place } from '../../misc/ant.js'
-import { DataWriter } from '../../utils/data.js'
-import { current_tps } from '../../world/tick.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { PNG } from 'pngjs'
 import { LivingEntity } from './living.js'
 
-export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
+const STEVE = "缀\x7f罿缀\x7f孛缀\x7f罿缀\x7f罿缀\x7f罿缀\x7f罿⠰ひ爨Ωせ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0缀\x7f桨栀h罿栀h桨栀h罿缀\x7f桨栀h罿⠰♲嬡Ωせ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0栀h桨栀h罿缀\x7f桨栀h罿缀\x7f桨栀h罿⠰♲嬡⠰ひ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0嬀[桨栀h孛缀\x7f桨栀h罿缀\x7f桨栀h罿⠰♲嬡⠰ひ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0栀h孛嬀[孛徖陁䅟徖蝁㭕徖陁䅟徖蝁㭕⠰♲嬡⠰ひ爨⠰♲嬡⠰ひ爨ᬨ⠊ਛᨦ✊ଛᰩ㈌ဣ\u202dⴐဠ嬀[孛嬀[桨徖陁䅟徖蝁㭕徖陁䅟喇阻䅟⠰♲嬡⠰ひ爨⠰♲嬡Ωせ爨ᬨ⠊ਛᨦ☊ਚḬ⤎జḫ㌍ᄤ栀h孛嬀[桨喇阻䅟徖蝁㭕徖陁䅟喇阻䅟⠰♲嬡⠰ひ爨⠰ひ爨Ωせ爨Ḭ☎ଘᨦ⤊జḫ⠎ଛᠤ⤊జ缀\x7f桨栀h罿喇阻䅟徖陁䅟喇阻䅟喇阻䅟⠰ひ爨⠰ひ爨⠰ひ爨Ωせ爨ᬨ⠊ചᴭⰎพᬨ✊ଛḬ⼎ᄢ缀\x7f桨栀h罿喇阻䅟喇阻䅟喇阻䅟徖陁䅟⠰ひ爨⠰ひ爨⠰ひ爨⠰ひ爨ᬨ⠊ਛᬨ☊చᜣ蜉㩘掜㩅ᐨ缀\x7f桨缀\x7f罿徖陁䅟喇阻䅟徖陁䅟徖陁䅟㼿㼿㼿⠰ひ爨㼿㼿㼿⠰ひ爨ᬨ⠊ਛᨨ☍ଘḬ萑ㅒ徖衁㥚⠰♲嬡⠰♲嬡徖陁䅟喇阻䅟徖蝁㭕徖蝁㭕㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿Ḭ⠎ਛᴭ戎⽃檝驏䑣历甴⽇⠰♲嬡⠰ひ爨徖陁䅟徖陁䅟徖陁䅟徖蝁㭕㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿历蘴㑓掚虄㑓果陈䅟妊琻⽈"
+const defaultSkin = new Uint8Array(1008)
+for(let i = 0; i < 1008; i+=2)defaultSkin[i]=STEVE.charCodeAt(i>>1),defaultSkin[i+1]=STEVE.charCodeAt(i>>1)>>8
 
 Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(36)
 	items = [null, null, null, null, null, null]
 	selected = 0
-	skin = null
-	sock = null
+	skin = defaultSkin
 	breakGridEvent = 0
 	blockBreakLeft = -1
 	bx = 0; by = 0
@@ -26,29 +25,6 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	get head(){return this.state & 2 ? 1.4 : 1.6}
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
-	}
-	chat(msg, style = 15){
-		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
-	}
-	changedWorld(){
-		let buf = new DataWriter()
-		buf.byte(2)
-		buf.string(this.world.id)
-		buf.float(this.world.gx)
-		buf.float(this.world.gy)
-		buf.double(this.world.tick)
-		buf.pipe(this.sock)
-	}
-	rubber(mv = 63){
-		this.sock.r = (this.sock.r + 1) & 0xff
-		let buf = new DataWriter()
-		buf.byte(1)
-		buf.int(this.netId | 0)
-		buf.short(this.netId / 4294967296 | 0)
-		buf.byte(this.sock.r)
-		buf.float(current_tps)
-		this.sock.packets.push(buf.build())
-		this.rubberMv |= mv
 	}
 	update(){
 		super.update()

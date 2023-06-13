@@ -186,7 +186,7 @@ In a nutshell, do things fast, not O(2^n).
 <details>
 <summary><h2 style="display:inline-block">Common variable names</h2></summary>
 
-- `pl`: player (instanceof `Entity`, typically attached to a socket, `sock.player`)
+- `pl`: player (instanceof `Entity`, typically attached to a socket, `sock.entity`)
 - `sock`: Network socket (typically attached to a player, `pl.sock`)
 - `ch`: Chunk (64x64 world section)
 - `x`, `y`: x and y position

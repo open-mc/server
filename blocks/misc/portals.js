@@ -1,6 +1,6 @@
 import { CONFIG, GAMERULES } from "../../config.js"
-import { X, Y } from "../../entities/misc/playerentity.js"
-import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right } from "../../misc/ant.js"
+import { X, Y } from "../../entities/entity.js"
+import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right, up } from "../../misc/ant.js"
 import { Dimensions } from "../../world/index.js"
 import { Block, Blocks } from "../block.js"
 
@@ -46,7 +46,7 @@ Blocks.portal = class extends Block{
 		e.x = targetX + closestDx + 0.5
 		e.y = targetY + closestDy
 		e.world = dim
-		e.rubber?.(X | Y)
+		if(e.sock) e.rubber(X | Y)
 		e.event(50)
 		if(closestDist < 2e9) return true // Portal exists
 		
@@ -84,7 +84,7 @@ Blocks.end_portal = class extends Block{
 			e.world = Dimensions.end
 			e.x = 100.5
 			e.y = 1
-			e.rubber?.(X | Y)
+			if(e.sock) e.rubber(X | Y)
 			goto(98, 0, Dimensions.end)
 			for(let i = 0; i < 5; i++)
 				place(Blocks.obsidian), right()
@@ -97,7 +97,7 @@ Blocks.end_portal = class extends Block{
 			e.world = Dimensions[GAMERULES.spawnworld] ?? Dimensions.overworld
 			e.x = GAMERULES.spawnx
 			e.y = GAMERULES.spawny
-			e.rubber?.(X | Y)
+			if(e.sock) e.rubber(X | Y)
 		}
 		return true
 	}

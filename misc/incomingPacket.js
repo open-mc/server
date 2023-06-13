@@ -1,10 +1,10 @@
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
 import { CONFIG, GAMERULES, MOD, stat, statRecord } from '../config.js'
-import { Entities, entityMap } from '../entities/entity.js'
+import { Entities } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
-import { current_tps } from '../world/tick.js'
+import { current_tps, entityMap } from '../world/tick.js'
 import { stepEntity } from '../world/physics.js'
 import { Dimensions } from '../world/index.js'
 
@@ -101,7 +101,7 @@ function playerMovePacket(player, buf){
 		if(x != x){
 			player.f = y || 0
 			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
-			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.players.includes(player)){
+			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
 				//hit e
 				const itm = player.inv[player.selected]
 				e.damage?.(itm?.damage?.(e) ?? 1, player)
@@ -203,7 +203,7 @@ function openEntityPacket(player, buf){
 	if(player.interface) return
 	const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
 	const dx = e.x - player.x, dy = e.y - player.y
-	if(dx * dx + dy * dy > (REACH + 2) * REACH || !e.chunk.players.includes(player)) return
+	if(dx * dx + dy * dy > (REACH + 2) * REACH || !e.chunk.sockets.includes(this)) return
 	player.interface = e
 	player.interfaceId = 0
 	const res = new DataWriter()

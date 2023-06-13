@@ -3,13 +3,13 @@ import { DataWriter } from '../utils/data.js'
 
 export const ChunkLoader = T => class extends T{
 	radius = CONFIG.chunkloadingrange
-	place(a,b,c){ 
+	place(a,b,c){
 		super.place(a,b,c)
 		this.load(floor(this.x) >> 6, floor(this.y) >> 6, this.world)
 	}
 	moved(){
-		const {world, _world, radius} = this
-		if(!_world) return
+		const {world, _world, radius, sock} = this
+		if(!_world || !sock) return
 		let ocx = floor(this._x) >> 6
 		let ocy = floor(this._y) >> 6
 		let cx = floor(this.x) >> 6
@@ -39,40 +39,41 @@ export const ChunkLoader = T => class extends T{
 		trashed.byte(17)
 		for(let y = y0; y < y1; y++){
 			for(let x=cx-radius+1;x<XT;x++){
-				this.world.link(x, y, this)
-				if(this.world.unlink(tx-x, ty-y, this)){
+				this.world.link(x, y, sock)
+				if(this.world.unlink(tx-x, ty-y, sock)){
 					trashed.int(tx-x)
 					trashed.int(ty-y)
 				}
 			}
 		}
-		
 		for(let x = x0; x < x1; x++){
 			for(let y=max(cy,ocy)-radius+1;y<YT;y++){
-				this.world.link(x, y, this)
-				if(this.world.unlink(tx-x, ty-y, this)){
+				this.world.link(x, y, sock)
+				if(this.world.unlink(tx-x, ty-y, sock)){
 					trashed.int(tx-x)
 					trashed.int(ty-y)
 				}
 			}
 		}
-		this.sock.packets.push(trashed.build())
+		sock.packets.push(trashed.build())
 		super.moved?.()
 	}
 	load(cx, cy, world){
-		const {radius} = this
+		const {radius, sock} = this
+		if(!sock) return
 		for(let x=cx-radius+1;x<cx+radius;x++){
 			for(let y=cy-radius+1;y<cy+radius;y++){
-				world.link(x, y, this)
+				world.link(x, y, sock)
 			}
 		}
 	}
 	unload(cx, cy, world, send = true){
-		const {radius} = this
+		const {radius, sock} = this
+		if(!sock) return
 		if(!send){
 			for(let x = cx-radius+1;x<cx+radius;x++){
 				for(let y=cy-radius+1;y<cy+radius;y++){
-					world.unlink(x, y, this)
+					world.unlink(x, y, sock)
 				}
 			}
 			return
@@ -83,7 +84,7 @@ export const ChunkLoader = T => class extends T{
 		trashed.byte(17)
 		for(let x = cx-radius+1;x<cx+radius;x++){
 			for(let y=cy-radius+1;y<cy+radius;y++){
-				if(world.unlink(x, y, this)){
+				if(world.unlink(x, y, this.sock)){
 					trashed.int(x)
 					trashed.int(y)
 				}

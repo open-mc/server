@@ -1,10 +1,10 @@
-import { Blocks } from '../blocks/block.js'
-import { CONFIG } from '../config.js'
 import { Item } from '../items/item.js'
-import { antChunk, chunkTileIndex, down, goto, jump, peek, place, up } from '../misc/ant.js'
 import { DataWriter } from '../utils/data.js'
-import { Dimensions } from '../world/index.js'
-export let entityMap = new Map(), i = -1
+import { current_tps, entityMap } from '../world/tick.js'
+
+let i = -1
+
+export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
 export class Entity{
 	constructor(){
@@ -16,6 +16,7 @@ export class Entity{
 		this.chunk = null
 		this._state = this.state = 0
 		this.netId = -1
+		this.sock = null
 		this._name = ''
 		this.age = 0
 		this.pendingEvents = []
@@ -70,19 +71,34 @@ export class Entity{
 			if(c > 127) buf.byte(c), Item.encode(buf, this.items[c&127])
 			else buf.byte(c), Item.encode(buf, this.inv[c])
 		if(this.chunk)
-			for(const pl of this.chunk.players) buf.pipe(pl.sock)
+			for(const sock of this.chunk.sockets) buf.pipe(sock)
 		else if(this.sock) buf.pipe(this.sock)
 	}
 	died(){}
 	emit(buf){
 		if(this.chunk){
 			if(buf instanceof DataWriter)
-				for(const pl of this.chunk.players) buf.pipe(pl.sock)
-			else for(const pl of this.chunk.players) pl.sock.send(buf)
+				for(const sock of this.chunk.sockets) buf.pipe(sock)
+			else for(const sock of this.chunk.sockets) sock.send(buf)
 		}else if(this.sock){
 			if(buf instanceof DataWriter) buf.pipe(this.sock)
 			else this.sock.send(buf)
 		}
+	}
+	chat(msg, style = 15){
+		this.sock?.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
+	}
+	rubber(mv = 63){
+		if(!this.sock) return
+		this.sock.r = (this.sock.r + 1) & 0xff
+		let buf = new DataWriter()
+		buf.byte(1)
+		buf.int(this.netId | 0)
+		buf.short(this.netId / 4294967296 | 0)
+		buf.byte(this.sock.r)
+		buf.float(current_tps)
+		this.sock.packets.push(buf.build())
+		this.rubberMv |= mv
 	}
 	event(id, fn){ this.pendingEvents.push(id, fn) }
 	static savedata = null

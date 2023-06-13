@@ -8,7 +8,7 @@ export class Chunk{
 	static PM
 	static preAllocatedTiles = new Array(4096)
 	constructor(x, y, world){
-		this.players = []
+		this.sockets = []
 		this.world = world
 		this.x = x & 0x3ffffff; this.y = y & 0x3ffffff
 		this.tiles = Chunk.preAllocatedTiles.slice(0)
@@ -111,7 +111,7 @@ export class Chunk{
 		}else buf.flint(Chunk.savedatahistory.length), buf.short(palette.length - 1)
 
 		for(const e of this.entities){
-			if(!e.id && !packet)continue
+			if(e.sock && !packet)continue
 			buf.short(e.id)
 			buf.short((e.x % 64 + 64) * 1024)
 			buf.short((e.y % 64 + 64) * 1024)

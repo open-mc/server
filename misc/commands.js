@@ -2,16 +2,16 @@ import { GAMERULES, version, MOD, OP, stat } from '../config.js'
 import { players } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
-import { Entities, Entity, entityMap } from '../entities/entity.js'
+import { Entities, Entity } from '../entities/entity.js'
 import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { Blocks } from '../blocks/block.js'
-import { current_tps, setTPS } from '../world/tick.js'
+import { current_tps, setTPS, entityMap } from '../world/tick.js'
 import { started } from '../server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
-import { X, Y } from '../entities/misc/playerentity.js'
+import { X, Y } from '../entities/entity.js'
 
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
@@ -194,7 +194,7 @@ export const commands = {
 		if(_ || !target)throw 'Selector must return exactly 1 target'
 		const {x, y, world} = target
 		for(const e of targets)
-			e.x = x, e.y = y, e.world = world, e.rubber?.(X | Y)
+			e.x = x, e.y = y, e.world = world, e.sock && e.rubber(X | Y)
 		if(targets.length>1)log(this, `Teleported ${targets.length} entities to ${target.name}`)
 		else log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
@@ -204,7 +204,7 @@ export const commands = {
     const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(x != x || y != y)throw 'Invalid coordinates'
 		for(const e of targets)
-			e.x = x, e.y = y, e.world = w, e.rubber?.(X | Y)
+			e.x = x, e.y = y, e.world = w, e.sock && e.rubber(X | Y)
 		if(targets.length>1)log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
 		else log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
 	},
@@ -223,7 +223,7 @@ export const commands = {
 		return `Kicked ${kicked} player(s)`
 	},
 	give(sel, item, count = '1', dat = '{}'){
-		let itm = Items[item], c = max(count | 0, 0)
+		let itm = Items[item], c = max(count | 0, 1)
 		if(!itm)throw 'No such item: '+item
 		for(const player of selector(sel, this)){
 			const stack = itm(c)
@@ -421,7 +421,7 @@ export const commands = {
 		const delw = new DataWriter()
 		delw.byte(17), delw.int(x), delw.int(y)
 		const del = delw.build()
-		for(const {sock} of chunk.players)
+		for(const sock of chunk.sockets)
 			sock.send(del), sock.send(Chunk.diskBufToPacket(buf, x, y))
 		goto(this)
 		let moved = false

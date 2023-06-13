@@ -11,7 +11,7 @@ import { deflateSync } from 'node:zlib'
 import { entityindex } from './entities/index.js'
 import { itemindex } from './items/index.js'
 import { blockindex } from './blocks/index.js'
-import { Entities } from './entities/entity.js'
+import { Entities, EntityIDs } from './entities/entity.js'
 import { Items } from './items/item.js'
 import { index } from './misc/miscdefs.js'
 
@@ -86,7 +86,7 @@ server.on('connection', function(sock, {url, headers, socket}){
 	if(exiting) return
 	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
 	if(!username || !pubKey || !authSig)return sock.logMalicious('Malformed Connection'), sock.close()
-	sock.player = null
+	sock.entity = null
 	sock.username = username
 	sock.packets = []
 	sock.pubKey = pubKey
@@ -132,7 +132,7 @@ async function play(sock, username, skin){
 	let other = players.get(username)
 	if(other){
 		other.sock.send('-119You are logged in from another session')
-		other.sock.player = null
+		other.sock.entity = null
 		other.sock.close()
 		other.sock = null
 		player = other
@@ -146,7 +146,7 @@ async function play(sock, username, skin){
 		const buf = await HANDLERS.LOADFILE('players/'+username).reader()
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
-		player = Entities.player()
+		player = EntityIDs[buf.short()]()
 		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]
 		player.state = buf.short()
@@ -182,7 +182,7 @@ async function play(sock, username, skin){
 	players.set(username, player)
 	sock.r = 255
 	player.rubber()
-	sock.player = player
+	sock.entity = player
 	if(!other){
 		stat('misc', 'sessions')
 		chat(username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
@@ -198,31 +198,32 @@ server.sock = {permissions: 4}
 server.world = Dimensions.overworld
 
 export const close = async function(){
-	const {player} = this
-	if(!player) return
-	players.delete(player.name)
-	playersConnecting.add(player.name)
+	const {entity} = this
+	if(!entity) return
+	players.delete(entity.name)
+	playersConnecting.add(entity.name)
 	const buf = new DataWriter()
-	buf.double(player.x)
-	buf.double(player.y)
-	buf.string(player.world?.id ?? 'overworld')
-	buf.short(player.state)
-	buf.float(player.dx)
-	buf.float(player.dy)
-	buf.float(player.f)
-	buf.double(player.age)
-	if(player.savedata) buf.flint(player.savedatahistory.length), buf.write(player.savedata, player)
-	if(!exiting) chat(player.name + ' left the game', YELLOW)
-	await HANDLERS.SAVEFILE('players/' + player.name, buf.build())
-	playersConnecting.delete(player.name)
+	buf.short(entity.id)
+	buf.double(entity.x)
+	buf.double(entity.y)
+	buf.string(entity.world?.id ?? 'overworld')
+	buf.short(entity.state)
+	buf.float(entity.dx)
+	buf.float(entity.dy)
+	buf.float(entity.f)
+	buf.double(entity.age)
+	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
+	if(!exiting) chat(entity.name + ' left the game', YELLOW)
+	await HANDLERS.SAVEFILE('players/' + entity.name, buf.build())
+	playersConnecting.delete(entity.name)
 	playerLeft()
-	player.remove()
+	entity.remove()
 }
 
 const message = function(_buf, isBinary){
 	try{
-		const {player} = this
-		if(!player && this.challenge && isBinary){
+		const {entity} = this
+		if(!entity && this.challenge && isBinary){
 			if(_buf.length <= 1008) return
 			if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf.subarray(1010))){
 				const cli_ver = _buf.readUint16BE(0)
@@ -237,11 +238,11 @@ const message = function(_buf, isBinary){
 				this.logMalicious('Invalid signature')
 			}
 			return
-		}else if(!player) return
-		if(!isBinary) return void onstring.call(this, player, _buf.toString())
+		}else if(!entity) return
+		if(!isBinary) return void onstring.call(this, entity, _buf.toString())
 		const buf = new DataReader(_buf) //let your code breathe
 		const code = buf.byte()
 		if(!codes[code]) return
-		codes[code].call(this, player, buf)
+		codes[code].call(this, entity, buf)
 	}catch(e){ this.logMalicious('Caused an error: \n'+(e.stack??e)) }
 }

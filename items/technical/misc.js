@@ -24,8 +24,10 @@ Items.eye_of_ender = class extends Item{
 		right(); place(Blocks.end_portal)
 		right(); place(Blocks.end_portal)
 		// Global Sound Event
-		for(const pl of GAMERULES.globalEvents ? players.values() : antChunk.players){
-			pl.event(52)
+		if(GAMERULES.globalEvents){
+			for(const pl of players.values()) pl.event(52)
+		}else for(const sock of antChunk.sockets){
+			sock.entity.event(52)
 		}
 	}
 }

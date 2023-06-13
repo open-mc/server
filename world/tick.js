@@ -1,4 +1,3 @@
-import { entityMap } from '../entities/entity.js'
 import { players } from '../world/index.js'
 import { DataWriter } from '../utils/data.js'
 import { Chunk } from './chunk.js'
@@ -6,6 +5,9 @@ import { allDimensions, Dimensions } from './index.js'
 import { stepEntity } from './physics.js'
 import { DEFAULT_TPS, stat, statAvg } from '../config.js'
 import { mirrorEntity } from './encodemove.js'
+
+export let current_tps = DEFAULT_TPS
+export const entityMap = new Map()
 
 export function tick(){
 	if(exiting) return
@@ -17,7 +19,7 @@ export function tick(){
 		}
 	}
 	for(const e of entityMap.values()){
-		if(!!e.id & !(!e.chunk | !e.world))
+		if(!e.sock & !(!e.chunk | !e.world))
 			stepEntity(e)
 		mirrorEntity(e)
 	}
@@ -49,7 +51,6 @@ function everySecond(){
 }
 let lastTick = 0
 let tickTimer = null, timer2 = null
-export let current_tps = DEFAULT_TPS
 export function setTPS(a){
 	current_tps = a
 	lastTick = performance.now()

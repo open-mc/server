@@ -42,7 +42,7 @@ export function place(bl){
 		tiles = _t; world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
 	}*/
 	const block = _t[_pos] = bl()
-	for(const {sock: {tbuf}} of _chunk.players){
+	for(const {tbuf} of _chunk.sockets){
 		tbuf.byte(0)
 		tbuf.int(_cx << 6 | (_pos&0b000000111111))
 		tbuf.int(_cy << 6 | (_pos>>6))
@@ -73,7 +73,7 @@ export function place(bl){
 let gridEventId = 0
 export function blockevent(ev, fn){
 	if(!tiles || !ev) return
-	for(const {sock: {tbuf}} of chunk.players){
+	for(const {tbuf} of chunk.sockets){
 		tbuf.byte(ev)
 		if(ev == 255) tbuf.byte(0)
 		tbuf.int(cx << 6 | (pos&0b000000111111))
@@ -84,7 +84,7 @@ export function blockevent(ev, fn){
 export function gridevent(ev, fn){
 	if(!tiles || !ev) return
 	const id = (gridEventId = gridEventId + 1 | 0) || (gridEventId = 1)
-	for(const {sock: {tbuf}} of chunk.players){
+	for(const {tbuf} of chunk.sockets){
 		tbuf.short(0xFF00|ev)
 		tbuf.int(cx << 6 | (pos&0b000000111111))
 		tbuf.int(cy << 6 | (pos>>6))
@@ -95,7 +95,7 @@ export function gridevent(ev, fn){
 }
 export function cancelgridevent(id){
 	if(!tiles || !id) return
-	for(const {sock: {tbuf}} of chunk.players){
+	for(const {tbuf} of chunk.sockets){
 		tbuf.short(65535)
 		tbuf.int(id)
 	}
