@@ -62,7 +62,7 @@ export class World extends Map{
 		for(let e of ch.entities){
 			if(e == pl) continue
 			ebuf.byte(0)
-			ebuf.int(e.netId | 0), ebuf.short(e.netId / 4294967296 | 0)
+			ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
 		}
 		return true
 	}

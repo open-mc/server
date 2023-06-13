@@ -1,6 +1,6 @@
 import { CONFIG, GAMERULES } from "../../config.js"
 import { X, Y } from "../../entities/misc/playerentity.js"
-import { antChunk, chunkTileIndex, getX, getY, goto, jump, peekdown, peekup, place, right } from "../../misc/ant.js"
+import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right } from "../../misc/ant.js"
 import { Dimensions } from "../../world/index.js"
 import { Block, Blocks } from "../block.js"
 
