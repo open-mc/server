@@ -163,12 +163,13 @@ async function play(sock, username, skin){
 		player.inv[2] = Items.oak_planks(20)
 		player.inv[3] = Items.tnt(10)
 		player.inv[4] = Items.flint_and_steel()
-		player.inv[5] = Items.obsidian(64)
-		player.inv[6] = Items.grass(32)
+		player.inv[5] = Items.grass(32)
+		player.inv[6] = Items.diamond_axe()
 		player.inv[7] = Items.diamond_pickaxe()
 		player.inv[8] = Items.diamond_shovel()
 		player.inv[9] = Items.netherrack(10)
 		player.inv[10] = Items.sandstone(10)
+		player.inv[12] = Items.obsidian(64)
 		stat('misc', 'unique_players')
 	}
 	player.interface = null; player.interfaceId = 0
