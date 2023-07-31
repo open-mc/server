@@ -1,6 +1,6 @@
-import { Entity } from "../entities/entity.js"
-import { blockevent, place, summon } from "../misc/ant.js"
-import { registerTypes } from "../utils/data.js"
+import { Entity } from '../entities/entity.js'
+import { blockevent, place, summon } from '../misc/ant.js'
+import { registerTypes } from '../utils/data.js'
 
 export class Item{
 	constructor(count = 1){

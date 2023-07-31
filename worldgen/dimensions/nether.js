@@ -1,8 +1,8 @@
-import { veins } from "../ores.js"
-import { constantBiome } from "../util/biomes.js"
-import { filler } from "../util/perlin.js"
-import { imxs32_2 } from "../util/random.js"
-import { Biomes, Blocks, air } from "../vars.js"
+import { veins } from '../ores.js'
+import { constantBiome } from '../util/biomes.js'
+import { filler } from '../util/perlin.js'
+import { imxs32_2 } from '../util/random.js'
+import { Biomes, Blocks, air } from '../vars.js'
 
 const generation = (filler) => (cx, cy) => {
 	filler(cx, cy)

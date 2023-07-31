@@ -1,4 +1,4 @@
-import { Biomes, Blocks } from "../vars.js"
+import { Biomes, Blocks } from '../vars.js'
 
 Biomes.nether = {
 	surface: null,

@@ -1,6 +1,6 @@
-import { entityMap } from "./tick.js"
-import { EVENTS } from "../entities/entity.js"
-import { Chunk } from "./chunk.js"
+import { entityMap } from './tick.js'
+import { EVENTS } from '../entities/entity.js'
+import { Chunk } from './chunk.js'
 
 export function calculateMv(e){
 	let mv = 0
@@ -46,7 +46,7 @@ export function encodeMove(e, sock, mv){
 	if(mv & 1)ebuf.double(e.x)
 	if(mv & 2)ebuf.double(e.y)
 	if(mv & 4)ebuf.float(e.dx), ebuf.float(e.dy)
-	if(mv & 8)ebuf.float(e.f), ebuf.short(e.state)
+	if(mv & 8)ebuf.float(e.f), ebuf.int(e.state)
 	if(mv & 16)ebuf.string(e.name)
 	if(mv & 32){
 		const l = e.pendingEvents.length

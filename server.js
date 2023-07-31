@@ -1,9 +1,9 @@
 import { argv, fs } from './internals.js'
 import { WebSocket, WebSocketServer } from 'ws'
-import { Dimensions, players } from './world/index.js'
+import { Dimensions, players, PERMISSIONS } from './world/index.js'
 import { chat, YELLOW } from './misc/chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './misc/incomingPacket.js'
-import { CONFIG, GAMERULES, HANDLERS, packs, PERMISSIONS, stat, STATS } from './config.js'
+import { CONFIG, GAMERULES, HANDLERS, packs, stat, STATS } from './config.js'
 import { DataReader, DataWriter } from './utils/data.js'
 import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
 import crypto from 'node:crypto'
@@ -113,7 +113,7 @@ async function play(sock, username, skin){
 		if(await queue(sock)) return sock.close()
 		sock.removeListener('close', playerLeftQueue)
 	}
-	let permissions = PERMISSIONS[username] || PERMISSIONS.default_permissions || 2
+	let permissions = PERMISSIONS[username] ?? PERMISSIONS.default_permissions ?? 2
 	if(permissions*1000 > Date.now()){
 		sock.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
 			+ Date.formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
@@ -149,9 +149,9 @@ async function play(sock, username, skin){
 		player = EntityIDs[buf.short()]()
 		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]
-		player.state = buf.short()
-		player.dx = buf.float(); player.dy = buf.float(); player.f = buf.float()
-		player.age = buf.double()
+		player._state = player.state = buf.short()
+		player._dx = player.dx = buf.float(); player.dy = player.dy = buf.float()
+		player.f = player.f = buf.float(); player.age = buf.double()
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
@@ -217,7 +217,7 @@ export const close = async function(){
 	await HANDLERS.SAVEFILE('players/' + entity.name, buf.build())
 	playersConnecting.delete(entity.name)
 	playerLeft()
-	entity.remove()
+	if(entity.world) entity.remove()
 }
 
 const message = function(_buf, isBinary){

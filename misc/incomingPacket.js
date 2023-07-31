@@ -1,12 +1,12 @@
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, mod_help } from './commands.js'
-import { CONFIG, GAMERULES, MOD, stat, statRecord } from '../config.js'
+import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from '../utils/data.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
 import { current_tps, entityMap } from '../world/tick.js'
-import { stepEntity } from '../world/physics.js'
-import { Dimensions } from '../world/index.js'
+import { fastCollision, stepEntity } from '../world/physics.js'
+import { Dimensions, MOD } from '../world/index.js'
 
 const REACH = 10
 
@@ -24,9 +24,7 @@ function withinDa(incoming, target){
 function validateMove(sock, player, buf){
 	// where the player wants to be
 	const x = buf.double() || 0, y = buf.double() || 0
-	player.state = buf.short(); let rubber = false
-	//const dx = buf.float() || 0, dy = buf.float() || 0
-
+	player.state = player.state & 0xFFFF0000 | buf.short(); let rubber = false
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
 
@@ -72,18 +70,21 @@ function validateMove(sock, player, buf){
 	if(!rubber){
 		player.dx = mx * current_tps
 		player.dy = my * current_tps
+		fastCollision(player)
+		player.impactDx = buf.float(); player.impactDy = buf.float()
 		stepEntity(player)
-	}else player.rubber()
+	}else player.rubber(), buf.double()
 }
 
 function playerMovePacket(player, buf){
+	if(!player.world) return
 	top: {
 		let t = Date.now() / 1000
 		if(t < (t = max(this.movePacketCd + 1 / current_tps, t - 2))) return
 		this.movePacketCd = t
 		if(buf.byte() != this.r || !player.chunk) return
 
-		if(!player.health) break top
+		if(player.state&0x8000) break top
 
 		validateMove(this, player, buf)
 		
@@ -191,8 +192,8 @@ function respawnPacket(player, _){
 	player.world = Dimensions[GAMERULES.spawnworld]
 	player.rubber()
 	player.damage(-Infinity, null)
+	player.state &= ~0x8000
 	player.dx = player.dy = 0
-	player.f = PI / 2
 }
 
 function openContainerPacket(player, buf){

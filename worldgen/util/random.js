@@ -1,6 +1,6 @@
 //terrain shape, ores, caves
 
-import { seed } from "../vars.js"
+import { seed } from '../vars.js'
 
 //3479348553, 1397169014
 export function imxs32_2(x, y, h = 2570712329, i = 4048968661){

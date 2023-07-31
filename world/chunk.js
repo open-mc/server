@@ -28,11 +28,11 @@ export class Chunk{
 			this.entities.push(e)
 			buf.setUint32(buf.i, e.netId)
 			buf.setUint16((buf.i += 6) - 2, e.netId / 4294967296)
-			e.name = buf.string()
-			e.state = buf.short()
-			e.dx = buf.float()
-			e.dy = buf.float()
-			e.f = buf.float()
+			e.name = e._name = buf.string()
+			e.state = e._state = buf.short()
+			e.dx = e._dx = buf.float()
+			e.dy = e._dy = buf.float()
+			e.f = e._f = buf.float()
 			e.age = buf.double()
 			if(e.savedata)buf.read(e.savedatahistory[buf.flint()] || e.savedata, e)
 		}
@@ -185,8 +185,8 @@ export class Chunk{
 		const off = 1<<32-clz32(buf.getUint8(0)>>6)
 		const buf2 = new Uint8Array(buf.byteLength - off + 9)
 		buf2[0] = 16
-		buf2[1] = x << 6 >>> 24; buf2[2] = x >> 16; buf2[3] = x >> 8; buf2[4] = x
-		buf2[5] = y << 6 >>> 24; buf2[6] = y >> 16; buf2[7] = y >> 8; buf2[8] = y
+		buf2[1] = x << 6 >>> 30; buf2[2] = x >> 16; buf2[3] = x >> 8; buf2[4] = x
+		buf2[5] = y << 6 >>> 30; buf2[6] = y >> 16; buf2[7] = y >> 8; buf2[8] = y
 		buf2.set(new Uint8Array(buf.buffer, buf.byteOffset + off, buf.byteLength - off), 9)
 		return buf2
 	}

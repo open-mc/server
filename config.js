@@ -1,24 +1,7 @@
 import { fs } from './internals.js'
 import { parse } from 'yaml'
 
-const perms = {op: 4, mod: 3, normal: 2, spectate: 1, deny: 0}
-export const OP = 4, MOD = 3, NORMAL = 2, SPECTATE = 1
 export let CONFIG
-export let PERMISSIONS
-const w = fs.watch(WORLD + "permissions.yaml")
-async function loadPermissions(){
-	try{
-		PERMISSIONS = parse(await fs.readFile(WORLD + "permissions.yaml").then(a => a.toString()).catch(e=>'default_permissions: normal'))
-		for(let i in PERMISSIONS){
-			let str = PERMISSIONS[i]
-			PERMISSIONS[i] = (perms[str.toLowerCase()] + 1 || 9) - 1
-			str = str.match(/^banned(\(([^\)]*)\))?$/)
-			if(str) PERMISSIONS[i] = round(new Date(str[2]) / 1000) || 2147483647
-		}
-	}catch(e){PERMISSIONS={};console.warn(e+'\n\n\n')}
-	w.next().then(loadPermissions)
-}
-
 
 const w2 = fs.watch(WORLD + "properties.yaml")
 const defaultConfig = parse(await fs.readFile(PATH + "default_properties.yaml").then(a => a.toString()))
@@ -86,6 +69,7 @@ default_permissions: normal`),
 }
 
 const json = a => JSON.parse(''+a)
+export const filesLoaded = task('Loading config files')
 export const [
 	GAMERULES,
 	STATS,
@@ -96,7 +80,7 @@ export const [
 	fs.readFile(WORLD + "stats.json").then(json).catch(e=>({})),
 	fs.readFile(PATH + "package.json").then(json),
 	fs.readFile(PATH + "packs.json").then(json),
-	loadConfig(), loadPermissions()
+	loadConfig()
 ])
 GAMERULES.commandlogs ??= true
 GAMERULES.spawnx ??= 0

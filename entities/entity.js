@@ -1,6 +1,9 @@
 import { Item } from '../items/item.js'
 import { DataWriter } from '../utils/data.js'
 import { current_tps, entityMap } from '../world/tick.js'
+import { deathMessages } from './deathmessages.js'
+
+export const chatImport = {chat: null}
 
 let i = -1
 
@@ -13,6 +16,7 @@ export class Entity{
 		this._world = this.world = null
 		this.dx  = this.dy  = this.f  = 0
 		this._dx = this._dy = this._f = 0
+		this.impactDx = this.impactDy = 0
 		this.chunk = null
 		this._state = this.state = 0
 		this.netId = -1
@@ -22,7 +26,7 @@ export class Entity{
 		this.pendingEvents = []
 	}
 	place(world, x, y){
-		this.x = x = ifloat(x); this.y = y = ifloat(y)
+		this.x = this._x = x = ifloat(x); this.y = this._y = y = ifloat(y)
 		if(this.netId < 0){
 			this.netId = ++i
 			entityMap.set(i, this)
@@ -38,9 +42,24 @@ export class Entity{
 	[Symbol.for('nodejs.util.inspect.custom')](){
 		return `Entities.${this.className} { x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32m${this.world ? 'Dimensions.' + this.world.id : 'null'}\x1b[m${Object.hasOwn(this, 'name') ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} }`
 	}
+	kill(cause){
+		if(this.state&0x8000)return
+		this.state |= 0x8000
+		this.rubber()
+		this.died(cause)
+		if(this.sock)
+			chatImport.chat((deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
+	}
 	remove(){
 		// Don't delete it yet, mark it for deletion
 		this.world = null
+		this._x = this._y = NaN
+	}
+	died(){
+		if(!this.sock){
+			this.world = null
+			this._x = this._y = NaN
+		}
 	}
 	give(stack){
 		if(!this.inv) return false
@@ -74,7 +93,6 @@ export class Entity{
 			for(const sock of this.chunk.sockets) buf.pipe(sock)
 		else if(this.sock) buf.pipe(this.sock)
 	}
-	died(){}
 	emit(buf){
 		if(this.chunk){
 			if(buf instanceof DataWriter)
@@ -97,6 +115,7 @@ export class Entity{
 		buf.short(this.netId / 4294967296 | 0)
 		buf.byte(this.sock.r)
 		buf.float(current_tps)
+		buf.byte(this.sock.permissions)
 		this.sock.packets.push(buf.build())
 		this.rubberMv |= mv
 	}

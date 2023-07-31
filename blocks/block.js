@@ -1,6 +1,6 @@
-import { Entities } from "../entities/entity.js"
-import { Item } from "../items/item.js"
-import { blockevent, getX, getY, place, antWorld } from "../misc/ant.js"
+import { Entities } from '../entities/entity.js'
+import { Item } from '../items/item.js'
+import { blockevent, getX, getY, place, antWorld } from '../misc/ant.js'
 
 export class Block{
 	[Symbol.for('nodejs.util.inspect.custom')](){ return `Blocks.${this.className}${this.savedata ? ' {...}' : ''}` }

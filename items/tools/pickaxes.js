@@ -1,4 +1,4 @@
-import { Item, Items } from "../item.js"
+import { Item, Items } from '../item.js'
 
 Items.diamond_pickaxe = class DiamondPickaxe extends Item{
 	breaktime(block){

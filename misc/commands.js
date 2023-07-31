@@ -1,5 +1,5 @@
-import { GAMERULES, version, MOD, OP, stat } from '../config.js'
-import { players } from '../world/index.js'
+import { GAMERULES, version, stat } from '../config.js'
+import { players, MOD, OP } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { Entities, Entity } from '../entities/entity.js'
@@ -12,6 +12,7 @@ import { started } from '../server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
+import { damageTypes } from '../entities/deathmessages.js'
 
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
@@ -201,8 +202,7 @@ export const commands = {
 	tp(a, _x, _y, d = this.world || 'overworld'){
 		if(!_y)_y=_x,_x=a,a='@s'
 		const targets = selector(a, this)
-    const {x, y, w} = parseCoords(_x, _y, d, this)
-		if(x != x || y != y)throw 'Invalid coordinates'
+    	const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
 			e.x = x, e.y = y, e.world = w, e.sock && e.rubber(X | Y)
 		if(targets.length>1)log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
@@ -388,23 +388,15 @@ export const commands = {
 		if(!tps) return 'The TPS is '+current_tps
 		setTPS(max(1, min((tps|0) || 20, 1000)))
 		for(const pl of players.values()){
-			let buf = new DataWriter()
-			buf.byte(1)
-			buf.int(pl.netId | 0)
-			buf.short(pl.netId / 4294967296 | 0)
-			buf.byte(pl.sock.r)
-			buf.float(current_tps)
-			pl.sock.packets.push(buf.build())
+			pl.sock.r--;pl.rubber(0)
 		}
 		return 'Set the TPS to '+current_tps
 	},
 	kill(t = '@s', cause = 'void'){
+		const c = damageTypes[cause] || 0
 		let i = 0
 		for(const e of selector(t, this)){
-			if(cause != 'void') e.died()
-			if(e.sock) e.damage(Infinity)
-			else e.remove()
-			i++
+			e.kill(c); i++
 		}
 		return 'Killed '+i+' entities'
 	},

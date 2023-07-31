@@ -1,6 +1,6 @@
-import { Items } from "../../items/item.js";
-import { load, peek, peekdown, place, save, up, down } from "../../misc/ant.js";
-import { Block, Blocks } from "../block.js";
+import { Items } from '../../items/item.js'
+import { load, peek, peekdown, place, save, up, down } from '../../misc/ant.js'
+import { Block, Blocks } from '../block.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0

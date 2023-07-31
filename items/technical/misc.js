@@ -1,8 +1,8 @@
-import { Blocks } from "../../blocks/block.js";
-import { GAMERULES } from "../../config.js";
-import { antChunk, jump, peek, place, right } from "../../misc/ant.js";
-import { players } from "../../world/index.js";
-import { Item, Items } from "../item.js"
+import { Blocks } from '../../blocks/block.js'
+import { GAMERULES } from '../../config.js'
+import { antChunk, jump, peek, place, right } from '../../misc/ant.js'
+import { players } from '../../world/index.js'
+import { Item, Items } from '../item.js'
 
 Items.end_portal_frame = class extends Item{
 	place(){ place(Blocks.end_portal_frame); super.use() }

@@ -1,7 +1,7 @@
-import { Blocks } from "../../blocks/block.js"
-import { Entities } from "../../entities/entity.js"
-import { peek, place, up, summon, getY, blockevent } from "../../misc/ant.js"
-import { Item, Items } from "../item.js"
+import { Blocks } from '../../blocks/block.js'
+import { Entities } from '../../entities/entity.js'
+import { peek, place, up, summon, getY, blockevent } from '../../misc/ant.js'
+import { Item, Items } from '../item.js'
 
 Items.tnt = class extends Item{
 	place(){ place(Blocks.tnt); super.use() }

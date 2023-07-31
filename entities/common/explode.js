@@ -1,7 +1,7 @@
-import { stat } from "../../config.js"
-import { optimize } from "../../internals.js"
-import { getX, getY, up, jump, peek, right, select, goto } from "../../misc/ant.js"
-import { DXDY } from "../entity.js"
+import { stat } from '../../config.js'
+import { optimize } from '../../internals.js'
+import { getX, getY, up, jump, peek, right, select, goto } from '../../misc/ant.js'
+import { DXDY } from '../entity.js'
 
 const DIAMETER = 41, LEFT = DIAMETER - 1 >>> 1
 const buffer = new Int32Array(DIAMETER * DIAMETER * 2)

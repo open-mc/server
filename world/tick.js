@@ -2,7 +2,7 @@ import { players } from '../world/index.js'
 import { DataWriter } from '../utils/data.js'
 import { Chunk } from './chunk.js'
 import { allDimensions, Dimensions } from './index.js'
-import { stepEntity } from './physics.js'
+import { fastCollision, stepEntity } from './physics.js'
 import { DEFAULT_TPS, stat, statAvg } from '../config.js'
 import { mirrorEntity } from './encodemove.js'
 
@@ -20,7 +20,7 @@ export function tick(){
 	}
 	for(const e of entityMap.values()){
 		if(!e.sock & !(!e.chunk | !e.world))
-			stepEntity(e)
+			fastCollision(e), stepEntity(e)
 		mirrorEntity(e)
 	}
 	for(const pl of players.values()){

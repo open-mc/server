@@ -1,4 +1,4 @@
-import { Biomes, Blocks } from "../vars.js";
+import { Biomes, Blocks } from '../vars.js'
 
 Biomes.snowy = {
 	surface: Blocks.snowy_grass,

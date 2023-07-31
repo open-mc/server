@@ -1,8 +1,8 @@
-import { CONFIG, GAMERULES } from "../../config.js"
-import { X, Y } from "../../entities/entity.js"
-import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right, up } from "../../misc/ant.js"
-import { Dimensions } from "../../world/index.js"
-import { Block, Blocks } from "../block.js"
+import { CONFIG, GAMERULES } from '../../config.js'
+import { X, Y } from '../../entities/entity.js'
+import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right, up } from '../../misc/ant.js'
+import { Dimensions } from '../../world/index.js'
+import { Block, Blocks } from '../block.js'
 
 Blocks.portal = class extends Block{
 	static solid = false

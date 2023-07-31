@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js'
+import { chatImport } from '../entities/entity.js'
 import { httpHost, server } from '../server.js'
 import { players } from '../world/index.js'
 import fetch from 'node-fetch'
@@ -50,6 +51,9 @@ export function chat(msg, style = 15, who = null){
 	for(const {sock} of players.values())
 		sock.send(msg)
 }
+
+// Every system has its flaws
+chatImport.chat = chat
 
 export function prefix(player, style = 0){
 	const {name} = player || server

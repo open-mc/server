@@ -1,5 +1,5 @@
-import { Items } from "../../items/item.js";
-import { Block, Blocks } from "../block.js";
+import { Items } from '../../items/item.js'
+import { Block, Blocks } from '../block.js'
 
 Blocks.netherrack = class Netherrack extends Block{
 	static breaktime = 2

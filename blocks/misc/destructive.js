@@ -1,4 +1,5 @@
 import { Entities } from '../../entities/entity.js'
+import { damageTypes } from '../../entities/deathmessages.js'
 import { Items } from '../../items/item.js'
 import { antChunk, chunkTileIndex, down, peek, peekdown, place, summon, up } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
@@ -28,5 +29,8 @@ Blocks.fire = class extends Block{
 		}else if(!b.solid){
 			place(Blocks.air)
 		}
+	}
+	touched(e){
+		e.damage?.(1, damageTypes.fire)
 	}
 }
