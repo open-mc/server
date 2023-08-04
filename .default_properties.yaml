@@ -4,6 +4,7 @@
 name: Test Server
 maxplayers: 500
 chunkloadingrange: 3 # recommended: 3
+showhealth: true # Show everyone's health on the TAB menu and server page
 
 # Gameplay stuff
 world:
@@ -46,7 +47,7 @@ generators:
 port: 27277
 # Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
 key: 
-pem: 
+cert: 
 
 # Webhook url for discord chat integration (optional)
 webhook:

@@ -37,11 +37,15 @@ export const peekpos = p => tiles ? tiles[pos = p] : Blocks.air
 export function place(bl){
 	const _t = tiles, _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
 	if(!_t) return bl()
-	/*if(_t[_pos].unset){
+	if(_t[_pos].unset){
 		_t[_pos].unset()
 		tiles = _t; world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
-	}*/
+	}
 	const block = _t[_pos] = bl()
+	if(block.set){
+		block.set()
+		tiles = _t; world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
+	}
 	for(const {tbuf} of _chunk.sockets){
 		tbuf.byte(0)
 		tbuf.int(_cx << 6 | (_pos&0b000000111111))

@@ -4,7 +4,7 @@ import { parse } from 'yaml'
 export let CONFIG
 
 const w2 = fs.watch(WORLD + "properties.yaml")
-const defaultConfig = parse(await fs.readFile(PATH + "default_properties.yaml").then(a => a.toString()))
+const defaultConfig = parse(await fs.readFile(PATH + ".default_properties.yaml").then(a => a.toString()))
 
 function clone(o){
 	if(Array.isArray(o)) return o.map(clone)
@@ -64,7 +64,7 @@ if(!await fs.exists(WORLD)){
 
 default_permissions: normal`),
 		fs.writeFile(WORLD + 'gamerules.json', '{}'),
-		fs.copyFile(PATH + 'default_properties.yaml', WORLD + 'properties.yaml')
+		fs.copyFile(PATH + '.default_properties.yaml', WORLD + 'properties.yaml')
 	])
 }
 

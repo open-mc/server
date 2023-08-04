@@ -1,19 +1,19 @@
-import { argv, fs } from './internals.js'
+import { argv, fs } from '../internals.js'
 import { WebSocket, WebSocketServer } from 'ws'
-import { Dimensions, players, PERMISSIONS } from './world/index.js'
-import { chat, YELLOW } from './misc/chat.js'
-import { PROTOCOL_VERSION, codes, onstring } from './misc/incomingPacket.js'
-import { CONFIG, GAMERULES, HANDLERS, packs, stat, STATS } from './config.js'
-import { DataReader, DataWriter } from './utils/data.js'
-import { playerLeft, playerLeftQueue, queue } from './misc/queue.js'
+import { Dimensions, players, PERMISSIONS } from '../world/index.js'
+import { chat, YELLOW } from '../misc/chat.js'
+import { PROTOCOL_VERSION, codes, onstring } from './incomingPacket.js'
+import { CONFIG, GAMERULES, HANDLERS, packs, stat, STATS } from '../config.js'
+import { DataReader, DataWriter } from '../utils/data.js'
+import { playerLeft, playerLeftQueue, queue } from '../misc/queue.js'
 import crypto from 'node:crypto'
 import { deflateSync } from 'node:zlib'
-import { entityindex } from './entities/index.js'
-import { itemindex } from './items/index.js'
-import { blockindex } from './blocks/index.js'
-import { Entities, EntityIDs } from './entities/entity.js'
-import { Items } from './items/item.js'
-import { index } from './misc/miscdefs.js'
+import { entityindex } from '../entities/index.js'
+import { itemindex } from '../items/index.js'
+import { blockindex } from '../blocks/index.js'
+import { Entities, EntityIDs } from '../entities/entity.js'
+import { Items } from '../items/item.js'
+import { index } from '../misc/miscdefs.js'
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -24,9 +24,11 @@ gnhKtGgJDdv3MweRrgkyz0aethcpcCF17xlXwszJn/Nyvc+E7+8XIRSbFglij0ei
 KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 -----END RSA PUBLIC KEY-----`
 
+const genInfo = () => ({players: ps, playerData: ds, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)], stats: STATS})
+
 const endpoints = {
 	avatar(res, i){
-		const p = players.get(i)
+		const p = players.get(i.split('?',1)[0])
 		if(!p) return void res.end('')
 		res.setHeader('content-type', 'image/png')
 		res.end(p.getAvatar())
@@ -35,9 +37,13 @@ const endpoints = {
 		res.setHeader('Location', 'https://preview.openmc.pages.dev/?' + wsHost)
 		res.writeHead(301)
 		res.end('')
+	},
+	info(res){
+		res.setHeader('content-type', 'application/json')
+		res.end(JSON.stringify(genInfo()))
 	}
 }
-const [statsHtml0, statsHtml1] = (await fs.readFile('./stats.html')).toString().split('[SERVER_INSERT]')
+const [statsHtml0, statsHtml1] = (await fs.readFile('./server/stats.html')).toString().split('[SERVER_INSERT]')
 const handler = (req, res) => {
 	if(!wsHost){
 		wsHost = (key&&pem ? 'wss://' : 'ws://') + req.headers['host']
@@ -48,7 +54,7 @@ const handler = (req, res) => {
 		res.write(statsHtml0)
 		const ps = [], ds = []
 		for(const p of players.values()) ps.push(p.name), ds.push(p.health)
-		res.write(JSON.stringify([{players: ps, playerData: ds, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)]}, STATS]))
+		res.write(JSON.stringify(genInfo()))
 		res.end(statsHtml1)
 		return
 	}
@@ -57,7 +63,7 @@ const handler = (req, res) => {
 	else res.end('404')
 }
 
-const {key, pem} = CONFIG
+const {key, cert = CONFIG.pem} = CONFIG
 export const httpServer = key && pem ? (await import('https')).createServer({
 	key: await fs.readFile(key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key),
 	cert: await fs.readFile(pem[0]=='/'||pem[0]=='~' ? pem : PATH + '../' + pem)
@@ -181,6 +187,7 @@ async function play(sock, username, skin){
 	if(dim) player.place(dim, x, y)
 	players.set(username, player)
 	sock.r = 255
+	sock.joinedAt = Date.now()
 	player.rubber()
 	sock.entity = player
 	if(!other){

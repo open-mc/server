@@ -12,8 +12,10 @@ Blocks.portal = class extends Block{
 		const d = peekdown(), u = peekup()
 		if((d != Blocks.obsidian & d != Blocks.portal) | (u != Blocks.obsidian & u != Blocks.portal)){
 			this.destroy(true, undefined)
-			antChunk.portals.remove(chunkTileIndex)
 		}
+	}
+	unset(){
+		antChunk.portals.remove(chunkTileIndex)
 	}
 	touched(e){
 		// & 1 == touched portal this tick

@@ -98,8 +98,7 @@ Date.formatTime = function(t){
 	}
 }
 
-const [info, stats] = [SERVER_INSERT];
-
+const info = [SERVER_INSERT], {stats} = info;
 stats.misc ??= {}
 stats.world ??= {}
 stats.player ??= {}
