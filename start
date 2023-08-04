@@ -13,11 +13,10 @@ if [ $? -eq 0 ]; then
 echo "$A" | grep -z -e 'ahead ' -e '\n.' &> /dev/null
 if [ $? -eq 0 ]; then
 echo "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
-read A
 else
 git pull
-node -e "console.log('\\x1b[33mUpdated server to '+require('./package.json').version)"
-fi; fi
+node -e "console.log('\\x1b[32mServer has been updated to '+require('./package.json').version+'.\\nPress enter to continue')"
+fi; read A; fi
 A=
 
 while true; do
