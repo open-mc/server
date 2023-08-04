@@ -3,8 +3,8 @@ import { PNG } from 'pngjs'
 import { fs } from '../../internals.js'
 import { Biomes, chunkBiomes } from '../vars.js'
 const biomemap = []
-biomemap.buffer = new DataView(PNG.sync.read(await fs.readFile(PATH+'worldgen/util/biomes.png')).data.buffer)
-await Promise.all((await fs.readdir(PATH+'worldgen//biomes')).map(a=>import(PATH+'worldgen/biomes/'+a)))
+biomemap.buffer = new DataView(PNG.sync.read(await fs.readFile(PATH + 'worldgen/util/biomes.png')).data.buffer)
+await Promise.all((await fs.readdir(PATH + 'worldgen//biomes')).map(a=>import(PATH + 'worldgen/biomes/'+a)))
 const biomeconvert = {
 	0x2eb300: Biomes.plains,
 	0x0048b3: Biomes.ocean,
@@ -15,7 +15,7 @@ const biomeconvert = {
 }
 for(let i = 0; i < biomemap.buffer.byteLength; i+=4){
 	const b = biomeconvert[biomemap.buffer.getUint32(i) >>> 8]
-	if(!b)console.error('\x1b[31mMissing biome mapping for color 0x'+(biomemap.buffer.getUint32(i)>>>8).toString(16).padStart(6,'0')),process.exit(0)
+	if(!b)console.error('\x1b[31mMissing biome mapping for color 0x'+(biomemap.buffer.getUint32(i)>>>8).toString(16).padStart(6,'0')),process.exit(1)
 	biomemap.push(b)
 }
 const maps = new Map()

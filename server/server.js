@@ -14,6 +14,7 @@ import { blockindex } from '../blocks/index.js'
 import { Entities, EntityIDs } from '../entities/entity.js'
 import { Items } from '../items/item.js'
 import { index } from '../misc/miscdefs.js'
+import { TLSSocket } from "tls"
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -24,10 +25,14 @@ gnhKtGgJDdv3MweRrgkyz0aethcpcCF17xlXwszJn/Nyvc+E7+8XIRSbFglij0ei
 KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 -----END RSA PUBLIC KEY-----`
 
-const genInfo = () => ({players: ps, playerData: ds, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)], stats: STATS})
+const genInfo = () => {
+	const ps = [], playerData = CONFIG.showhealth ? [] : undefined
+	for(const p of players.values()) ps.push(p.name), playerData?.push(p.health)
+	return {players: ps, playerData, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)], stats: STATS}
+}
 
 const endpoints = {
-	avatar(res, i){
+	'live-avatars'(res, i){
 		const p = players.get(i.split('?',1)[0])
 		if(!p) return void res.end('')
 		res.setHeader('content-type', 'image/png')
@@ -38,38 +43,48 @@ const endpoints = {
 		res.writeHead(301)
 		res.end('')
 	},
-	info(res){
+	'info.json'(res){
 		res.setHeader('content-type', 'application/json')
 		res.end(JSON.stringify(genInfo()))
 	}
 }
-const [statsHtml0, statsHtml1] = (await fs.readFile('./server/stats.html')).toString().split('[SERVER_INSERT]')
+Object.setPrototypeOf(endpoints, null)
+const [statsHtml0, statsHtml1] = (await fs.readFile('./server/page.html')).toString().split('[SERVER_INSERT]')
 const handler = (req, res) => {
 	if(!wsHost){
-		wsHost = (key&&pem ? 'wss://' : 'ws://') + req.headers['host']
+		// Insecure / development only
+		wsHost = 'ws://' + req.headers['host']
 		httpHost = wsHost.replace('ws', 'http')
 	}
-	const [, endpoint, i] = req.url.match(/\/?([\w_\-]+)(?:\/(.*))?/y) || []
+	const [, endpoint, i] = req.url.match(/\/([\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){
 		res.write(statsHtml0)
-		const ps = [], ds = []
-		for(const p of players.values()) ps.push(p.name), ds.push(p.health)
 		res.write(JSON.stringify(genInfo()))
 		res.end(statsHtml1)
 		return
 	}
-	const fn = endpoints[endpoint]
-	if(fn) fn(res, i, req)
-	else res.end('404')
+	if(endpoint in endpoints) return endpoints[endpoint](res, i, req)
+	return res.end('404')
 }
-
+export const PORT = argv.port || CONFIG.port || 27277
+export let wsHost = '', httpHost = ''
 const {key, cert = CONFIG.pem} = CONFIG
-export const httpServer = key && pem ? (await import('https')).createServer({
+const certFile = cert && await fs.readFile(cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert)
+export const httpServer = key && cert ? (await import('https')).createServer({
 	key: await fs.readFile(key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key),
-	cert: await fs.readFile(pem[0]=='/'||pem[0]=='~' ? pem : PATH + '../' + pem)
+	cert: certFile
 }, handler) : (await import('http')).createServer(handler)
-export const secure = !!(key && pem)
+if(key && cert){
+	const sock = new TLSSocket(null, {cert: certFile})
+	const {subject: {CN}, valid_to} = sock.getCertificate()
+	const expires = +new Date(valid_to)
+	if(expires < Date.now()) console.warn('SSL certificate has expired')
+	wsHost = 'wss://' + CN + ':' + PORT
+	httpHost = wsHost.replace('ws', 'http')
+	sock.destroy()
+} // Else it's inferred from the first connection to the server (not safe, but then neither is http)
 
+export const secure = !!(key && cert)
 export const server = new WebSocketServer({server: httpServer, perMessageDeflate: false})
 
 export let started = 0
@@ -83,10 +98,10 @@ WebSocket.prototype.logMalicious = function(reason){
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + packs.map(a=>'\0'+a).join(''))))
 
 const playersConnecting = new Set()
-export let wsHost = '', httpHost = ''
 server.on('connection', function(sock, {url, headers, socket}){
 	if(!wsHost){
-		wsHost = (key&&pem ? 'wss://' : 'ws://') + headers['host']
+		// Insecure / development only
+		wsHost = 'ws://' + headers['host']
 		httpHost = wsHost.replace('ws', 'http')
 	}
 	if(exiting) return

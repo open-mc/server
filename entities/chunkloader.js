@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js'
 import { DataWriter } from '../utils/data.js'
 
 export const ChunkLoader = T => class extends T{
-	radius = CONFIG.chunkloadingrange
+	radius = CONFIG.world.chunkloadingrange
 	place(a,b,c){
 		super.place(a,b,c)
 		this.load(floor(this.x) >> 6, floor(this.y) >> 6, this.world)

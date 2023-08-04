@@ -8,7 +8,7 @@ const defaultConfig = parse(await fs.readFile(PATH + ".default_properties.yaml")
 
 function clone(o){
 	if(Array.isArray(o)) return o.map(clone)
-	else if(typeof o === 'object'){
+	else if(o && typeof o === 'object'){
 		o = {...o}
 		for(const k in o) o[k] = clone(o[k])
 	}

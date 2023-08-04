@@ -44,7 +44,7 @@ for(let a of (''+await fs.readFile(WORLD+'/defs/itemindex.txt')).split('\n')){
 
 const GENERATORS = Object.create(null)
 const loaded = []
-for(const gen of await fs.readdir(PATH+'worldgen/dimensions'))
+for(const gen of await fs.readdir(PATH + 'worldgen/dimensions'))
 	loaded.push(import('./dimensions/'+gen).then(m => GENERATORS[gen.replace('.js','')] = {...m}))
 await Promise.all(loaded)
 

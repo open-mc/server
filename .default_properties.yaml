@@ -3,14 +3,13 @@
 # Server stuff
 name: Test Server
 maxplayers: 500
-chunkloadingrange: 3 # recommended: 3
-showhealth: true # Show everyone's health on the TAB menu and server page
 
 # Gameplay stuff
 world:
   # Change gamemode by doing /gamerule spawnGamemode <gamemode>
   seed: 6969420 # 32 bit seed
   netherscale: 16
+  chunkloadingrange: 3 # recommended: 3
 
 # Terrain generators
 generators:
@@ -46,8 +45,10 @@ generators:
 
 port: 27277
 # Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
-key: 
-cert: 
+key:
+cert:
+
+showhealth: true # Show everyone's health on the TAB menu and server page
 
 # Webhook url for discord chat integration (optional)
 webhook:

@@ -138,7 +138,7 @@ const App = () => [
 	Card(3, info.name, info.icon, info.motd),
 	H1('Players'),
 	Table(100, info.players.map((a, i) =>
-		Card(1,a, '/avatar/'+a, 'Health: '+info.playerData[i])
+		Card(1,a, '/avatar/'+a, info.playerData?'Health: '+info.playerData[i]:'')
 	)),
 	H1('Statistics'),
 	'Click on a category to expand it',

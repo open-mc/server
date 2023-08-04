@@ -21,5 +21,5 @@ export const generator = (x, y, gend, genn) => new Promise(r => {
 	gen.postMessage({x, y, d: gend, key, seed: CONFIG.world.seed, name: genn})
 	key++
 })
-gen.on('exit', () => process.exit(0))
+gen.on('exit', () => process.exit(1))
 globalThis.genprocess = gen
