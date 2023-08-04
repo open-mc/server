@@ -5,16 +5,16 @@
 cd "${0%/*}"
 
 git fetch
-$A=$(git status)
-echo "$A" | grep "Your branch is up to date with '" &> /dev/null
-if [ $? -neq 0 ]; then
-echo "$A" | grep 'nothing to commit' &> /dev/null
+$A="$(git status -sb)"
+echo "$A" | grep ", behind " &> /dev/null
 if [ $? -eq 0 ]; then
-git pull
-node -e "console.log('\\x1b[33mUpdated server to '+require('./package.json').version)"
-else
+echo "$A" | grep -z -e '\[ahead ' -e '\n.' &> /dev/null
+if [ $? -eq 0 ]; then
 echo "\033[33mYour server is not up to date. As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
 read A
+else
+git pull
+node -e "console.log('\\x1b[33mUpdated server to '+require('./package.json').version)"
 fi; fi
 A=
 
