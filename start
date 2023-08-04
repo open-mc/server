@@ -2,15 +2,17 @@
 # Script to install modules and continue running server forever
 
 # Move to folder if not already
-cd "${0%/*}"
+cd "$(dirname $0)"
+
+[ -d node_modules ] || npm i
 
 git fetch
 A="$(git status -sb)"
-echo "$A" | grep ", behind " &> /dev/null
+echo "$A" | grep 'behind ' &> /dev/null
 if [ $? -eq 0 ]; then
-echo "$A" | grep -z -e '\[ahead ' -e '\n.' &> /dev/null
+echo "$A" | grep -z -e 'ahead ' -e '\n.' &> /dev/null
 if [ $? -eq 0 ]; then
-echo "\033[33mYour server is not up to date. As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
+echo "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
 read A
 else
 git pull
@@ -18,10 +20,7 @@ node -e "console.log('\\x1b[33mUpdated server to '+require('./package.json').ver
 fi; fi
 A=
 
-[ -d node_modules ] || npm i
-
 while true; do
 node . && break
 echo "\012\033[31mServer crashed (exit code $?)"
-sleep 1
 done
