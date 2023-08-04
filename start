@@ -8,9 +8,9 @@ cd "$(dirname $0)"
 
 git fetch
 A="$(git status -sb)"
-echo "$A" | grep 'behind ' &> /dev/null
+echo "$A" | grep 'behind ' > /dev/null
 if [ $? -eq 0 ]; then
-echo "$A" | grep -z -e 'ahead ' -e '\n.' &> /dev/null
+echo "$A" | grep -z -e 'ahead ' -e '\n.' > /dev/null
 if [ $? -eq 0 ]; then
 echo "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
 else
