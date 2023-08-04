@@ -32,7 +32,7 @@ const genInfo = () => {
 }
 
 const endpoints = {
-	'live-avatars'(res, i){
+	avatar(res, i){
 		const p = players.get(i.split('?',1)[0])
 		if(!p) return void res.end('')
 		res.setHeader('content-type', 'image/png')
@@ -56,7 +56,7 @@ const handler = (req, res) => {
 		wsHost = 'ws://' + req.headers['host']
 		httpHost = wsHost.replace('ws', 'http')
 	}
-	const [, endpoint, i] = req.url.match(/\/([\w_\-]+)(?:\/(.*))?$|/y)
+	const [, endpoint, i] = req.url.match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){
 		res.write(statsHtml0)
 		res.write(JSON.stringify(genInfo()))
@@ -68,7 +68,7 @@ const handler = (req, res) => {
 }
 export const PORT = argv.port || CONFIG.port || 27277
 export let wsHost = '', httpHost = ''
-const {key, cert = CONFIG.pem} = CONFIG
+const {key, cert} = CONFIG
 const certFile = cert && await fs.readFile(cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert)
 export const httpServer = key && cert ? (await import('https')).createServer({
 	key: await fs.readFile(key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key),
