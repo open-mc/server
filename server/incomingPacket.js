@@ -2,7 +2,7 @@ import { chat, prefix } from '../misc/chat.js'
 import { anyone_help, commands, err, mod_help } from '../misc/commands.js'
 import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
-import { DataWriter } from '../utils/data.js'
+import { DataWriter } from 'dataproto'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from '../misc/ant.js'
 import { current_tps, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
@@ -211,7 +211,7 @@ function openEntityPacket(player, buf){
 	res.byte(13)
 	res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
 	res.byte(0)
-	res.pipe(player.sock)
+	player.sock.send(res.build())
 }
 function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory

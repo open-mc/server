@@ -1,5 +1,5 @@
 import { Item } from '../items/item.js'
-import { DataWriter } from '../utils/data.js'
+import { DataWriter } from 'dataproto'
 import { current_tps, entityMap } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
 
@@ -90,16 +90,16 @@ export class Entity{
 			if(c > 127) buf.byte(c), Item.encode(buf, this.items[c&127])
 			else buf.byte(c), Item.encode(buf, this.inv[c])
 		if(this.chunk)
-			for(const sock of this.chunk.sockets) buf.pipe(sock)
-		else if(this.sock) buf.pipe(this.sock)
+			for(const sock of this.chunk.sockets) sock.send(buf.build())
+		else if(this.sock) this.sock.send(buf.build())
 	}
 	emit(buf){
 		if(this.chunk){
 			if(buf instanceof DataWriter)
-				for(const sock of this.chunk.sockets) buf.pipe(sock)
+				for(const sock of this.chunk.sockets) sock.send(buf.build())
 			else for(const sock of this.chunk.sockets) sock.send(buf)
 		}else if(this.sock){
-			if(buf instanceof DataWriter) buf.pipe(this.sock)
+			if(buf instanceof DataWriter) this.sock.send(buf.build())
 			else this.sock.send(buf)
 		}
 	}

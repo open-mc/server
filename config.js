@@ -34,7 +34,7 @@ async function loadConfig(a){
 
 export const HANDLERS = {
 	//settings for custom databases
-	LOADFILE: path => fs.readFile(WORLD + path).reader(),
+	LOADFILE: path => fs.readFile(WORLD + path).then(a => a ? new DataReader(a) : null),
 	SAVEFILE: (path, data) => fs.writeFile(WORLD + path, data)
 }
 export const DEFAULT_TPS = 20

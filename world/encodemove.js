@@ -16,7 +16,7 @@ export function calculateMv(e){
 			buf.float(e.world.gx)
 			buf.float(e.world.gy)
 			buf.double(e.world.tick)
-			buf.pipe(e.sock)
+			e.sock.send(buf.build())
 		}
 		e.moved?.()
 		mv |= 256

@@ -1,5 +1,5 @@
 import { players } from '../world/index.js'
-import { DataWriter } from '../utils/data.js'
+import { DataWriter } from 'dataproto'
 import { Chunk } from './chunk.js'
 import { allDimensions, Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
@@ -26,11 +26,11 @@ export function tick(){
 	for(const pl of players.values()){
 		const {packets, ebuf, tbuf} = pl.sock
 		if(tbuf.length || tbuf.i > 1){
-			tbuf.pipe(pl.sock)
+			pl.sock.send(tbuf.build())
 			void (pl.sock.tbuf = new DataWriter()).byte(8)
 		}
 		if(ebuf.length || ebuf.i > 1){
-			ebuf.pipe(pl.sock)
+			pl.sock.send(ebuf.build())
 			void (pl.sock.ebuf = new DataWriter()).byte(20)
 		}
 		for(let i = 0; i < packets.length; i++)
@@ -45,7 +45,7 @@ function everySecond(){
 		const buf = new DataWriter()
 		buf.byte(3)
 		buf.double(pl.world ? pl.world.tick : 0)
-		buf.pipe(pl.sock)
+		pl.sock.send(buf.build())
 	}
 	stat('misc', 'age')
 }

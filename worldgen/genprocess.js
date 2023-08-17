@@ -1,5 +1,5 @@
 import { fs, parentPort } from '../internals.js'
-import { jsonToType } from '../utils/data.js'
+import { jsonToType } from 'dataproto'
 import { air, Blocks, chunk, chunkBiomes, empty, Items, setSeed } from './vars.js'
 parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
 	if(name=='void'){

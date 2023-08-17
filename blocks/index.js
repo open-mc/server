@@ -1,6 +1,6 @@
 //import all block files
 import { fs } from '../internals.js'
-import { jsonToType, typeToJson } from '../utils/data.js'
+import { jsonToType, typeToJson } from 'dataproto'
 import { Chunk } from '../world/chunk.js'
 import { BlockIDs, Blocks, Block } from './block.js'
 

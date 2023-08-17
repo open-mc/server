@@ -1,7 +1,7 @@
 import { Worker, argv } from '../internals.js'
 import { CONFIG, stat } from '../config.js'
 import { gotStats } from '../internals.js'
-import { DataReader } from '../utils/data.js'
+import { DataReader } from 'dataproto'
 const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv })
 const loaded = task('Loading WorldGen process...')
 const waiting = new Map()

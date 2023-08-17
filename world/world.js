@@ -1,7 +1,7 @@
 import { HANDLERS, stat, CONFIG } from '../config.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
-import { DataWriter } from '../utils/data.js'
+import { DataWriter } from 'dataproto'
 import { entityMap } from './tick.js'
 import { argv } from '../internals.js'
 
@@ -50,7 +50,7 @@ export class World extends Map{
 				for(const sock of ch.sockets)
 					sock.send(buf)
 			})
-		}else ch.toBuf(new DataWriter, true).pipe(sock)
+		}else sock.send(ch.toBuf(new DataWriter, true).build())
 		ch.sockets.push(sock)
 	}
 	unlink(cx, cy, sock){
@@ -107,7 +107,7 @@ export class World extends Map{
 		buf.int(y)
 		buf.short(b.id)
 		for(const sock of ch.sockets)
-			buf.pipe(sock)
+			sock.send(buf.build())
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return 'Dimensions.'+this.id+' { tick: \x1b[33m'+this.tick+'\x1b[m, chunks: '+(this.size?'(\x1b[33m'+this.size+'\x1b[m) [ ... ]':'[]')+' }'}
 	static savedatahistory = []

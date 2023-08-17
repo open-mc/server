@@ -4,7 +4,7 @@ import { Dimensions, players, PERMISSIONS } from '../world/index.js'
 import { chat, YELLOW } from '../misc/chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './incomingPacket.js'
 import { CONFIG, GAMERULES, HANDLERS, packs, stat, STATS } from '../config.js'
-import { DataReader, DataWriter } from '../utils/data.js'
+import { DataReader, DataWriter } from 'dataproto'
 import { playerLeft, playerLeftQueue, queue } from '../misc/queue.js'
 import crypto from 'node:crypto'
 import { deflateSync } from 'node:zlib'
@@ -116,14 +116,14 @@ server.on('connection', function(sock, {url, headers, socket}){
 		return sock.logMalicious('Invalid public key signature'), sock.close()
 	crypto.randomBytes(32, (err, rnd) => {
 		if(err) return sock.close()
-		sock.challenge = rnd
+		sock.challenge = Buffer.concat([Buffer.from(headers['host']+'\0'), rnd])
 		const buf = new DataWriter()
 		buf.string(CONFIG.name)
 		buf.string(CONFIG.motd[floor(random() * CONFIG.motd.length)])
 		buf.string(CONFIG.icon)
 		buf.uint8array(indexCompressed)
-		buf.uint8array(rnd)
-		buf.pipe(sock)
+		buf.uint8array(sock.challenge)
+		sock.send(buf.build())
 		sock.on('message', message)
 	})
 })
@@ -164,7 +164,7 @@ async function play(sock, username, skin){
 		return
 	}else try{
 		playersConnecting.add(username)
-		const buf = await HANDLERS.LOADFILE('players/'+username).reader()
+		const buf = await HANDLERS.LOADFILE('players/'+username).then(a => a ? new DataReader(a) : null)
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
 		player = EntityIDs[buf.short()]()

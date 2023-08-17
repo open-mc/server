@@ -1,5 +1,5 @@
 import { fs } from '../internals.js'
-import { jsonToType, typeToJson } from '../utils/data.js'
+import { jsonToType, typeToJson } from 'dataproto'
 
 const loaded = task('Loading items...')
 
