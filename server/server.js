@@ -246,7 +246,7 @@ const message = function(_buf, isBinary){
 	try{
 		const {entity} = this
 		if(!entity && this.challenge && isBinary){
-			if(_buf.length <= 1008) return
+			if(_buf.length <= 1010) return
 			if(crypto.verify('SHA256', this.challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + this.pubKey + '\n-----END RSA PUBLIC KEY-----', _buf.subarray(1010))){
 				const cli_ver = _buf.readUint16BE(0)
 				if(cli_ver < PROTOCOL_VERSION)
