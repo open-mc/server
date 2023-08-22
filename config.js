@@ -3,6 +3,12 @@ import { parse } from 'yaml'
 
 export let CONFIG
 
+export const DB = {
+	//settings for custom databases
+	LOADFILE: path => fs.readFile(WORLD + path).then(a => a ? new DataReader(a) : null),
+	SAVEFILE: (path, data) => fs.writeFile(WORLD + path, data)
+}
+
 const w2 = fs.watch(WORLD + "properties.yaml")
 const defaultConfig = parse(await fs.readFile(PATH + ".default_properties.yaml").then(a => a.toString()))
 
@@ -32,11 +38,6 @@ async function loadConfig(a){
 	w2.next().then(loadConfig)
 }
 
-export const HANDLERS = {
-	//settings for custom databases
-	LOADFILE: path => fs.readFile(WORLD + path).then(a => a ? new DataReader(a) : null),
-	SAVEFILE: (path, data) => fs.writeFile(WORLD + path, data)
-}
 export const DEFAULT_TPS = 20
 
 if(!await fs.exists(WORLD)){
@@ -45,25 +46,14 @@ if(!await fs.exists(WORLD)){
 		fs.mkdir(WORLD + 'players'),
 		fs.mkdir(WORLD + 'dimensions'),
 		fs.mkdir(WORLD + 'defs').then(() => Promise.all([
-			fs.writeFile(WORLD + 'defs/blockindex.txt', 'air'),
-			fs.writeFile(WORLD + 'defs/itemindex.txt', 'stone'),
-			fs.writeFile(WORLD + 'defs/entityindex.txt', 'player {}'),
-			fs.writeFile(WORLD + 'defs/misc.txt', '{}')
+			DB.SAVEFILE('defs/blockindex.txt', 'air'),
+			DB.SAVEFILE('defs/itemindex.txt', 'stone'),
+			DB.SAVEFILE('defs/entityindex.txt', 'player {}'),
+			DB.SAVEFILE('defs/misc.txt', '{}')
 		])),
-		fs.writeFile(WORLD + 'stats.json', `{}`),
-		fs.writeFile(WORLD + 'permissions.yaml', `# permission settings
-# possible permissions: op, mod, normal, spectate, deny, banned(ban_end)
-
-# "Spectate" players may move around, load chunks and see the world
-# but cannot place, break or otherwise interact with the world.
-# They are also not visible to other players, but do show up /list
-
-# Example permissions (without the #):
-# cyarty: op
-# zekiah: mod
-
-default_permissions: normal`),
-		fs.writeFile(WORLD + 'gamerules.json', '{}'),
+		DB.SAVEFILE('stats.json', `{}`),
+		DB.SAVEFILE('permissions.json', `{"":2}`),
+		DB.SAVEFILE('gamerules.json', '{}'),
 		fs.copyFile(PATH + '.default_properties.yaml', WORLD + 'properties.yaml')
 	])
 }
@@ -87,7 +77,9 @@ GAMERULES.spawnx ??= 0
 GAMERULES.spawny ??= 20
 GAMERULES.spawnworld ??= 'overworld'
 GAMERULES.randomtickspeed ??= 2
-GAMERULES.globalEvents ??= true
+GAMERULES.globalevents ??= true
+GAMERULES.keepinventory ??= false
+GAMERULES.mobloot ??= true
 
 export function stat(cat, name, v = 1){
 	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})

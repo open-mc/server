@@ -8,8 +8,8 @@ Entities.end_crystal = class extends Entity{
 	static gy = 0
 	health = 1
 	static maxHealth = 1
-	damage(a, b){
-		if(!(b instanceof Entity) || a < 1) return
+	damage(a, _){
+		if(a < 1) return
 		this.event(3)
 		explode(this, 180)
 	}

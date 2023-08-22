@@ -1,4 +1,4 @@
-import { HANDLERS, stat, CONFIG } from '../config.js'
+import { DB, stat, CONFIG } from '../config.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { DataWriter } from 'dataproto'
@@ -22,7 +22,7 @@ export class World extends Map{
 		let ch = super.get(k)
 		if(!ch){
 			super.set(k, ch = new Chunk(cx, cy, this))
-			HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			DB.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
@@ -40,7 +40,7 @@ export class World extends Map{
 		let ch = super.get(k)
 		if(!ch){
 			super.set(k, ch = new Chunk(cx, cy, this))
-			HANDLERS.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			DB.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
@@ -75,7 +75,7 @@ export class World extends Map{
 		if(--ch.t) return //Count down timer
 		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter).build()
-		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
+		DB.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
 			super.delete(k) //Completely unloaded with no re-loads, delete chunk
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
@@ -88,7 +88,7 @@ export class World extends Map{
 		ch.t = 0 //Whoops, chunk timer "ended"
 		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter).build()
-		HANDLERS.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
+		DB.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
 	}
 	peek(x, y, sock = null){
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)

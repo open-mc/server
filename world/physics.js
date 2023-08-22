@@ -22,7 +22,7 @@ export function stepEntity(e, dt = 1 / current_tps){
 			if(!chunk || !chunk.tiles) continue
 			for(const e2 of chunk.entities){
 				const {collisionTestPadding: ctp} = e2
-				if(e2.netId <= e.netId || e2.x + e2.width + ctp < x0 || e2.x - e2.width - ctp > x1 || e2.y + e2.height + ctp < y0 || e2.y - ctp > y1) continue
+				if(!e2.world || e2.netId <= e.netId || e2.x + e2.width + ctp < x0 || e2.x - e2.width - ctp > x1 || e2.y + e2.height + ctp < y0 || e2.y - ctp > y1) continue
 				e.touch?.(e2)
 				e2.touch?.(e)
 			}

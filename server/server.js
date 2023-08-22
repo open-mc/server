@@ -3,7 +3,7 @@ import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players, PERMISSIONS } from '../world/index.js'
 import { chat, YELLOW } from '../misc/chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './incomingPacket.js'
-import { CONFIG, GAMERULES, HANDLERS, packs, stat, STATS } from '../config.js'
+import { CONFIG, GAMERULES, DB, packs, stat, STATS } from '../config.js'
 import { DataReader, DataWriter } from 'dataproto'
 import { playerLeft, playerLeftQueue, queue } from '../misc/queue.js'
 import crypto from 'node:crypto'
@@ -134,7 +134,7 @@ async function play(sock, username, skin){
 		if(await queue(sock)) return sock.close()
 		sock.removeListener('close', playerLeftQueue)
 	}
-	let permissions = PERMISSIONS[username] ?? PERMISSIONS.default_permissions ?? 2
+	let permissions = PERMISSIONS[username] ?? PERMISSIONS['']
 	if(permissions*1000 > Date.now()){
 		sock.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
 			+ Date.formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
@@ -144,11 +144,7 @@ async function play(sock, username, skin){
 		sock.send('-11fYou are not invited to play on this server')
 		sock.close()
 		return
-	}else if(permissions == 9){
-		sock.send('-10fYour permissions were not correctly set up!\nPlease contact a server admin to fix this issue')
-		sock.close()
-		return
-	}
+	}else if(permissions > 9){ permissions = 2 }
 	let player, dim, x, y
 	let other = players.get(username)
 	if(other){
@@ -164,7 +160,7 @@ async function play(sock, username, skin){
 		return
 	}else try{
 		playersConnecting.add(username)
-		const buf = await HANDLERS.LOADFILE('players/'+username).then(a => a ? new DataReader(a) : null)
+		const buf = await DB.LOADFILE('players/'+username)
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN)return
 		player = EntityIDs[buf.short()]()
@@ -236,7 +232,7 @@ export const close = async function(){
 	buf.double(entity.age)
 	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
 	if(!exiting) chat(entity.name + ' left the game', YELLOW)
-	await HANDLERS.SAVEFILE('players/' + entity.name, buf.build())
+	await DB.SAVEFILE('players/' + entity.name, buf.build())
 	playersConnecting.delete(entity.name)
 	playerLeft()
 	if(entity.world) entity.remove()

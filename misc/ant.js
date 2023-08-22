@@ -175,7 +175,7 @@ export function select(x0, y0, x1, y1, cb){
 			const ch = (cxa == cx & cya == cy) && chunk || world.get(cxa+cya*0x4000000)
 			if(!ch || !ch.entities) continue
 			for(const e2 of ch.entities){
-				if((e2.state&0x8000) || (e2.x < x0 | e2.x > x1) || (e2.y < y0 | e2.y > y1)) continue
+				if((e2.state&0x8000 | !e2.world) || (e2.x < x0 | e2.x > x1) || (e2.y < y0 | e2.y > y1)) continue
 				cb(e2)
 			}
 		}

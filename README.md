@@ -5,8 +5,6 @@ sh server/start
 Will create 2 folders where the command is run:
 - `world` containing world data as well as config files
   - Contains `properties.yaml` which you can edit
-  - Contains `permissions.yaml` for player permissions
-  - Contains a folder `static` for the server's http homepage
 
 - `server` containing the server code, which you can edit if you are interested in modding this game
 

@@ -2,6 +2,7 @@ import { Item } from '../items/item.js'
 import { DataWriter } from 'dataproto'
 import { current_tps, entityMap } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
+import { GAMERULES } from '../config.js'
 
 export const chatImport = {chat: null}
 
@@ -49,6 +50,7 @@ export class Entity{
 		this.died(cause)
 		if(this.sock)
 			chatImport.chat((deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
+		else this.remove()
 	}
 	remove(){
 		// Don't delete it yet, mark it for deletion
@@ -56,12 +58,31 @@ export class Entity{
 		this._x = this._y = NaN
 	}
 	died(){
-		if(!this.sock){
-			this.world = null
-			this._x = this._y = NaN
+		if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
+			const changed = []
+			if(this.inv) for(let i = 0; i < this.inv.length; i++){
+				const itm = Entities.item()
+				itm.item = this.inv[i]
+				itm.dx = random() * 30 - 15
+				itm.dy = random() * 4 + 4
+				itm.place(this.world, this.x, this.y + this.height / 2)
+				this.inv[i] = null
+				changed.push(i)
+			}
+			if(this.items) for(let i = 0; i < this.items.length; i++){
+				const itm = Entities.item()
+				itm.item = this.items[i]
+				itm.dx = random() * 30 - 15
+				itm.dy = random() * 4 + 4
+				itm.place(this.world, this.x, this.y + this.height / 2)
+				this.items[i] = null
+				changed.push(i | 128)
+			}
+			this.itemschanged(changed)
 		}
 	}
 	give(stack){
+		if(!stack.count) console.trace()
 		if(!this.inv) return false
 		const changed = []
 		for(let i = 0; i < this.inv.length; i++){

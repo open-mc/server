@@ -1,5 +1,5 @@
 import { GAMERULES, version, stat } from '../config.js'
-import { players, MOD, OP } from '../world/index.js'
+import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world/index.js'
 import { Dimensions } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { Entities, Entity } from '../entities/entity.js'
@@ -136,7 +136,7 @@ function selector(a, who){
 		return [e]
 	}
 	if(a[0] == '@'){
-		if(a[1] == 's')return who instanceof Entity ? [who] : []
+		if(a[1] == 's'){if(who instanceof Entity) return [who]; else throw 'Self selector unavailable'}
 		if(a[1] == 'e')return [...entityMap.values()]
 		if(a[1] == 'n'){
 			if(!who || !entityMap.delete(who.netId))return [...entityMap.values()]
@@ -360,7 +360,7 @@ export const commands = {
 	},
 	gamerule(a, b){
 		if(!a){
-			return 'List of gamerules:\n' + Object.entries(GAMERULES).map(([k, v]) => k + ': ' + typeof v).join('\n')
+			return 'List of gamerules:\n' + Object.entries(GAMERULES).map(([k, v]) => k + ': ' + JSON.stringify(v)).join('\n')
 		}
 		a = a.toLowerCase()
 		if(!b){
@@ -420,11 +420,62 @@ export const commands = {
 		while((floor(this.y)&63|!moved) && peek().solid)
 			this.y = floor(this.y) + 1, moved = true, up()
 		if(moved) this.rubber(Y)
+	},
+	perm(u, a='default'){
+		if(this.sock.permissions < OP) throw 'You do not have permission to use /perm'
+		if(!Object.hasOwn(PERMS, a)) throw 'Invalid permission'
+		a = PERMS[a]
+		let count = ''
+		if(u[0] != '@'){
+			PERMISSIONS[u] = a
+			count = u
+			const f = players.get(u)
+			if(f) f.sock.permissions = a, f.rubber(0)
+		}else for(const f of selector(u, this)){
+			if(!f.sock | !f.name) continue
+			if(count) count = typeof count == 'string' ? 2 : count+1
+			else count = f.name
+			PERMISSIONS[f.name] = a
+			f.sock.permissions = a, f.rubber(0)
+		}
+		savePermissions()
+		return 'Set the permission of '+(typeof count=='number'?count+' players':count)+' to '+a
+	},
+	ban(u, a = 1e100){
+		a = round(Date.now()/1000+(+a??1e100))
+		let count = ''
+		if(u[0] != '@'){
+			PERMISSIONS[u] = a
+			count = u
+			const f = players.get(u)
+			if(f){
+				f.sock.permissions = a
+				f.sock.send('-119You have been banned from this server')
+				f.sock.close()
+			}
+		}else for(const f of selector(u, this)){
+			if(!f.sock | !f.name) continue
+			if(count) count = typeof count == 'string' ? 2 : count+1
+			else count = f.name
+			PERMISSIONS[f.name] = a
+			pl.sock.send('-119You have been banned from this server'), pl.sock.close()
+		}
+		savePermissions()
+		return 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString())
 	}
+}
+const PERMS = {
+	0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
+	deny: 0, spectator: 1, visitor: 1,
+	normal: 2, player: 2, get default(){return PERMISSIONS['']},
+	mod: 3, moderator: 3, staff: 3,
+	op: 4, operator: 4, admin: 4
 }
 
 //Aliases
 commands.i = commands.info
+commands.op = function(u){return commands.perm.call(this,u,OP)}
+commands.deop = function(u){return commands.perm.call(this,u,NORMAL)}
 
 export const anyone_help = {
 	help: '<cmd> -- Help for a command',
@@ -451,6 +502,10 @@ export const anyone_help = {
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
 	tps: '[tps] -- Set server-side tps',
 	spawnpoint: ['(x) (y) (dimension) -- Set the spawn point', 'tp (who) -- Teleport entities to spawn'],
+	perm: '[target] <int>|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
+	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
+	op: '[target] -- Alias for /perm [target] op',
+	deop: '[target] -- Alias for /perm [target] normal'
 }
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)

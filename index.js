@@ -1,6 +1,6 @@
 import { Dimensions, players } from './world/index.js'
 import './utils/prototypes.js'
-import { CONFIG, HANDLERS, STATS, DEFAULT_TPS, stat } from './config.js'
+import { CONFIG, DB, STATS, DEFAULT_TPS, stat, GAMERULES } from './config.js'
 import { setTPS, entityMap } from './world/tick.js'
 import { PORT, close, httpServer, secure, server } from './server/server.js'
 import { argv, ready, stats } from './internals.js'
@@ -12,7 +12,6 @@ import { Entities } from './entities/entity.js'
 import { Blocks } from './blocks/block.js'
 import { Items } from './items/item.js'
 process.stdout.write('\x1bc\x1b[3J')
-
 await ready
 task.done('Modules loaded')
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
@@ -67,10 +66,11 @@ function saveAll(cb){
 		const buf = new DataWriter()
 		buf.flint(d.constructor.savedatahistory.length)
 		buf.write(d.constructor.savedata, d)
-		promises.push(HANDLERS.SAVEFILE('dimensions/'+name+'/meta', buf.build()))
+		promises.push(DB.SAVEFILE('dimensions/'+name+'/meta', buf.build()))
 		for (const ch of d.values()) d.save(ch)
 	}
-	promises.push(HANDLERS.SAVEFILE('stats.json', JSON.stringify(STATS)))
+	promises.push(DB.SAVEFILE('stats.json', JSON.stringify(STATS)))
+	promises.push(DB.SAVEFILE('gamerules.json', JSON.stringify(GAMERULES)))
 	Promise.all(promises).then(cb)
 }
 void function timeout(){if(exiting) return; promises.length = 0; setTimeout(saveAll, 300e3, timeout)}()

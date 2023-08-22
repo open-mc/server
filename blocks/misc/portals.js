@@ -24,8 +24,8 @@ Blocks.portal = class extends Block{
 		e.flags |= 1
 		const dim = e.world == Dimensions.overworld ? Dimensions.nether : Dimensions.overworld
 		while(peekdown() == Blocks.portal) down()
-		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.netherscale : getX() * CONFIG.netherscale) | 0
-		const targetY = floor(dim == Dimensions.nether ? getY() / CONFIG.netherscale : getY() * CONFIG.netherscale) | 0
+		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.world.netherscale : getX() * CONFIG.world.netherscale) | 0
+		const targetY = floor(dim == Dimensions.nether ? getY() / CONFIG.world.netherscale : getY() * CONFIG.world.netherscale) | 0
 		const chs = [
 			dim.load(targetX - 32 >>> 6, targetY - 32 >>> 6),
 			dim.load(targetX + 32 >>> 6, targetY - 32 >>> 6),
