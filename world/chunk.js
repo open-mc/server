@@ -111,8 +111,8 @@ export class Chunk{
 			buf.byte(16)
 			buf.int(this.x)
 			buf.int(this.y)
-			buf.short(palette.length - 1)
-		}else buf.flint(Chunk.savedatahistory.length), buf.short(palette.length - 1)
+			buf.short((palette.length || 1024) - 1)
+		}else buf.flint(Chunk.savedatahistory.length), buf.short((palette.length || 1024) - 1)
 
 		for(const e of this.entities){
 			if(e.sock && !packet)continue
