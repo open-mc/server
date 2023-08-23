@@ -61,6 +61,7 @@ export class Entity{
 		if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
 			const changed = []
 			if(this.inv) for(let i = 0; i < this.inv.length; i++){
+				if(!this.inv[i]) continue
 				const itm = Entities.item()
 				itm.item = this.inv[i]
 				itm.dx = random() * 30 - 15
@@ -70,6 +71,7 @@ export class Entity{
 				changed.push(i)
 			}
 			if(this.items) for(let i = 0; i < this.items.length; i++){
+				if(!this.items[i]) continue
 				const itm = Entities.item()
 				itm.item = this.items[i]
 				itm.dx = random() * 30 - 15
@@ -82,7 +84,6 @@ export class Entity{
 		}
 	}
 	give(stack){
-		if(!stack.count) console.trace()
 		if(!this.inv) return false
 		const changed = []
 		for(let i = 0; i < this.inv.length; i++){

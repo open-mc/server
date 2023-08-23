@@ -213,6 +213,7 @@ async function play(sock, username, skin){
 }
 
 server.sock = {permissions: 4}
+server.x = 0; server.y = 0
 server.world = Dimensions.overworld
 
 export const close = async function(){

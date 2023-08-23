@@ -41,7 +41,7 @@ export function chat(msg, style = 15, who = null){
 	if(CONFIG.webhook && msg.length < 1994){
 		const wpf = CONFIG.webhook_profiles ?? true
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
-			content: !who ? '_**' + msg + '**_' : wpf ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
+			content: !who ? '***' + msg + '***' : wpf ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
 			username: wpf && who ? who.getName() : CONFIG.name,
 			avatar_url: wpf && who ? httpHost + '/avatar/' + who.name + (who.sock ? '?t=' + who.sock.joinedAt : '') : CONFIG.icon,
 			allowed_mentions: { parse: [] }, flags: 4

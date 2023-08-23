@@ -101,7 +101,11 @@ export class Chunk{
 				PM[id] = palette.length
 				palette.push(id)
 			}
-			if(palette.length == 1024) break
+			if(palette.length == 1024){
+				for(let i of palette) PM[i] = 65535
+				palette.length = 0
+				break
+			}
 		}
 		if(packet){
 			buf.byte(16)
@@ -128,45 +132,53 @@ export class Chunk{
 		buf.short(65535)
 		for(const b of this.biomes)buf.byte(b)
 
-		if(palette.length < 1024) for(const p of palette) buf.short(p)
-		//encode data
-		if(palette.length < 2);
-		else if(palette.length == 2){
-			for(let i = 0; i < 4096; i+=8){
-				buf.byte(((this.tiles[i].id == palette[1]) << 0)
-				| ((this.tiles[i + 1].id == palette[1]) << 1)
-				| ((this.tiles[i + 2].id == palette[1]) << 2)
-				| ((this.tiles[i + 3].id == palette[1]) << 3)
-				| ((this.tiles[i + 4].id == palette[1]) << 4)
-				| ((this.tiles[i + 5].id == palette[1]) << 5)
-				| ((this.tiles[i + 6].id == palette[1]) << 6)
-				| ((this.tiles[i + 7].id == palette[1]) << 7))
+		if(palette.length){
+			//encode palette
+			for(const p of palette) buf.short(p)
+
+			//encode blocks
+			if(palette.length == 1);
+			else if(palette.length == 2){
+				for(let i = 0; i < 4096; i+=8){
+					buf.byte(((this.tiles[i].id == palette[1]) << 0)
+					| ((this.tiles[i + 1].id == palette[1]) << 1)
+					| ((this.tiles[i + 2].id == palette[1]) << 2)
+					| ((this.tiles[i + 3].id == palette[1]) << 3)
+					| ((this.tiles[i + 4].id == palette[1]) << 4)
+					| ((this.tiles[i + 5].id == palette[1]) << 5)
+					| ((this.tiles[i + 6].id == palette[1]) << 6)
+					| ((this.tiles[i + 7].id == palette[1]) << 7))
+				}
+			}else if(palette.length <= 4){
+				for(let i = 0; i < 4096; i+=4){
+					buf.byte(PM[this.tiles[i].id]
+					| (PM[this.tiles[i + 1].id] << 2)
+					| (PM[this.tiles[i + 2].id] << 4)
+					| (PM[this.tiles[i + 3].id] << 6))
+				}
+			}else if(palette.length <= 16){
+				for(let i = 0; i < 4096; i+=2){
+					buf.byte(PM[this.tiles[i].id]
+					| (PM[this.tiles[i + 1].id] << 4))
+				}
+			}else if(palette.length <= 256){
+				for(let i = 0; i < 4096; i++){
+					buf.byte(PM[this.tiles[i].id])
+				}
+			}else{
+				let j = 0
+				for(let i = 0; i < 6144; i+=3, j+=2){
+					buf.byte(PM[this.tiles[j].id])
+					buf.byte(PM[this.tiles[j + 1].id])
+					buf.byte((PM[this.tiles[j].id] >> 8) | ((PM[this.tiles[j + 1].id] >> 4) & 0xF0))
+				}
 			}
-		}else if(palette.length <= 4){
-			for(let i = 0; i < 4096; i+=4){
-				buf.byte(PM[this.tiles[i].id]
-				| (PM[this.tiles[i + 1].id] << 2)
-				| (PM[this.tiles[i + 2].id] << 4)
-				| (PM[this.tiles[i + 3].id] << 6))
-			}
-		}else if(palette.length <= 16){
-			for(let i = 0; i < 4096; i+=2){
-				buf.byte(PM[this.tiles[i].id]
-				| (PM[this.tiles[i + 1].id] << 4))
-			}
-		}else if(palette.length <= 256){
-			for(let i = 0; i < 4096; i++){
-				buf.byte(PM[this.tiles[i].id])
-			}
-		}else if(palette.length < 1024){
-			let j = 0
-			for(let i = 0; i < 6144; i+=3, j+=2){
-				buf.byte(PM[this.tiles[j].id])
-				buf.byte(PM[this.tiles[j + 1].id])
-				buf.byte((PM[this.tiles[j].id] >> 8) | ((PM[this.tiles[j + 1].id] >> 4) & 0xF0))
-			}
+			// reset PM
+			for(let i of palette) PM[i] = 65535
+			palette.length = 0
 		}else for(let i = 0; i < 4096; i++)
 			buf.short(this.tiles[j].id)
+
 		//save block entities
 		for(let i = 0; i < 4096; i++){
 			let tile = this.tiles[i]
@@ -174,8 +186,6 @@ export class Chunk{
 			buf.flint(tile.savedatahistory.length)
 			buf.write(tile.savedata, tile)
 		}
-		// reset PM
-		for(let i of palette) PM[i] = 65535
 		buf.write(Chunk.savedata, this)
 
 		return buf

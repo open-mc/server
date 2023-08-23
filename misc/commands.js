@@ -229,12 +229,13 @@ export const commands = {
 			const stack = itm(c)
 			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
 			player.give(stack)
-			while(stack.count){
+			while(true){
 				const e = Entities.item()
 				if(stack.count > 255)
 					e.item = stack.constructor(255), stack.count -= 255
 				else e.item = stack
 				e.place(player.world, player.x, player.y + player.head - 0.5)
+				if(e.item == stack) break
 			}
 		}
 	},
