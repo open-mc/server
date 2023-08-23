@@ -32,6 +32,7 @@ export const STRIKETHROUGH = 128
  * @param {{getName: () => string, getAvatar: () => string}} [player] sender of chat message, primarily used to prefix the message. Setting this to their websocket object will send the message as a command output
  */
 export function chat(msg, style = 15, who = null){
+	if(who == server) who = null
 	let a = ''
 	if(style&BOLD)a+='1;'
 	if(style&ITALIC)a+='3;'
