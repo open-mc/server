@@ -146,18 +146,22 @@ server.on('connection', function(sock, {url, headers, socket}){
 		sock.send(buf.build())
 		sock.on('message', message)
 	})
+	sock.pingTime = 0
+	sock.lastPing = 0
 	sock.on('pong', pong)
-	alive.add(sock)
 })
-const alive = new WeakSet
-function pong(){ alive.add(this) }
+function pong(){
+	this.pingTime = Date.now() - this.lastPing
+	this.lastPing = 0
+}
 setInterval(() => {
 	for(const ws of server.clients){
-		if(!alive.has(ws)) ws.destroy()
-		alive.delete(ws)
+		if(ws.lastPing % 1){ ws.close(); continue }
+		if(ws.lastPing){ ws.lastPing += 0.5 }
+		ws.lastPing = Date.now()
 		ws.ping()
 	}
-}, 300e3)
+}, 10e3)
 
 async function play(sock, username, skin){
 	if(exiting) return

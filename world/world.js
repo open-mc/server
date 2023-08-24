@@ -50,7 +50,7 @@ export class World extends Map{
 				for(const sock of ch.sockets)
 					sock.send(buf)
 			})
-		}else sock.send(ch.toBuf(new DataWriter, true).build())
+		}else sock.send(ch.toBuf(new DataWriter(), true).build())
 		ch.sockets.push(sock)
 	}
 	unlink(cx, cy, sock){
@@ -74,7 +74,7 @@ export class World extends Map{
 		if(ch.t <= 0) return
 		if(--ch.t) return //Count down timer
 		let k = ch.x+ch.y*0x4000000
-		const b = ch.toBuf(new DataWriter).build()
+		const b = ch.toBuf(new DataWriter()).build()
 		DB.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
 			super.delete(k) //Completely unloaded with no re-loads, delete chunk
@@ -87,7 +87,7 @@ export class World extends Map{
 		if(ch.t <= 0) return //Already saving
 		ch.t = 0 //Whoops, chunk timer "ended"
 		let k = ch.x+ch.y*0x4000000
-		const b = ch.toBuf(new DataWriter).build()
+		const b = ch.toBuf(new DataWriter()).build()
 		DB.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
 	}
 	peek(x, y, sock = null){

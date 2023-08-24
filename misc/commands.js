@@ -293,7 +293,7 @@ export const commands = {
 		const Con = _item && Items[_item] || Item
 		let cleared = 0, count = ''
 		for(const e of selector(sel, this)){
-			if(!count && e.sock) count = player.name
+			if(!count && e.sock) count = e.name
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			let max = +_max
