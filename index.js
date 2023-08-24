@@ -2,7 +2,7 @@ import { Dimensions, players } from './world/index.js'
 import './utils/prototypes.js'
 import { CONFIG, DB, STATS, DEFAULT_TPS, stat, GAMERULES } from './config.js'
 import { setTPS, entityMap } from './world/tick.js'
-import { PORT, close, httpServer, secure, server } from './server/server.js'
+import { PORT, close, httpServer, secure, server } from './misc/server.js'
 import { argv, ready, stats } from './internals.js'
 import util from 'node:util'
 import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
@@ -23,13 +23,12 @@ httpServer.once('listening', () => {
 		if(text == 'clear') return clear()
 		if(text[0] == '/'){
 			try{
-				const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
-				if(!match) return void console.log('Slash, yes, very enlightening.')
+				const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g) || ['help']
 				for(let i = 0; i < match.length; i++){
 					const a = match[i]
 					try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 				}
-				if(!(match[0] in commands))throw 'No such command: /'+match[0]
+				if(!(match[0] in commands)) throw 'No such command: /'+match[0]
 				stat('misc', 'commands_used')
 				let res = await commands[match[0]].apply(server, match.slice(1))
 				if(res)console.log(res)

@@ -1,9 +1,9 @@
-import { chat, prefix } from '../misc/chat.js'
-import { anyone_help, commands, err, mod_help } from '../misc/commands.js'
+import { chat, prefix } from './chat.js'
+import { anyone_help, commands, err, log, mod_help } from './commands.js'
 import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from 'dataproto'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from '../misc/ant.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
 import { current_tps, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, MOD } from '../world/index.js'
@@ -327,16 +327,15 @@ export function onstring(player, text){
 	if(!(text = text.trimEnd())) return
 	if(text[0] == '/'){
 		try{
-			const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
-			if(!match) return void player.chat('Slash, yes, very enlightening.')
+			const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g) || ['help']
 			for(let i = 0; i < match.length; i++){
 				const a = match[i]
 				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 			}
-			if(!(match[0] in commands))throw 'No such command: /'+match[0]
+			if(!(match[0] in commands)) throw 'No such command: /'+match[0]
 			if(this.permissions < MOD){
-				if(!anyone_help[match[0]])throw "You do not have permission to use /"+match[0]
-			}else if(player.permission == MOD && !mod_help[match[0]])throw "You do not have permission to use /"+match[0]
+				if(!anyone_help[match[0]]) throw "You do not have permission to use /"+match[0]
+			}else if(player.permission == MOD && !mod_help[match[0]]) throw "You do not have permission to use /"+match[0]
 			stat('misc', 'commands_used')
 			let res = commands[match[0]].apply(player, match.slice(1))
 			if(res)

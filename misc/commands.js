@@ -8,7 +8,7 @@ import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 import { current_tps, setTPS, entityMap } from '../world/tick.js'
-import { started } from '../server/server.js'
+import { started } from './server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
@@ -122,13 +122,13 @@ function parseCoords(x = '~', y = '~', d, t){
 	return {x, y, w}
 }
 
-function log(who, msg){
-	if(!GAMERULES.commandlogs)return
+export function log(who, msg){
+	if(!GAMERULES.commandlogs) return msg
 	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC, who)
 }
 
 function selector(a, who){
-	if(!a)throw 'Selector missing!'
+	if(!a) throw 'Selector missing!'
 	const id = +a
 	if(id === id){
 		const e = entityMap.get(id)
@@ -137,29 +137,29 @@ function selector(a, who){
 	}
 	if(a[0] == '@'){
 		if(a[1] == 's'){if(who instanceof Entity) return [who]; else throw 'Self selector unavailable'}
-		if(a[1] == 'e')return [...entityMap.values()]
+		if(a[1] == 'e') return [...entityMap.values()]
 		if(a[1] == 'n'){
-			if(!who || !entityMap.delete(who.netId))return [...entityMap.values()]
+			if(!who || !entityMap.delete(who.netId)) return [...entityMap.values()]
 			const a = [...entityMap.values()]
 			entityMap.set(who.netId, who)
 			return a
 		}
 		const candidates = [...players.values()]
-		if(!candidates.length)throw "No targets matched selector"
-		if(a[1] == 'a')return candidates
+		if(!candidates.length) throw "No targets matched selector"
+		if(a[1] == 'a') return candidates
 		if(a[1] == 'p'){
-			if(!who || who.clients)throw "No targets matched selector"
+			if(!who || who.clients) throw "No targets matched selector"
 			const closest = candidates.winner(a => {
-				if(a.world != who.world)return -Infinity
+				if(a.world != who.world) return -Infinity
 				const dx = a.x - who.x, dy = a.y - who.y
 				return -(dx * dx + dy * dy)
 			})
 			return [closest]
 		}
-		if(a[1] == 'r')return [candidates[floor(random() * candidates.length)]]
+		if(a[1] == 'r') return [candidates[floor(random() * candidates.length)]]
 	}else{
 		const player = players.get(a)
-		if(!player)throw "No targets matched selector"
+		if(!player) throw "No targets matched selector"
 		return [player]
 	}
 	throw 'Invalid selector'
@@ -167,7 +167,7 @@ function selector(a, who){
 
 let stack = null
 export function err(e){
-	if(!e.stack)return e
+	if(!e.stack) return e
 	stack = e.stack
 	return e + '\nType /stacktrace to view full stack trace'
 }
@@ -182,7 +182,7 @@ export const commands = {
 		return a
 	},
 	say(s, ...l){
-		if(!l.length)throw 'Command usage: /say <style> <text...>\nExample: /say lime-bold Hello!'
+		if(!l.length) throw 'Command usage: /say <style> <text...>\nExample: /say lime-bold Hello!'
 		let col = 0, txt = s.includes('raw') ? l.join(' ') : prefix(this, 1) + l.join(' ')
 		for(let [m] of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
 		col += s.match(/()black|()dark[-_]?red|()dark[-_]?green|()(?:gold|dark[-_]?yellow)|()dark[-_]?blue|()dark[-_]?purple|()dark[-_]?(?:aqua|cyan)|()(?:light[-_]?)?gr[ea]y|()dark[-_]?gr[ea]y|()red|()(?:green|lime)|()yellow|()blue|()purple|()(?:aqua|cyan)|$/).slice(1).indexOf('') & 15
@@ -192,12 +192,12 @@ export const commands = {
 		if(!b)b = a, a = '@s'
 		const targets = selector(a, this)
 		const [target, _] = selector(b, this)
-		if(_ || !target)throw 'Selector must return exactly 1 target'
+		if(_ || !target) throw 'Selector must return exactly 1 target'
 		const {x, y, world} = target
 		for(const e of targets)
 			e.x = x, e.y = y, e.world = world, e.sock && e.rubber(X | Y)
-		if(targets.length>1)log(this, `Teleported ${targets.length} entities to ${target.name}`)
-		else log(this, `Teleported ${targets[0].name} to ${target.name}`)
+		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to ${target.name}`)
+		else return log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
 	tp(a, _x, _y, d = this.world || 'overworld'){
 		if(!_y)_y=_x,_x=a,a='@s'
@@ -205,13 +205,13 @@ export const commands = {
     	const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
 			e.x = x, e.y = y, e.world = w, e.sock && e.rubber(X | Y)
-		if(targets.length>1)log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
-		else log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
+		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
+		else return log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')
 		const targets = selector(a, this)
-		if(targets.length > 1 && this.sock.permissions < OP)throw 'Moderators may not kick more than 1 person at a time'
+		if(targets.length > 1 && this.sock.permissions < OP) throw 'Moderators may not kick more than 1 person at a time'
 		stat('misc', 'player_kicks', targets.length)
 		let kicked = 0
 		for(const pl of targets){
@@ -220,12 +220,16 @@ export const commands = {
 			pl.sock.close()
 			kicked++
 		}
-		return `Kicked ${kicked} player(s)`
+		return log(this, `Kicked ${kicked} player(s)`)
 	},
-	give(sel, item, count = '1', dat = '{}'){
-		let itm = Items[item], c = max(count | 0, 1)
-		if(!itm)throw 'No such item: '+item
+	give(sel, item, amount = '1', dat = '{}'){
+		let itm = Items[item], c = max(amount | 0, 1)
+		if(!itm) throw 'No such item: '+item
+		let count = ''
 		for(const player of selector(sel, this)){
+			if(!count && player.sock) count = player.name
+			else if(typeof count == 'string') count = 2-!count
+			else count++
 			const stack = itm(c)
 			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
 			player.give(stack)
@@ -238,14 +242,15 @@ export const commands = {
 				if(e.item == stack) break
 			}
 		}
+		return log(this, 'Gave '+(typeof count=='number'?count+' players':count)+' '+item+'*'+c)
 	},
 	summon(type, _x = '~', _y = '~', data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
-		if(!(type in Entities))throw 'No such entity: ' + type
+		if(!(type in Entities)) throw 'No such entity: ' + type
 		const e = Entities[type]()
 		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
 		e.place(w, x, y)
-		return 'Summoned a(n) '+type+' with an ID of '+e.netId
+		return log(this, 'Summoned a(n) '+type+' with an ID of '+e.netId)
 	},
 	mutate(sel, data){
 		let i = 0
@@ -254,24 +259,24 @@ export const commands = {
 			snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
 			if(e.rubber) e.rubber()
 		}
-		return 'Successfully mutated '+i+' entities'
+		return log(this, 'Successfully mutated '+i+' entities')
 	},
 	setblock(_x = '~', _y = '~', type, data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
-		if(!(type in Blocks))throw 'No such block: ' + type
+		if(!(type in Blocks)) throw 'No such block: ' + type
 		const b = Blocks[type]()
 		snbt(data, 0, b, b.savedata)
 		goto(floor(x), floor(y), w)
 		place(b)
-		return 'Set block at ('+(floor(x)|0)+', '+(floor(y)|0)+')'
+		return log(this, 'Set block at ('+(floor(x)|0)+', '+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
 	},
 	fill(_x, _y, _x2, _y2, type, d = this.world || 'overworld'){
 		let n = performance.now()
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
 		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(x, y, w)
-		if(x2 < 0 || y2 < 0)return;
-		if(!(type in Blocks))throw 'No such block: ' + type
+		if(x2 < 0 || y2 < 0) return;
+		if(!(type in Blocks)) throw 'No such block: ' + type
 		const b = Blocks[type]
 		for(y = 0; y != y2+1; y=(y+1)|0){
 			for(x = 0; x != x2+1; x=(x+1)|0){
@@ -282,12 +287,15 @@ export const commands = {
 		}
 		n = performance.now() - n
 		const count = x2*y2+x2+y2+1
-		return 'Filled '+count+' blocks' + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : '')
+		return log(this, 'Filled '+count+' blocks with ' + type + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : ''))
 	},
 	clear(sel, _item, _max = '2147483647'){
 		const Con = _item && Items[_item] || Item
-		let cleared = 0, es = 0
+		let cleared = 0, count = ''
 		for(const e of selector(sel, this)){
+			if(!count && e.sock) count = player.name
+			else if(typeof count == 'string') count = 2-!count
+			else count++
 			let max = +_max
 			const changed = []
 			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
@@ -304,10 +312,10 @@ export const commands = {
 				if(item.count <= max)max -= item.count, e.items[i] = null
 				else item.count -= max, max = 0
 			}
-			cleared += +_max - max; es++
+			cleared += +_max - max
 			e.itemschanged(changed)
 		}
-		log(this, `Cleared a total of ${cleared} items from ${es} entities`)
+		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)
 	},
 	help(c){
 		const cmds = this.sock.permissions == MOD ? mod_help : this.sock.permissions == OP ? help : anyone_help
@@ -320,7 +328,7 @@ export const commands = {
 		}
 	},
 	stacktrace(){
-		if(!stack)return 'No stack trace found...'
+		if(!stack) return 'No stack trace found...'
 		console.warn(stack)
 		return stack
 	},
@@ -331,33 +339,32 @@ export const commands = {
 			return `This dimension is on tick ${d.tick}\nThe day is ${floor((d.tick + 7000) / 24000)} and the time is ${floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
 		}else if(time[0] == '+' || time[0] == '-'){
 			let t = d.tick + +time
-			if(t < 0)t = (t % 24000 + 24000) % 24000
-			if(t != t)throw `'${time}' is not a valid number`
+			if(t < 0) t = (t % 24000 + 24000) % 24000
+			if(t != t) throw `'${time}' is not a valid number`
 			d.tick = t
-			return 'Set the time to '+t
 		}else if(time[0] >= '0' && time[0] <= '9'){
 			const t = +time
-			if(!(t >= 0))throw `'${time}' is not a valid number`
+			if(!(t >= 0)) throw `'${time}' is not a valid number`
 			d.tick = t
-			return 'Set the time to '+t
+		}else{
+			let t;
+			switch(time){
+				case 'day': t = 1800; break
+				case 'noon': t = 6000; break
+				case 'afternoon': t = 9000; break
+				case 'sunset': t = 13800; break
+				case 'night': t = 15600; break
+				case 'midnight': t = 18000; break
+				case 'dark': t = 22000; break
+				case 'sunrise': t = 0; break
+				default:
+				throw "'invalid option: '"+time+"'"
+			}
+			t = (d.tick - t) % 24000
+			if(t >= 12000)d.tick += (24000 - t)
+			else d.tick -= t
 		}
-		let t;
-		switch(time){
-			case 'day': t = 1800; break
-			case 'noon': t = 6000; break
-			case 'afternoon': t = 9000; break
-			case 'sunset': t = 13800; break
-			case 'night': t = 15600; break
-			case 'midnight': t = 18000; break
-			case 'dark': t = 22000; break
-			case 'sunrise': t = 0; break
-			default:
-			throw "'invalid option: '"+time+"'"
-		}
-		t = (d.tick - t) % 24000
-		if(t >= 12000)d.tick += (24000 - t)
-		else d.tick -= t
-		return 'Set the time to '+time
+		return log(this, 'Set the '+d.id+' time to '+d.tick)
 	},
 	gamerule(a, b){
 		if(!a){
@@ -374,24 +381,24 @@ export const commands = {
 			case 'string': GAMERULES[a] = c; break
 			default: throw 'No such gamerule: ' + a
 		}
-		return 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a])
+		return log(this, 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a]))
 	},
 	spawnpoint(x='~',y='~',d=this.world||'overworld'){
 		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
 			return commands.tp.call(this, y || '@s', GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
 		void ({x: GAMERULES.spawnx, y: GAMERULES.spawny, w: {id: GAMERULES.spawnworld}} = parseCoords(x,y,d,this))
-		return 'Set the spawn point successfully!'
+		return log(this, `Set the spawn point to (${GAMERULES.spawnx.toFixed(2)}, ${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime spent on this server: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime you\'ve spent on this server: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+current_tps
 		setTPS(max(1, min((tps|0) || 20, 1000)))
 		for(const pl of players.values()){
-			pl.sock.r--;pl.rubber(0)
+			pl.sock.r--; pl.rubber(0)
 		}
-		return 'Set the TPS to '+current_tps
+		return log(this, 'Set the TPS to '+current_tps)
 	},
 	kill(t = '@s', cause = 'void'){
 		const c = damageTypes[cause] || 0
@@ -399,7 +406,7 @@ export const commands = {
 		for(const e of selector(t, this)){
 			e.kill(c); i++
 		}
-		return 'Killed '+i+' entities'
+		return log(this, 'Killed '+i+' entities')
 	},
 	async regen(_x, _y, type, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
@@ -421,6 +428,7 @@ export const commands = {
 		while((floor(this.y)&63|!moved) && peek().solid)
 			this.y = floor(this.y) + 1, moved = true, up()
 		if(moved) this.rubber(Y)
+		return log(this, `Regenerated chunk located at (${x<<6}, ${y<<6}) in the ${w.id}`)
 	},
 	perm(u, a='default'){
 		if(this.sock.permissions < OP) throw 'You do not have permission to use /perm'
@@ -440,7 +448,7 @@ export const commands = {
 			f.sock.permissions = a, f.rubber(0)
 		}
 		savePermissions()
-		return 'Set the permission of '+(typeof count=='number'?count+' players':count)+' to '+a
+		return log(this, 'Set the permission of '+(typeof count=='number'?count+' players':count)+' to '+a)
 	},
 	ban(u, a = 1e100){
 		a = round(Date.now()/1000+(+a??1e100))
@@ -462,9 +470,10 @@ export const commands = {
 			pl.sock.send('-119You have been banned from this server'), pl.sock.close()
 		}
 		savePermissions()
-		return 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString())
+		return log(this, 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString()))
 	}
 }
+Object.setPrototypeOf(commands, null)
 const PERMS = {
 	0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 	deny: 0, spectator: 1, visitor: 1,

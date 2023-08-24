@@ -7,7 +7,7 @@
 	"dependencies": {
 		"basic-repl": "^2.2.1",
 		"dataproto": "^1.0.8",
-		"fs-extra": "^10.1.0",
+		"mime-types": "^2.1.35",
 		"node": "^19.8.1",
 		"node-fetch": "^3.3.0",
 		"pngjs": "^6.0.0",

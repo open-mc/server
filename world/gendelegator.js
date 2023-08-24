@@ -8,8 +8,8 @@ const waiting = new Map()
 let key = 0
 
 gen.on('message', function({key, buf}){
-	if(key == -1)return loaded('WorldGen process loaded')
-	else if(key == -2)return gotStats(1,arguments[0])
+	if(key == -1) return loaded('WorldGen process loaded')
+	else if(key == -2) return gotStats(1,arguments[0])
 	stat('world', 'chunks_generated')
 	stat('world', 'chunk_revisits', -1)
 	waiting.get(key)(new DataReader(buf))

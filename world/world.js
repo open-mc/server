@@ -55,7 +55,7 @@ export class World extends Map{
 	}
 	unlink(cx, cy, sock){
 		let ch = super.get((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000)
-		if(!ch)return false
+		if(!ch) return false
 		ch.sockets.remove(sock)
 		const {ebuf} = sock
 		for(let e of ch.entities){
@@ -92,14 +92,14 @@ export class World extends Map{
 	}
 	peek(x, y, sock = null){
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
-		if(!ch || ch instanceof Promise)return null
-		if(sock && !ch.sockets.includes(sock))return null
+		if(!ch || ch instanceof Promise) return null
+		if(sock && !ch.sockets.includes(sock)) return null
 		return ch.tiles[(x & 63) + ((y & 63) << 6)]
 	}
 	chunk(x, y){ return super.get((x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000) }
 	put(x, y, b){
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
-		if(!ch)return
+		if(!ch) return
 		ch.tiles[(x & 63) + ((y & 63) << 6)] = b
 		let buf = new DataWriter()
 		buf.byte(8)

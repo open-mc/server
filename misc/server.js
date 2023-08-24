@@ -1,11 +1,11 @@
 import { argv, fs } from '../internals.js'
 import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players, PERMISSIONS } from '../world/index.js'
-import { chat, YELLOW } from '../misc/chat.js'
+import { chat, YELLOW } from './chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './incomingPacket.js'
 import { CONFIG, GAMERULES, DB, packs, stat, STATS } from '../config.js'
 import { DataReader, DataWriter } from 'dataproto'
-import { playerLeft, playerLeftQueue, queue } from '../misc/queue.js'
+import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import crypto from 'node:crypto'
 import { deflateSync } from 'node:zlib'
 import { entityindex } from '../entities/index.js'
@@ -13,8 +13,9 @@ import { itemindex } from '../items/index.js'
 import { blockindex } from '../blocks/index.js'
 import { Entities, EntityIDs } from '../entities/entity.js'
 import { Items } from '../items/item.js'
-import { index } from '../misc/miscdefs.js'
-import { TLSSocket } from "tls"
+import { index } from './miscdefs.js'
+import { TLSSocket } from 'tls'
+import { contentType } from 'mime-types'
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -43,13 +44,25 @@ const endpoints = {
 		res.writeHead(301)
 		res.end('')
 	},
+	static(res, url=''){
+		res.setHeader('content-type', contentType(url))
+		url = PATH+decodeURI('static/'+url).replace(/^\/+|\/+$/g,'')
+		fs.createReadStream(url).on('error', () => {
+			res.setHeader('content-type', 'text/html')
+			fs.createReadStream(url+'/index.html').on('error', () => {
+				res.setHeader('content-type', 'text/plain')
+				res.statusCode = 404
+				res.end('404')
+			}).pipe(res)
+		}).pipe(res)
+	},
 	'info.json'(res){
 		res.setHeader('content-type', 'application/json')
 		res.end(JSON.stringify(genInfo()))
 	}
 }
 Object.setPrototypeOf(endpoints, null)
-const [statsHtml0, statsHtml1] = (await fs.readFile('./server/page.html')).toString().split('[SERVER_INSERT]')
+const [statsHtml0, statsHtml1] = (await fs.readFile(PATH+'/misc/index.html')).toString().split('[[SERVER_INSERT]]')
 const handler = (req, res) => {
 	if(!wsHost){
 		// Insecure / development only
@@ -63,7 +76,12 @@ const handler = (req, res) => {
 		res.end(statsHtml1)
 		return
 	}
-	if(endpoint in endpoints) return endpoints[endpoint](res, i, req)
+	try{
+		if(endpoint in endpoints) return endpoints[endpoint](res, i, req)
+	}catch(e){
+		if(argv.log)
+			console.warn(e)
+	}
 	return res.end('404')
 }
 export const PORT = argv.port || CONFIG.port || 27277
@@ -79,7 +97,9 @@ if(key && cert){
 	const {subject: {CN}, valid_to} = sock.getCertificate()
 	const expires = +new Date(valid_to)
 	if(expires < Date.now()) console.warn('SSL certificate has expired')
-	wsHost = 'wss://' + CN + ':' + PORT
+	wsHost = argv.host ?? CONFIG.host ?? CN.split(',').find(a=>!a.includes('*'))
+	if(!wsHost) throw "Unable to determine host name, which is required for secure servers. Specify one via -host=<host> as a command line argument, or add a property 'host' in properties.yaml\n"
+	wsHost = 'wss://' + wsHost + ':' + PORT
 	httpHost = wsHost.replace('ws', 'http')
 	sock.destroy()
 } // Else it's inferred from the first connection to the server (not safe, but then neither is http)
@@ -106,7 +126,7 @@ server.on('connection', function(sock, {url, headers, socket}){
 	}
 	if(exiting) return
 	let [, username, pubKey, authSig] = url.split('/').map(decodeURIComponent)
-	if(!username || !pubKey || !authSig)return sock.logMalicious('Malformed Connection'), sock.close()
+	if(!username || !pubKey || !authSig) return sock.logMalicious('Malformed Connection'), sock.close()
 	sock.entity = null
 	sock.username = username
 	sock.packets = []
@@ -126,7 +146,19 @@ server.on('connection', function(sock, {url, headers, socket}){
 		sock.send(buf.build())
 		sock.on('message', message)
 	})
+	sock.on('pong', pong)
+	alive.add(sock)
 })
+const alive = new WeakSet
+function pong(){ alive.add(this) }
+setInterval(() => {
+	for(const ws of server.clients){
+		if(!alive.has(ws)) ws.destroy()
+		alive.delete(ws)
+		ws.ping()
+	}
+}, 300e3)
+
 async function play(sock, username, skin){
 	if(exiting) return
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
@@ -162,7 +194,7 @@ async function play(sock, username, skin){
 		playersConnecting.add(username)
 		const buf = await DB.LOADFILE('players/'+username)
 		playersConnecting.delete(username)
-		if(sock.readyState !== sock.OPEN)return
+		if(sock.readyState !== sock.OPEN) return
 		player = EntityIDs[buf.short()]()
 		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]

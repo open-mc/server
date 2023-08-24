@@ -136,7 +136,7 @@ export class DataWriter extends Array{
 			else{
 				len = v.length
 				if(len > 0x3FFF){
-					if(len > 0x7FFFFFFF)throw new RangeError('Encoded arrays may not have more than 2147483647 items')
+					if(len > 0x7FFFFFFF) throw new RangeError('Encoded arrays may not have more than 2147483647 items')
 					else buf.setUint32((this.i += 4) - 4, len | 0x80000000)
 				}else if(len > 0x3F)buf.setUint16((this.i += 2) - 2, len | 0x4000)
 				else buf.setUint8(this.i++, len)
@@ -165,7 +165,7 @@ export class DataWriter extends Array{
 	flint(n){
 		if(this.i > this.cur.byteLength - 4)this.allocnew()
 		if(n > 0x3FFF){
-			if(n > 0x7FFFFFFF)throw new RangeError('n > 2147483647')
+			if(n > 0x7FFFFFFF) throw new RangeError('n > 2147483647')
 			else this.cur.setUint32((this.i += 4) - 4, n | 0x80000000)
 		}else if(n > 0x3F)this.cur.setUint16((this.i += 2) - 2, n | 0x4000)
 		else this.cur.setUint8(this.i++, n)
@@ -175,7 +175,7 @@ export class DataWriter extends Array{
 		const len = v.length
 		const buf = this.cur
 		if(len > 0x3FFF){
-			if(len > 0x7FFFFFFF)throw new RangeError('Encoded strings may not have more than 2147483647 characters')
+			if(len > 0x7FFFFFFF) throw new RangeError('Encoded strings may not have more than 2147483647 characters')
 			else buf.setUint32((this.i += 4) - 4, len | 0x80000000)
 		}else if(len > 0x3F)buf.setUint16((this.i += 2) - 2, len | 0x4000)
 		else buf.setUint8(this.i++, len)
@@ -201,7 +201,7 @@ export class DataWriter extends Array{
 		const len = encoded.length
 		const buf = this.cur
 		if(len > 0x3FFF){
-			if(len > 0x7FFFFFFF)throw new RangeError('Encoded strings may not have more than 2147483647 characters')
+			if(len > 0x7FFFFFFF) throw new RangeError('Encoded strings may not have more than 2147483647 characters')
 			else buf.setUint32((this.i += 4) - 4, len | 0x80000000)
 		}else if(len > 0x3F)buf.setUint16((this.i += 2) - 2, len | 0x4000)
 		else buf.setUint8(this.i++, len)

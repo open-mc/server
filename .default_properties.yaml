@@ -55,7 +55,7 @@ webhook:
 # Display a different discord avatar and username for each player when chatting
 webhook_profiles: true
 
-magic_word: bread # Home page will count how often this word is said in chat
+magic_word: hi # Home page will count how often this word is said in chat
 
 # Related to server list and disconnect screen
 

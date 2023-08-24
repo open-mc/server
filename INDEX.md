@@ -84,7 +84,7 @@ function  test( b ,x= 1 ) {
 //e.g the above code could've been like this:
 function test(b, x = 1){
 	let count = 1
-	if (count == x)return true
+	if(count == x) return true
 	if(easyToRead(0 & also(nice.to(lookAt))))
 		thisIsFine() & wrapped & notLongerThan(100*chars) => code.shouldBe(likeThis)
 }

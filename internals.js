@@ -1,6 +1,7 @@
-import { promises as fs, exists } from 'node:fs'
+import { promises as fs, exists, createReadStream, createWriteStream } from 'node:fs'
 fs.exists = a => new Promise(r => exists(a, r))
-
+fs.createReadStream = createReadStream
+fs.createWriteStream = createWriteStream
 export { Worker, parentPort } from 'node:worker_threads'
 import { parentPort } from 'node:worker_threads'
 export { fs }

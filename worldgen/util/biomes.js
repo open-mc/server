@@ -22,7 +22,7 @@ const maps = new Map()
 const t = new Float32Array(18)
 export function biomesheet(x){
 	let sheet = maps.get(x)
-	if(sheet)return sheet
+	if(sheet) return sheet
 	sheet = new Uint8ClampedArray(258)
 	let g0 = imxs32(x, -994417718), g1 = imxs32(x, 65013760)
 	let g2 = imxs32(x + 1, -994417718)

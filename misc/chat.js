@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js'
 import { chatImport } from '../entities/entity.js'
-import { httpHost, server } from '../server/server.js'
+import { httpHost, server } from './server.js'
 import { players } from '../world/index.js'
 import fetch from 'node-fetch'
 
