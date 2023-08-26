@@ -16,6 +16,7 @@ import { Items } from '../items/item.js'
 import { index } from './miscdefs.js'
 import { TLSSocket } from 'tls'
 import { contentType } from 'mime-types'
+import { actualTPS, currentTPS } from '../world/tick.js'
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo
@@ -163,6 +164,29 @@ setInterval(() => {
 	}
 }, 10e3)
 
+function sendTabMenu(encodePlayers = false){
+	const buf = new DataWriter()
+	buf.byte(4)
+	buf.string('1fYou are playing on '+wsHost.replace(/wss?:\/\//y, ''))
+	buf.string(`2${actualTPS>=currentTPS*0.8?'a':actualTPS>=currentTPS/2?'b':'9'}TPS: ${actualTPS.toFixed(2)}`)
+	if(encodePlayers){
+		buf.flint(players.size)
+		for(const pl of players.values()){
+			buf.string(pl.name)
+			if(pl.skin){
+				for(let i = 396; i < 1068; i += 84)
+					buf.uint8array(new Uint8Array(pl.skin.buffer, pl.skin.byteOffset + i, 24), 24)
+			}else for(let i = 0; i < 24; i++) buf.double(0)
+			buf.byte(pl.health)
+			buf.short(Math.min(65535, pl.sock.pingTime))
+		}
+	}
+	const b = buf.build()
+	for(const pl of players.values()) pl.sock.send(b)
+}
+
+setInterval(sendTabMenu, 2000)
+
 async function play(sock, username, skin){
 	if(exiting) return
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
@@ -246,6 +270,7 @@ async function play(sock, username, skin){
 	sock.tbuf.byte(8)
 	sock.on('close', close)
 	sock.on('error', e => sock.logMalicious('Caused an error: \n'+e.stack))
+	sendTabMenu(true)
 }
 
 server.sock = {permissions: 4}
@@ -273,6 +298,7 @@ export const close = async function(){
 	playersConnecting.delete(entity.name)
 	playerLeft()
 	if(entity.world) entity.remove()
+	sendTabMenu()
 }
 
 const message = function(_buf, isBinary){

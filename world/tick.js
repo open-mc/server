@@ -3,14 +3,13 @@ import { DataWriter } from 'dataproto'
 import { Chunk } from './chunk.js'
 import { allDimensions, Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
-import { DEFAULT_TPS, stat, statAvg } from '../config.js'
+import { stat, statAvg, STATS } from '../config.js'
 import { mirrorEntity } from './encodemove.js'
 
-export let current_tps = DEFAULT_TPS
+export let currentTPS = 0
 export const entityMap = new Map()
-
+export let actualTPS = currentTPS
 export function tick(){
-	if(exiting) return
 	for(const w of allDimensions){
 		w.tick++
 		for(const ch of Dimensions[w].values()){
@@ -37,9 +36,7 @@ export function tick(){
 			pl.sock.send(packets[i])
 		packets.length = 0
 	}
-	statAvg('misc', 'tps', -1000 / (lastTick - (lastTick = performance.now())))
 }
-
 function everySecond(){
 	for(const pl of players.values()){
 		const buf = new DataWriter()
@@ -50,12 +47,23 @@ function everySecond(){
 	stat('misc', 'age')
 }
 let lastTick = 0
-let tickTimer = null, timer2 = null
+let timer = null
 export function setTPS(a){
-	current_tps = a
+	currentTPS = actualTPS = a
 	lastTick = performance.now()
-	clearInterval(tickTimer)
-	tickTimer = setInterval(tick, 1000 / a)
-	clearInterval(timer2)
-	timer2 = setInterval(everySecond, 1000)
+	clearInterval(timer)
+	timer = setInterval(everySecond, 1000)
 }
+
+globalThis.exiting = false
+setTimeout(function s(){
+	setImmediate(s)
+	const mspt = 1000 / currentTPS
+	const now = performance.now()
+	if(exiting || lastTick + mspt >= now) return
+	const dt = Math.floor((now - lastTick) / mspt)
+	lastTick += dt*mspt
+	actualTPS += (currentTPS/dt - actualTPS)/currentTPS/2
+	statAvg('misc', 'tps', currentTPS/dt)
+	tick()
+})

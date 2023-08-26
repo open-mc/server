@@ -1,8 +1,8 @@
 import { optimize } from '../internals.js'
 import { goto, load, peekat, save } from '../misc/ant.js'
-import { current_tps } from './tick.js'
+import { currentTPS } from './tick.js'
 
-export function stepEntity(e, dt = 1 / current_tps){
+export function stepEntity(e, dt = 1 / currentTPS){
 	if(e.state & 1)e.dy = 0
 	else{
 		e.dy += dt * e.world.gy * e.gy
@@ -33,7 +33,7 @@ export function stepEntity(e, dt = 1 / current_tps){
 }
 
 export const EPSILON = .0001
-export function fastCollision(e, dt = 1 / current_tps){
+export function fastCollision(e, dt = 1 / currentTPS){
 	const dx = e.dx * dt, dy = e.dy * dt
 	const x = e.x, y = e.y
 	e.state &= 0xFFFF

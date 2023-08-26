@@ -1,6 +1,6 @@
 import { Item } from '../items/item.js'
 import { DataWriter } from 'dataproto'
-import { current_tps, entityMap } from '../world/tick.js'
+import { currentTPS, entityMap } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
 import { GAMERULES } from '../config.js'
 
@@ -136,7 +136,7 @@ export class Entity{
 		buf.int(this.netId | 0)
 		buf.short(this.netId / 4294967296 | 0)
 		buf.byte(this.sock.r)
-		buf.float(current_tps)
+		buf.float(currentTPS)
 		buf.byte(this.sock.permissions)
 		this.sock.packets.push(buf.build())
 		this.rubberMv |= mv

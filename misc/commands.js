@@ -7,7 +7,7 @@ import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { Blocks } from '../blocks/block.js'
-import { current_tps, setTPS, entityMap } from '../world/tick.js'
+import { currentTPS, setTPS, entityMap } from '../world/tick.js'
 import { started } from './server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
@@ -390,15 +390,15 @@ export const commands = {
 		return log(this, `Set the spawn point to (${GAMERULES.spawnx.toFixed(2)}, ${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime you\'ve spent on this server: ' + Date.formatTime(this.age * 1000 / current_tps) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime you\'ve spent on this server: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tps(tps){
-		if(!tps) return 'The TPS is '+current_tps
+		if(!tps) return 'The TPS is '+currentTPS
 		setTPS(max(1, min((tps|0) || 20, 1000)))
 		for(const pl of players.values()){
 			pl.sock.r--; pl.rubber(0)
 		}
-		return log(this, 'Set the TPS to '+current_tps)
+		return log(this, 'Set the TPS to '+currentTPS)
 	},
 	kill(t = '@s', cause = 'void'){
 		const c = damageTypes[cause] || 0

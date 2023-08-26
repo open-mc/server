@@ -4,7 +4,7 @@ import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from 'dataproto'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
-import { current_tps, entityMap } from '../world/tick.js'
+import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, MOD } from '../world/index.js'
 
@@ -32,7 +32,7 @@ function validateMove(sock, player, buf){
 	if(CONFIG.socket.movementchecks){
 		const {movementcheckmercy: mercy} = CONFIG.socket
 		if(mx >= 0){
-			const excess = mx - max(9, dx) / current_tps
+			const excess = mx - max(9, dx) / currentTPS
 			sock.rx -= excess
 			if(sock.rx < 0){
 				mx += sock.rx
@@ -40,7 +40,7 @@ function validateMove(sock, player, buf){
 				rubber = true
 			}else if(sock.rx > mercy) sock.rx = mercy
 		}else{
-			const excess = mx - min(-9, dx) / current_tps
+			const excess = mx - min(-9, dx) / currentTPS
 			sock.rx += excess
 			if(sock.rx < 0){
 				mx -= sock.rx
@@ -49,7 +49,7 @@ function validateMove(sock, player, buf){
 			}else if(sock.rx > mercy) sock.rx = mercy
 		}
 		if(my >= 0){
-			const excess = my - max(9, dy) / current_tps
+			const excess = my - max(9, dy) / currentTPS
 			sock.ry -= excess
 			if(sock.ry < 0){
 				my += sock.ry
@@ -58,7 +58,7 @@ function validateMove(sock, player, buf){
 			}else if(sock.ry > mercy) sock.ry = mercy
 		}else{
 			const tV = player.world.gy * player.gy / (1 - player.yDrag)
-			const excess = my - min(tV * 1.2, dy) / current_tps
+			const excess = my - min(tV * 1.2, dy) / currentTPS
 			sock.ry += excess
 			if(sock.ry < 0){
 				my -= sock.ry
@@ -68,8 +68,8 @@ function validateMove(sock, player, buf){
 		}
 	}
 	if(!rubber){
-		player.dx = mx * current_tps
-		player.dy = my * current_tps
+		player.dx = mx * currentTPS
+		player.dy = my * currentTPS
 		fastCollision(player)
 		player.impactDx = buf.float(); player.impactDy = buf.float()
 		stepEntity(player)
@@ -80,7 +80,7 @@ function playerMovePacket(player, buf){
 	if(!player.world) return
 	top: {
 		let t = Date.now() / 1000
-		if(t < (t = max(this.movePacketCd + 1 / current_tps, t - 2))) return
+		if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
 		this.movePacketCd = t
 		if(buf.byte() != this.r || !player.chunk) return
 
@@ -141,7 +141,7 @@ function playerMovePacket(player, buf){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
-					player.blockBreakLeft = round((item ? item.breaktime(block) : block.breaktime) * current_tps)
+					player.blockBreakLeft = round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
 					player.breakGridEvent = gridevent(1, buf => buf.float(player.blockBreakLeft))
 				}
 				return

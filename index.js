@@ -45,7 +45,6 @@ httpServer.once('listening', () => {
 httpServer.listen(PORT)
 setTPS(DEFAULT_TPS)
 
-globalThis.exiting = false
 let promises = []
 process.on('SIGINT', _ => {
 	//Save stuff here
