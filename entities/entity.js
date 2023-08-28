@@ -148,7 +148,8 @@ export class Entity{
 	static airDrag = 0.06
 	static yDrag = 0.667
 	static width = 0.5; static height = 1; static head = 0.5
-	static collisionTestPadding = 0
+	static collisionPaddingX = 0
+	static collisionPaddingY = 0
 	static gx = 1
 	static gy = 1
 
