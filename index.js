@@ -11,6 +11,7 @@ import { input, repl } from 'basic-repl'
 import { Entities } from './entities/entity.js'
 import { Blocks } from './blocks/block.js'
 import { Items } from './items/item.js'
+import { BlockShape } from './world/blockshapes.js'
 process.stdout.write('\x1bc\x1b[3J')
 await ready
 task.done('Modules loaded')

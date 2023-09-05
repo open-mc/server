@@ -4,6 +4,7 @@ import { Block, Blocks } from '../block.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
+	static blockShape = []
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1
