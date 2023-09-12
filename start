@@ -19,7 +19,11 @@ node -e "console.log('\\x1b[32mServer has been updated to '+require('./package.j
 fi; read A; fi
 A=
 
+runtime=node --allow-natives-syntax
+command -v deno && runtime=deno --allow-natives-syntax
+command -v bun && runtime=bun
+
 while true; do
-node . && break
+$runtime . && break
 echo "\012\033[31mServer crashed (exit code $?)"
 done

@@ -31,7 +31,7 @@ players[Symbol.for('nodejs.util.inspect.custom')] = function(){
 
 export const OP = 4, MOD = 3, NORMAL = 2, SPECTATE = 1
 export const PERMISSIONS = JSON.parse(await fs.readFile(WORLD + "permissions.json").then(a => a.toString()).catch(e=>'{"":2}'))
-filesLoaded()
+filesLoaded('Files loaded')
 Object.setPrototypeOf(PERMISSIONS, null)
 let resave = 0
 export async function savePermissions(){

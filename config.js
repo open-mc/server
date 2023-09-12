@@ -9,7 +9,7 @@ export const DB = {
 	SAVEFILE: (path, data) => fs.writeFile(WORLD + path, data)
 }
 
-const w2 = fs.watch(WORLD + "properties.yaml")
+const w2 = fs.watch(WORLD + "properties.yaml")[Symbol.asyncIterator]()
 const defaultConfig = parse(await fs.readFile(PATH + ".default_properties.yaml").then(a => a.toString()))
 
 function clone(o){
@@ -30,7 +30,7 @@ function fallback(o, f){
 }
 
 async function loadConfig(a){
-	if(a)console.log("Reloading config...")
+	if(a)console.info("Reloading config...")
 	try{
 		CONFIG = parse(await fs.readFile(WORLD + "properties.yaml").then(a => a.toString()))
 		fallback(CONFIG, defaultConfig)
@@ -39,21 +39,20 @@ async function loadConfig(a){
 }
 
 export const DEFAULT_TPS = 20
-
 if(!await fs.exists(WORLD)){
 	await fs.mkdir(WORLD)
 	await Promise.all([
 		fs.mkdir(WORLD + 'players'),
 		fs.mkdir(WORLD + 'dimensions'),
 		fs.mkdir(WORLD + 'defs').then(() => Promise.all([
-			DB.SAVEFILE('defs/blockindex.txt', 'air'),
-			DB.SAVEFILE('defs/itemindex.txt', 'stone'),
-			DB.SAVEFILE('defs/entityindex.txt', 'player {}'),
-			DB.SAVEFILE('defs/misc.txt', '{}')
+			fs.writeFile(WORLD+'defs/blockindex.txt', 'air'),
+			fs.writeFile(WORLD+'defs/itemindex.txt', 'stone'),
+			fs.writeFile(WORLD+'defs/entityindex.txt', 'player {}'),
+			fs.writeFile(WORLD+'defs/misc.txt', '{}')
 		])),
-		DB.SAVEFILE('stats.json', `{}`),
-		DB.SAVEFILE('permissions.json', `{"":2}`),
-		DB.SAVEFILE('gamerules.json', '{}'),
+		fs.writeFile(WORLD+'stats.json', `{}`),
+		fs.writeFile(WORLD+'permissions.json', `{"":2}`),
+		fs.writeFile(WORLD+'gamerules.json', '{}'),
 		fs.copyFile(PATH + '.default_properties.yaml', WORLD + 'properties.yaml')
 	])
 }

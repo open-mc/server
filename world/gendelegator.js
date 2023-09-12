@@ -2,8 +2,10 @@ import { Worker, argv } from '../internals.js'
 import { CONFIG, stat } from '../config.js'
 import { gotStats } from '../internals.js'
 import { DataReader } from 'dataproto'
-const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv })
+
 const loaded = task('Loading WorldGen process...')
+const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv })
+
 const waiting = new Map()
 let key = 0
 
@@ -15,11 +17,11 @@ gen.on('message', function({key, buf}){
 	waiting.get(key)(new DataReader(buf))
 	waiting.delete(key)
 })
+gen.on('exit', () => process.exit(1))
+
 export const generator = (x, y, gend, genn) => new Promise(r => {
 	x = x << 6 >> 6; y = y << 6 >> 6
 	waiting.set(key, r)
 	gen.postMessage({x, y, d: gend, key, seed: CONFIG.world.seed, name: genn})
 	key++
 })
-gen.on('exit', () => process.exit(1))
-globalThis.genprocess = gen

@@ -1,5 +1,5 @@
 import { promises as fs, exists, createReadStream, createWriteStream } from 'node:fs'
-fs.exists = a => new Promise(r => exists(a, r))
+fs.exists = a => new Promise(r => exists(a, (a,b=a)=>r(b)))
 fs.createReadStream = createReadStream
 fs.createWriteStream = createWriteStream
 export { Worker, parentPort } from 'node:worker_threads'
@@ -7,14 +7,10 @@ import { parentPort } from 'node:worker_threads'
 export { fs }
 
 import './utils/prototypes.js'
-
-import { setFlagsFromString, getHeapStatistics } from 'node:v8'
+import { getHeapStatistics } from 'node:v8'
 import { runInThisContext } from 'node:vm'
 export let optimize = Function.prototype
-try{
-	setFlagsFromString('--allow-natives-syntax')
-	optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)')
-}catch(e){}
+try{ optimize = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)') }catch(e){}
 
 export const argv = []
 Object.setPrototypeOf(argv, null)
@@ -32,8 +28,7 @@ for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args)
 		}
 	}else if(opt) Array.prototype.push.call(argv, opt)
 }
-
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
+globalThis.PATH = '/home/blob/Desktop/server/'//decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
 globalThis.WORLD = argv[0] || PATH + '../world/'
 if(!WORLD.endsWith('/')) WORLD += '/'
 
@@ -88,8 +83,7 @@ Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	s.push(composeStat([`Mem: ${(v[0]*MEMLIMIT/1048576+v.slice(1).reduce((a,b)=>a+b,0)*4096).toFixed(1)}MB / ${round(MEMLIMIT / 104857.6 + (v.length-1)*40960)/10}MB`],v, ))
 	return s.join('\n\n')
 },enumerable:false})
-
-runInThisContext((_=>{
+runInThisContext(((_) => {
 
 const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat, clz32 } = Math
 const Object = globalThis.Object
@@ -99,16 +93,17 @@ const assert = condition => {
 	console.error(new Error().stack.replace(/Error.*\n.*\n/, 'Assertion failed\n'))
 }
 
-}).toString().slice(6,-3))
+}).toString().slice(10,-3))
 
 if(!('abs' in globalThis))
 	Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
 
+fs.rm(PATH + '.logs').catch(e=>null)
 function uncaughtErr(e){
-	const l = process.stdout.columns
-	console.log('\n\x1b[31m'+'='.repeat(max(0,floor(l / 2 - 8)))+' Critical Error '+'='.repeat(max(0,ceil(l / 2 - 8)))+'\x1b[m\n\n' 
-		+ (e && (e.stack || e.message || e)) + '\n\x1b[31m'+'='.repeat(l)+'\n' + ' '.repeat(max(0,floor(l / 2 - 28))) + 'Join our discord for help: https://discord.gg/NUUwFNUHkf')
-	process.exit(1)
+	e = e && (e.stack || e.message || e)+''
+	if(!e) return
+	fs.appendFile(PATH + '.logs', e+'\n')
+	// https://discord.gg/NUUwFNUHkf
 }
 process.on('uncaughtException', uncaughtErr)
 process.on('unhandledRejection', uncaughtErr)
@@ -117,17 +112,16 @@ let total = 0, loaded = 0
 let resolvePromise = null
 const started = Date.now()
 const print = parentPort ? _ => {} : desc => {
-	process.stdout.write(`\x1b[6n\x1b[9999A\x1b[9999D\x1b[2K\x1b[32m[${'#'.repeat(loaded)+' '.repeat(total - loaded)}] (${Date.formatTime(Date.now() - started)}) ${desc}\n`)
+	console.log(`\x1b[32m[${Date.formatTime(Date.now() - started)}] -> ${desc}`)
 }
 globalThis.task = function(desc = ''){
 	total++
 	let called = false
-	print(desc)
-	return (desc) => {
+	return (d = desc) => {
 		if(called) return
 		called = true
 		loaded++
-		print(desc)
+		print(d)
 		if(total == loaded && resolvePromise)resolvePromise(), resolvePromise = null
 	}
 }

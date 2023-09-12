@@ -50,7 +50,6 @@ await Promise.all(loaded)
 
 empty.fill(Blocks.air)
 air()
-
 parentPort?.postMessage({key:-1})
 const PM = new Uint16Array(blockCount).fill(65535)
 function buildBuffer(){
