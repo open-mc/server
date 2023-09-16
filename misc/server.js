@@ -14,7 +14,7 @@ import { blockindex } from '../blocks/index.js'
 import { Entities, EntityIDs } from '../entities/entity.js'
 import { Items } from '../items/item.js'
 import { index } from './miscdefs.js'
-import { TLSSocket } from 'tls'
+import { TLSSocket } from 'node:tls'
 import { contentType } from 'mime-types'
 import { actualTPS, currentTPS } from '../world/tick.js'
 

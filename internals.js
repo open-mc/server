@@ -28,7 +28,7 @@ for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args)
 		}
 	}else if(opt) Array.prototype.push.call(argv, opt)
 }
-globalThis.PATH = '/home/blob/Desktop/server/'//decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
+globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
 globalThis.WORLD = argv[0] || PATH + '../world/'
 if(!WORLD.endsWith('/')) WORLD += '/'
 
@@ -98,11 +98,11 @@ const assert = condition => {
 if(!('abs' in globalThis))
 	Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
 
-fs.rm(PATH + '.logs').catch(e=>null)
+if(!parentPort) fs.rm(PATH + '.logs').catch(e=>null)
 function uncaughtErr(e){
-	e = e && (e.stack || e.message || e)+''
+	e = e && (e.stack || e.message || e)
 	if(!e) return
-	fs.appendFile(PATH + '.logs', e+'\n')
+	fs.appendFile(PATH + '.logs', e+'\n').catch(e=>console.log(e))
 	// https://discord.gg/NUUwFNUHkf
 }
 process.on('uncaughtException', uncaughtErr)

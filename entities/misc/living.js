@@ -24,7 +24,7 @@ export class LivingEntity extends Entity{
 	update(){
 		super.update()
 		if(this.impactDy < -13){
-			const d = max(0,round((this.impactDy * this.impactDy * 0.02) - 3))
+			const d = max(0,round((this.impactDy * this.impactDy * 0.022) - 4))
 			this.damage(d, d >= 4 ? damageTypes.fall : damageTypes.hitGround)
 		}
 	}
