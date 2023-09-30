@@ -25,10 +25,10 @@ Items.acacia_planks = class extends Planks{
 Items.jungle_planks = class extends Planks{
 	place(){ place(Blocks.oak_planks); super.use(true) }
 }
-Items.oak_planks_slab = class extends Items.oak_planks{
-	place(){ place(Blocks.oak_planks_slab); super.use(true) }
-}
 
+Items.oak_planks_slab = class extends Items.oak_planks{
+	place(fx, fy){ place(fy >= 0.5 ? Blocks.oak_planks_upper_slab : Blocks.oak_planks_slab); super.use(true) }
+}
 Items.birch_planks_slab = class extends Items.birch_planks{
 	place(){ place(Blocks.birch_planks_slab); super.use(true) }
 }

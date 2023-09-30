@@ -36,6 +36,7 @@ export const EPSILON = .0001
 export function fastCollision(e, dt = 1 / currentTPS){
 	const dx = e.dx * dt, dy = e.dy * dt
 	e.state &= 0xFFFF
+	const CLIMB = e.impactDy < 0 ? e.stepHeight ?? 0.01 : 0.01
 	e.impactDx = e.impactDy = 0
 	let x0 = floor(e.x - e.width + EPSILON), xw = ceil(e.x + e.width - EPSILON) - x0 - 1
 	let y0 = floor(e.y + EPSILON), yh = ceil(e.y + e.height - EPSILON) - y0 - 1
@@ -92,16 +93,25 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		const ex = ceil(e.x + e.width + dx - EPSILON) - x0
 		for(let x = xw; x < ex; x++){
 			let xs = 2, ey0 = e.y + EPSILON - y0, ey1 = 1
+			let climb = 0
 			for(let y = 0; y <= yh; y++){
 				if(y === yh) ey1 = e.y + e.height - y0 - yh
 				const {solid, blockShape} = peekat(x, y)
 				if(!solid) { ey0 = 0; continue }
-				if(!blockShape){ xs = 0; break }
+				if(!blockShape){ xs = 0; if(1-ey0>climb)climb=1-ey0; break }
 				for(let i = 0; i < blockShape.length; i += 4){
-					if(ey0 >= blockShape[i+3] | ey1 <= blockShape[i+1]) continue
+					const c = blockShape[i+3] - ey0
+					if(c > climb) climb = c
+					if(c <= 0 | ey1 <= blockShape[i+1]) continue
 					if(blockShape[i] <= xs) xs = blockShape[i]
 				}
 				ey0 = 0
+			}
+			if(climb > 0 && climb <= CLIMB){
+				e.y += climb
+				jump(0, -(y0 - (y0 = floor(e.y + EPSILON))))
+				yh = ceil(e.y + e.height - EPSILON) - y0 - 1
+				continue
 			}
 			const tx = xs + x + x0 - e.width
 			if((x === ex - 1 ? tx >= e.x + dx + EPSILON : xs > 1) || tx < e.x - EPSILON) continue
@@ -115,16 +125,25 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		const ex = floor(e.x - e.width + dx + EPSILON) - 1 - x0
 		for(let x = 1; x > ex; x--){
 			let xs = -1, ey0 = e.y + EPSILON - y0, ey1 = 1
+			let climb = 0
 			for(let y = 0; y <= yh; y++){
 				if(y === yh) ey1 = e.y + e.height - y0 - yh
 				const {solid, blockShape} = peekat(x, y)
 				if(!solid) { ey0 = 0; continue }
-				if(!blockShape){ xs = 1; break }
+				if(!blockShape){ xs = 1; if(1-ey0>climb)climb=1-ey0; break }
 				for(let i = 0; i < blockShape.length; i += 4){
-					if(ey0 >= blockShape[i+3] | ey1 <= blockShape[i+1]) continue
+					const c = blockShape[i+3] - ey0
+					if(c > climb) climb = c
+					if(c <= 0 | ey1 <= blockShape[i+1]) continue
 					if(blockShape[i+2] >= xs) xs = blockShape[i+2]
 				}
 				ey0 = 0
+			}
+			if(climb > 0 && climb <= CLIMB){
+				e.y += climb
+				jump(0, -(y0 - (y0 = floor(e.y + EPSILON))))
+				yh = ceil(e.y + e.height - EPSILON) - y0 - 1
+				continue
 			}
 			const tx = xs + x + x0 + e.width
 			if((x === ex + 1 ? tx <= e.x + dx - EPSILON : xs < 0) || tx > e.x + EPSILON) continue

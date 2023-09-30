@@ -3,7 +3,7 @@ import { anyone_help, commands, err, log, mod_help } from './commands.js'
 import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from 'dataproto'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, MOD } from '../world/index.js'
@@ -76,6 +76,7 @@ function validateMove(sock, player, buf){
 	}else player.rubber(), buf.double()
 }
 
+const DEFAULT_BLOCKSHAPE = [0, 0, 1, 1]
 function playerMovePacket(player, buf){
 	if(!player.world) return
 	top: {
@@ -109,33 +110,67 @@ function playerMovePacket(player, buf){
 			}
 			break top
 		}
-		const bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
+		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
 		goto(bx, by, player.world)
 		const reach = sqrt(x * x + y * y)
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach
 		let l = 0
-		while(d < reach){
-			if(peek().solid)break
+		a: while(d < reach){
+			const {solid, blockShape = DEFAULT_BLOCKSHAPE} = peek()
+			if(solid){
+				for(let i = 0; i < blockShape.length; i += 4){
+					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
+					if(dx > 0 && px <= x0){
+						const iy = py + (dy / dx) * (x0-px)
+						if(iy >= y0 && iy <= y1) break a
+					}else if(dx < 0 && px >= x1){
+						const iy = py + (dy / dx) * (x1-px)
+						if(iy >= y0 && iy <= y1) break a
+					}
+					if(dy > 0 && py <= y0){
+						const ix = px + (dx / dy) * (y0-py)
+						if(ix >= x0 && ix <= x1) break a
+					}else if(dy < 0 && py >= y1){
+						const ix = px + (dx / dy) * (y1-py)
+						if(ix >= x0 && ix <= x1) break a
+					}
+				}
+			}
 			if(dx > 0){
 				const iy = py + dy * (1 - px) / dx
-				if(iy >= 0 && iy <= 1){right(); l=65535; d += (1 - px) / dx; px = 0; py = iy; continue}
+				if(iy >= 0 && iy <= 1){right(); l=l<<16|255; d += (1 - px) / dx; px = 0; py = iy; continue}
 			}else if(dx < 0){
 				const iy = py + dy * -px / dx
-				if(iy >= 0 && iy <= 1){left(); l=1; d += -px / dx; px = 1; py = iy; continue}
+				if(iy >= 0 && iy <= 1){left(); l=l<<16|1; d += -px / dx; px = 1; py = iy; continue}
 			}
 			if(dy > 0){
 				const ix = px + dx * (1 - py) / dy
-				if(ix >= 0 && ix <= 1){up(); l=-65536; d += (1 - py) / dy; py = 0; px = ix; continue}
+				if(ix >= 0 && ix <= 1){up(); l=l<<16|65280; d += (1 - py) / dy; py = 0; px = ix; continue}
 			}else if(dy < 0){
 				const ix = px + dx * -py / dy
-				if(ix >= 0 && ix <= 1){down(); l=65536; d += -py / dy; py = 1; px = ix; continue}
+				if(ix >= 0 && ix <= 1){down(); l=l<<16|256; d += -py / dy; py = 1; px = ix; continue}
 			}
 			//failsafe
 			break top
 		}
+		if(d >= reach){
+			const {solid, blockShape} = peekat(l << 24 >> 24, l << 16 >> 24)
+			if(solid && blockShape && blockShape.length == 0){
+				jump(l << 24 >> 24, l << 16 >> 24)
+				px -= l << 24 >> 24; py -= l << 16 >> 24
+				l >>>= 16
+				if(l == 1) px = 1
+				else if(l == 255) px = 0
+				else if(l == 256) py = 1
+				else if(l == 65280) py = 0
+			}else{
+				if(sel > 127) break top
+				px = (player.x + x) % 1; py = (player.y + player.head + y) % 1
+			}
+		}
+		px -= l << 24 >> 24; py -= l << 16 >> 24
 		if(sel > 127){
-			if(d >= reach) break top
 			const block = peek(), item = player.inv[sel & 127]
 			if(block.solid){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
@@ -164,15 +199,16 @@ function playerMovePacket(player, buf){
 			if(!l) break top
 		}
 		if(!item) break top
-		jump(l << 16 >> 16, l >> 16)
+		jump(l << 24 >> 24, l << 16 >> 24)
 		if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
 		b = peek()
+		if(b.solid) break top
 		{
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
 		if(item.place){
-			item.place()
+			item.place(px, py)
 			stat('player', 'blocks_placed')
 		}
 		if(!item.count) player.inv[sel&127] = null

@@ -5,6 +5,7 @@ import { DXDY } from '../entity.js'
 export class LivingEntity extends Entity{
 	health = 20
 	static maxHealth = 20
+	static stepHeight = 0.5
 	damage(amount, dealer){
 		if(dealer == damageTypes.fire || dealer == damageTypes.water || dealer == damageTypes.burning){
 			const now = Date.now()
