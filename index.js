@@ -55,7 +55,7 @@ process.on('SIGINT', _ => {
 	Promise.all(promises).then(() => {
 		promises.length = 0
 		for(const sock of server.clients) promises.push(close.call(sock))
-		saveAll(() => process.exit(0))
+		saveAll(() => DB.close(() => process.exit(0)))
 	})
 })
 function saveAll(cb){
