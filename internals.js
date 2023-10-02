@@ -29,8 +29,6 @@ for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args)
 	}else if(opt) Array.prototype.push.call(argv, opt)
 }
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
-globalThis.WORLD = argv[0] || PATH + '../world/'
-if(!WORLD.endsWith('/')) WORLD += '/'
 
 performance.nodeTiming ??= {idleTime: 0}
 
@@ -83,26 +81,16 @@ Object.defineProperty(stats,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	s.push(composeStat([`Mem: ${(v[0]*MEMLIMIT/1048576+v.slice(1).reduce((a,b)=>a+b,0)*4096).toFixed(1)}MB / ${round(MEMLIMIT / 104857.6 + (v.length-1)*40960)/10}MB`],v, ))
 	return s.join('\n\n')
 },enumerable:false})
-runInThisContext(((_) => {
 
-const { abs, min, max, floor, ceil, round, random, PI, PI2 = PI * 2, sin, cos, tan, sqrt, ifloat, clz32 } = Math
-const Object = globalThis.Object
-
-const assert = condition => {
-	if(condition) return
-	console.error(new Error().stack.replace(/Error.*\n.*\n/, 'Assertion failed\n'))
-}
-
-}).toString().slice(10,-3))
-
-if(!('abs' in globalThis))
-	Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
+Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
 
 if(!parentPort) fs.rm(PATH + '.logs').catch(e=>null)
-function uncaughtErr(e){
+
+export function uncaughtErr(e){
 	e = e && (e.stack || e.message || e)
 	if(!e) return
-	fs.appendFile(PATH + '.logs', e+'\n').catch(e=>console.log(e))
+	if(!parentPort) fs.appendFile(PATH + '.logs', e+'\n').catch(e=>console.log(e))
+	else parentPort.postMessage(e+'')
 	// https://discord.gg/NUUwFNUHkf
 }
 process.on('uncaughtException', uncaughtErr)

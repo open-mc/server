@@ -4,6 +4,9 @@ import { generator } from './gendelegator.js'
 import { DataWriter } from 'dataproto'
 import { entityMap } from './tick.js'
 import { argv } from '../internals.js'
+import { Dimensions } from './index.js'
+
+const dimLevel = DB.sublevel('dimensions')
 
 export class World extends Map{
 	constructor(id){
@@ -12,17 +15,19 @@ export class World extends Map{
 		this.gx = 0
 		this.gy = -32
 		this.tick = 0
-
+		this.level = dimLevel.sublevel(id, {valueEncoding: 'binary'})
 		const [a, b] = CONFIG.generators[this.id].split('/', 2)
 		if(!b) this.gend = this.id, this.genn = a
 		else this.gend = a, this.genn = b
 	}
+	static new(id){ return Dimensions[id] ??= new World(id) }
 	load(cx, cy){
 		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(!ch){
 			super.set(k, ch = new Chunk(cx, cy, this))
-			DB.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
@@ -40,7 +45,8 @@ export class World extends Map{
 		let ch = super.get(k)
 		if(!ch){
 			super.set(k, ch = new Chunk(cx, cy, this))
-			DB.LOADFILE('dimensions/'+this.id+'/'+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
@@ -75,7 +81,7 @@ export class World extends Map{
 		if(--ch.t) return //Count down timer
 		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter()).build()
-		DB.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => {
+		this.level.put(''+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
 			super.delete(k) //Completely unloaded with no re-loads, delete chunk
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
@@ -88,7 +94,7 @@ export class World extends Map{
 		ch.t = 0 //Whoops, chunk timer "ended"
 		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter()).build()
-		DB.SAVEFILE('dimensions/'+this.id+'/'+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
+		this.level.put(''+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
 	}
 	peek(x, y, sock = null){
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
@@ -115,3 +121,18 @@ export class World extends Map{
 
 	static savedata = {tick: Double}
 }
+
+World.new('overworld')
+World.new('nether')
+World.new('end')
+World.new('void')
+
+const dimCreate = []
+for(let i in Dimensions){
+	let d = Dimensions[i]
+	dimCreate.push(d.level.get('meta').then(a => {
+		const buf = new DataReader(a)
+		return buf.read(d.constructor.savedatahistory[buf.flint()] || d.constructor.savedata, d)
+	}).catch(e => null))
+}
+await Promise.all(dimCreate)

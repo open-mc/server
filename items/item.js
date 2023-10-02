@@ -1,5 +1,4 @@
-import { Entity } from '../entities/entity.js'
-import { blockevent, place, summon } from '../misc/ant.js'
+import { blockevent } from '../misc/ant.js'
 import { registerTypes } from 'dataproto'
 
 export class Item{

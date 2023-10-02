@@ -187,6 +187,8 @@ function sendTabMenu(encodePlayers = false){
 
 setInterval(sendTabMenu, 2000)
 
+const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
+
 async function play(sock, username, skin){
 	if(exiting) return
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
@@ -220,7 +222,7 @@ async function play(sock, username, skin){
 		return
 	}else try{
 		playersConnecting.add(username)
-		const buf = await DB.LOADFILE('players/'+username)
+		const buf = new DataReader(await playersLevel.get(username))
 		playersConnecting.delete(username)
 		if(sock.readyState !== sock.OPEN) return
 		player = EntityIDs[buf.short()]()
@@ -294,7 +296,7 @@ export const close = async function(){
 	buf.double(entity.age)
 	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
 	if(!exiting) chat(entity.name + ' left the game', YELLOW)
-	await DB.SAVEFILE('players/' + entity.name, buf.build())
+	await playersLevel.put(entity.name, buf.build())
 	playersConnecting.delete(entity.name)
 	playerLeft()
 	if(entity.world) entity.remove()

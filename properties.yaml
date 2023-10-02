@@ -4,6 +4,8 @@
 name: Test Server
 maxplayers: 500
 
+path: ../world
+
 # World simulation stuff
 world:
   # Change gamemode by doing /gamerule spawnGamemode <gamemode>

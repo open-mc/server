@@ -1,20 +1,24 @@
-import { Worker, argv } from '../internals.js'
+import { Worker, argv, uncaughtErr } from '../internals.js'
 import { CONFIG, stat } from '../config.js'
 import { gotStats } from '../internals.js'
 import { DataReader } from 'dataproto'
+import { blockindex } from '../blocks/index.js'
+import { itemindex } from '../items/index.js'
 
 const loaded = task('Loading WorldGen process...')
-const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv })
+const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv: [blockindex, itemindex] })
 
 const waiting = new Map()
 let key = 0
 
-gen.on('message', function({key, buf}){
+gen.on('message', function(a){
+	if(typeof a == 'string') return uncaughtErr('(from gen child process)\n'+a)
+	const {key, buf} = a
 	if(key == -1) return loaded('WorldGen process loaded')
 	else if(key == -2) return gotStats(1,arguments[0])
 	stat('world', 'chunks_generated')
 	stat('world', 'chunk_revisits', -1)
-	waiting.get(key)(new DataReader(buf))
+	waiting.get(key)(buf)
 	waiting.delete(key)
 })
 gen.on('exit', () => process.exit(1))

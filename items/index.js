@@ -1,14 +1,15 @@
 import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from 'dataproto'
+import { Item, ItemIDs, Items } from './item.js'
+import { DB } from '../config.js'
 
 const loaded = task('Loading items...')
 
 // Monstrosity for importing all ./*/*.js
-import { Item, ItemIDs, Items } from './item.js'
 await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import(PATH + 'items/' + name + '/' + file))))))
 let modified = false
 export let itemindex
-for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(itemindex = a+'').split('\n'))){
+for(const a of await DB.get('itemindex').catch(e=>'stone').then(a=>(itemindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
 	const I = Items[name]
 	if(!I){ItemIDs.push(Items.stone);continue}
@@ -45,7 +46,7 @@ for(const name in Items){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
+	await DB.put('itemindex', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
 }
 
 loaded(`${ItemIDs.length} Items loaded`)

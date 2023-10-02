@@ -1,7 +1,7 @@
 import { players } from '../world/index.js'
 import { DataWriter } from 'dataproto'
 import { Chunk } from './chunk.js'
-import { allDimensions, Dimensions } from './index.js'
+import { Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
 import { stat, statAvg, STATS } from '../config.js'
 import { mirrorEntity } from './encodemove.js'
@@ -10,7 +10,8 @@ export let currentTPS = 0
 export const entityMap = new Map()
 export let actualTPS = currentTPS
 export function tick(){
-	for(const w of allDimensions){
+	for(const n in Dimensions){
+		const w = Dimensions[n]
 		w.tick++
 		for(const ch of Dimensions[w].values()){
 			if(!(ch instanceof Chunk))continue

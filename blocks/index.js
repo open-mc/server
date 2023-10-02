@@ -3,14 +3,16 @@ import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from 'dataproto'
 import { Chunk } from '../world/chunk.js'
 import { BlockIDs, Blocks, Block } from './block.js'
+import { DB } from '../config.js'
 
 const loaded = task('Loading blocks...')
 
 // Monstrosity for importing all ./*/*.js
-await Promise.all((await fs.readdir(PATH + 'blocks/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'blocks/' + name).then(a => Promise.all(a.map(file => import(PATH + 'blocks/' + name + '/' + file))))))
+await Promise.all((await fs.readdir(PATH + 'blocks/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'blocks/' + name).then(a => Promise.all(a.map(file => import('./' + name + '/' + file))))))
+
 let modified = false
 export let blockindex
-for(const a of await fs.readFile(WORLD + 'defs/blockindex.txt').then(a=>(blockindex = a+'').split('\n'))){
+for(const a of await DB.get('blockindex').catch(e=>'air').then(a=>(blockindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
 	const B = Blocks[name]
 	if(!B){BlockIDs.push(Blocks.air);continue}
@@ -50,7 +52,7 @@ for(const name in Blocks){
 	Object.defineProperties(Blocks[name], Object.getOwnPropertyDescriptors(new B()))
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/blockindex.txt', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
+	await DB.put('blockindex', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
 }
 
 Chunk.preAllocatedTiles.fill(Blocks.air)

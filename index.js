@@ -64,11 +64,11 @@ function saveAll(cb){
 		const buf = new DataWriter()
 		buf.flint(d.constructor.savedatahistory.length)
 		buf.write(d.constructor.savedata, d)
-		promises.push(fs.writeFile(WORLD+'dimensions/'+name+'/meta', buf.build()))
+		promises.push(d.level.put('meta', buf.build()))
 		for (const ch of d.values()) d.save(ch)
 	}
-	promises.push(fs.writeFile(WORLD+'stats.json', JSON.stringify(STATS)))
-	promises.push(fs.writeFile(WORLD+'gamerules.json', JSON.stringify(GAMERULES)))
+	promises.push(DB.put('stats', JSON.stringify(STATS)))
+	promises.push(DB.put('gamerules', JSON.stringify(GAMERULES)))
 	Promise.all(promises).then(cb)
 }
 void function timeout(){if(exiting) return; promises.length = 0; setTimeout(saveAll, 300e3, timeout)}()

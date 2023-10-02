@@ -1,5 +1,5 @@
 import { optimize } from '../internals.js'
-import { goto, load, peekat, save } from '../misc/ant.js'
+import { goto, jump, load, peekat, save } from '../misc/ant.js'
 import { currentTPS } from './tick.js'
 
 export function stepEntity(e, dt = 1 / currentTPS){
@@ -38,22 +38,23 @@ export function fastCollision(e, dt = 1 / currentTPS){
 	e.state &= 0xFFFF
 	const CLIMB = e.impactDy < 0 ? e.stepHeight ?? 0.01 : 0.01
 	e.impactDx = e.impactDy = 0
-	let x0 = floor(e.x - e.width + EPSILON), xw = ceil(e.x + e.width - EPSILON) - x0 - 1
-	let y0 = floor(e.y + EPSILON), yh = ceil(e.y + e.height - EPSILON) - y0 - 1
+	let x0 = floor(e.x - e.width + EPSILON)
+	let y0 = floor(e.y + EPSILON)
 	goto(x0, y0, e.world)
+	const xw = e.x + e.width - EPSILON - x0
 	y: if(dy > 0){
 		const ey = ceil(e.y + e.height + dy - EPSILON) + 1 - y0
-		for(let y = yh; y < ey; y++){
-			let ys = 2, ex0 = e.x - e.width + EPSILON - x0, ex1 = 1
-			for(let x = 0; x <= xw; x++){
+		for(let y = ceil(e.y + e.height - EPSILON) - y0 - 1; y < ey; y++){
+			let ys = 2, ex0 = e.x - e.width + EPSILON - x0 + 1, ex1 = e.x + e.width - x0 - EPSILON + 1
+			for(let x = 0; x < xw; x++){
+				ex0 -= 1; ex1 -= 1
 				const {solid, blockShape} = peekat(x, y - 1)
-				if(!solid) { ex0 = 0; continue }
+				if(!solid) continue
 				if(!blockShape){ ys = 0; break }
 				for(let i = 0; i < blockShape.length; i += 4){
 					if(ex0 >= blockShape[i+2] | ex1 <= blockShape[i]) continue
 					if(blockShape[i + 1] <= ys) ys = blockShape[i + 1]
 				}
-				ex0 = 0
 			}
 			const ty = ys + y + y0 - e.height
 			if((y === ey - 1 ? ty >= e.y + dy + EPSILON : ys > 1) || ty < e.y - EPSILON) continue
@@ -65,18 +66,17 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		e.y = ifloat(e.y + dy)
 	}else if(dy < 0){
 		const ey = floor(e.y + dy + EPSILON) - 1 - y0
-		for(let y = 1; y > ey; y--){
-			let ys = -1, ex0 = e.x - e.width + EPSILON - x0, ex1 = 1
-			for(let x = 0; x <= xw; x++){
-				if(x === xw) ex1 = e.x + e.width - x0 - xw
+		for(let y = 0; y > ey; y--){
+			let ys = -1, ex0 = e.x - e.width + EPSILON - x0 + 1, ex1 = e.x + e.width - x0 - EPSILON + 1
+			for(let x = 0; x < xw; x++){
+				ex0 -= 1; ex1 -= 1
 				const {solid, blockShape} = peekat(x, y)
-				if(!solid) { ex0 = 0; continue }
+				if(!solid) continue
 				if(!blockShape){ ys = 1; break }
 				for(let i = 0; i < blockShape.length; i += 4){
 					if(ex0 >= blockShape[i+2] | ex1 <= blockShape[i]) continue
 					if(blockShape[i + 3] > ys) ys = blockShape[i + 3]
 				}
-				ex0 = 0
 			}
 			const ty = ys + y + y0
 			if((y === ey + 1 ? ty <= e.y + dy - EPSILON : ys < 0) || ty > e.y + EPSILON) continue
@@ -87,30 +87,29 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		}
 		e.y = ifloat(e.y + dy)
 	}
-	y0 = floor(e.y + EPSILON), yh = ceil(e.y + e.height - EPSILON) - y0 - 1
+	y0 = floor(e.y + EPSILON)
 	goto(x0, y0, e.world)
 	x: if(dx > 0){
 		const ex = ceil(e.x + e.width + dx - EPSILON) - x0
-		for(let x = xw; x < ex; x++){
-			let xs = 2, ey0 = e.y + EPSILON - y0, ey1 = 1
+		for(let x = ceil(e.x + e.width - EPSILON) - x0 - 1; x < ex; x++){
+			let xs = 2, ey0 = e.y + EPSILON - y0 + 1
 			let climb = 0
-			for(let y = 0; y <= yh; y++){
-				if(y === yh) ey1 = e.y + e.height - y0 - yh
+			const yh = e.y + e.height - EPSILON - y0
+			for(let y = 0; y < yh; y++){
+				ey0 -= 1
 				const {solid, blockShape} = peekat(x, y)
-				if(!solid) { ey0 = 0; continue }
-				if(!blockShape){ xs = 0; if(1-ey0>climb)climb=1-ey0; break }
+				if(!solid) continue
+				if(!blockShape){ xs = 0; if(1-ey0>climb)climb=1-ey0; continue }
 				for(let i = 0; i < blockShape.length; i += 4){
 					const c = blockShape[i+3] - ey0
 					if(c > climb) climb = c
-					if(c <= 0 | ey1 <= blockShape[i+1]) continue
+					if(c <= 0 | ey0+e.height-EPSILON-EPSILON <= blockShape[i+1]) continue
 					if(blockShape[i] <= xs) xs = blockShape[i]
 				}
-				ey0 = 0
 			}
 			if(climb > 0 && climb <= CLIMB){
 				e.y += climb
 				jump(0, -(y0 - (y0 = floor(e.y + EPSILON))))
-				yh = ceil(e.y + e.height - EPSILON) - y0 - 1
 				continue
 			}
 			const tx = xs + x + x0 - e.width
@@ -123,26 +122,26 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		e.x = ifloat(e.x + dx)
 	}else if(dx < 0){
 		const ex = floor(e.x - e.width + dx + EPSILON) - 1 - x0
-		for(let x = 1; x > ex; x--){
-			let xs = -1, ey0 = e.y + EPSILON - y0, ey1 = 1
+		for(let x = 0; x > ex; x--){
+			let xs = -1, ey0 = e.y + EPSILON - y0 + 1
 			let climb = 0
-			for(let y = 0; y <= yh; y++){
-				if(y === yh) ey1 = e.y + e.height - y0 - yh
+			const yh = e.y + e.height - EPSILON - y0
+			for(let y = 0; y < yh; y++){
+				ey0 -= 1
 				const {solid, blockShape} = peekat(x, y)
-				if(!solid) { ey0 = 0; continue }
-				if(!blockShape){ xs = 1; if(1-ey0>climb)climb=1-ey0; break }
+				if(!solid) continue
+				if(!blockShape){ xs = 1; if(1-ey0>climb)climb=1-ey0; continue }
 				for(let i = 0; i < blockShape.length; i += 4){
 					const c = blockShape[i+3] - ey0
 					if(c > climb) climb = c
-					if(c <= 0 | ey1 <= blockShape[i+1]) continue
+					if(c <= 0 | ey0+e.height-EPSILON-EPSILON <= blockShape[i+1]) continue
 					if(blockShape[i+2] >= xs) xs = blockShape[i+2]
 				}
-				ey0 = 0
+				
 			}
 			if(climb > 0 && climb <= CLIMB){
 				e.y += climb
 				jump(0, -(y0 - (y0 = floor(e.y + EPSILON))))
-				yh = ceil(e.y + e.height - EPSILON) - y0 - 1
 				continue
 			}
 			const tx = xs + x + x0 + e.width
@@ -154,11 +153,11 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		}
 		e.x = ifloat(e.x + dx)
 	}
-	x0 = floor(e.x - e.width + EPSILON), xw = ceil(e.x + e.width - EPSILON) - x0 - 1
+	x0 = floor(e.x - e.width + EPSILON)
 	goto(x0, y0, e.world)
 	const p = save()
-	a: for(let y = yh; y >= 0; y--)
-		b: for(let x = xw; x >= 0; x--){
+	a: for(let y = ceil(e.y + e.height - EPSILON) - y0 - 1; y >= 0; y--)
+		b: for(let x = ceil(e.x + e.width - EPSILON) - x0 - 1; x >= 0; x--){
 			const b = peekat(x, y)
 			if(!b.touched) continue b
 			const {blockShape} = b

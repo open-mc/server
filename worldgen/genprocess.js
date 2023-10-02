@@ -1,6 +1,8 @@
-import { fs, parentPort } from '../internals.js'
+import { fs, parentPort, argv } from '../internals.js'
 import { jsonToType } from 'dataproto'
 import { air, Blocks, chunk, chunkBiomes, empty, Items, setSeed } from './vars.js'
+import { Level } from 'level'
+
 parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
 	if(name=='void'){
 		air()
@@ -22,9 +24,10 @@ parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'})
 		else parentPort.postMessage({key, buf: buildBuffer()})
 	}
 })
+
 let blockCount = 0, itemCount = 0
 let i = 0
-for(let a of (''+await fs.readFile(WORLD+'/defs/blockindex.txt')).split('\n')){
+for(let a of process.argv[2].split('\n')){
 	a = a.split(' ')
 	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
 	const f = def.savedata ? (data = {}) => Object.assign(data, def) : () => def
@@ -33,7 +36,7 @@ for(let a of (''+await fs.readFile(WORLD+'/defs/blockindex.txt')).split('\n')){
 	blockCount++
 }
 i = 0
-for(let a of (''+await fs.readFile(WORLD+'/defs/itemindex.txt')).split('\n')){
+for(let a of process.argv[3].split('\n')){
 	a = a.split(' ')
 	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
 	const f = (count, data = {}) => (data.count = count, Object.assign(data, def))

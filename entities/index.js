@@ -1,14 +1,15 @@
 import { fs } from '../internals.js'
 import { jsonToType, typeToJson } from 'dataproto'
+import { Entities, Entity, EntityIDs } from './entity.js'
+import { DB } from '../config.js'
 
 const loaded = task('Loading entities...')
 
 // Monstrosity for importing all ./*/*.js
-import { Entities, Entity, EntityIDs } from './entity.js'
 await Promise.all((await fs.readdir(PATH + 'entities/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'entities/' + name).then(a => Promise.all(a.map(file => import(PATH + 'entities/' + name + '/' + file))))))
 let modified = false
 export let entityindex
-for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entityindex = ''+a).split('\n'))){
+for(const a of await DB.get('entityindex').catch(e=>'player {}').then(a=>(entityindex = ''+a).split('\n'))){
 	let [name, ...history] = a.split(' ')
 	const E = Entities[name]
 	if(!E){EntityIDs.push(Entities.player);continue}
@@ -45,7 +46,7 @@ for(const name in Entities){
 	}
 }
 if(modified){
-	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.prototype.className + E.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.prototype.savedata ? ' ' + typeToJson(E.prototype.savedata) : '')).join('\n'))
+	await DB.put('entityindex', entityindex = EntityIDs.map(E=>E.prototype.className + E.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.prototype.savedata ? ' ' + typeToJson(E.prototype.savedata) : '')).join('\n'))
 }
 
 loaded(`${EntityIDs.length} Entities loaded`)
