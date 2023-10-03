@@ -124,6 +124,7 @@ function parseCoords(x = '~', y = '~', d, t){
 
 export function log(who, msg){
 	if(!GAMERULES.commandlogs) return msg
+	if(who && !who.sock) who = null
 	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC, who)
 }
 

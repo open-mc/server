@@ -2,8 +2,8 @@ import { blockevent } from '../misc/ant.js'
 import { registerTypes } from 'dataproto'
 
 export class Item{
-	constructor(count = 1){
-		this.count = count
+	constructor(count = 0){
+		this.count = count || 1
 		this.name = ''
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){ return 'Items.'+this.className+'(\x1b[33m'+this.count+'\x1b[m)' }

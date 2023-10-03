@@ -65,7 +65,7 @@ export function mirrorEntity(e){
 				ebuf.byte(EVENTS)
 				ebuf.uint32(e.netId), ebuf.uint16(e.netId / 4294967296 | 0)
 				const l = e.pendingEvents.length
-					for(let i = 0; i < l; i+=2){
+				for(let i = 0; i < l; i+=2){
 					const id = e.pendingEvents[i]
 					ebuf.byte(id)
 					e.pendingEvents[i+1]?.(ebuf)
