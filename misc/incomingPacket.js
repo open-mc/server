@@ -6,7 +6,7 @@ import { DataWriter } from 'dataproto'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
-import { Dimensions, MOD } from '../world/index.js'
+import { Dimensions } from '../world/index.js'
 
 const REACH = 10
 
@@ -68,10 +68,10 @@ function validateMove(sock, player, buf){
 		}
 	}
 	if(!rubber){
-		player.dx = mx * currentTPS
-		player.dy = my * currentTPS
+		player.dx = mx * currentTPS + Math.sign(mx) * 0.01
+		player.dy = my * currentTPS + Math.sign(mx) * 0.01
 		fastCollision(player)
-		player.impactDx = buf.float(); player.impactDy = buf.float()
+		//player.impactDx = buf.float(); player.impactDy = buf.float()
 		stepEntity(player)
 	}else player.rubber(), buf.double()
 }

@@ -74,8 +74,9 @@ Blocks.portal = class extends Block{
 
 
 Blocks.end_portal = class extends Block{
-	static solid = false
+	static solid = true
 	static blockShape = [0, 0, 1, 0.75]
+	static softness = 1
 	static breaktime = Infinity
 	static blast = Infinity
 	touched(e){

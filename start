@@ -2,7 +2,7 @@
 # Script to install modules and continue running server forever
 
 # Move to folder if not already
-[[ $0 == /bin* ]] || cd "$(dirname $0)"
+cd "$(dirname $0)"
 
 runtime="node --allow-natives-syntax ."
 update="npm i"
@@ -29,4 +29,5 @@ while true; do
 $runtime $FLAGS && break
 FLAGS=
 echo "\012\033[31mServer crashed (exit code $?)"
+sleep 2
 done

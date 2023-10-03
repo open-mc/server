@@ -66,7 +66,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	getAvatar(){
 		if(this._avatar) return this._avatar
 		const png = new PNG({width: 64, height: 64})
-		src = this.skin; dest = new Uint32Array(png.data.buffer)
+		src = this.skin; dest = new Int32Array(png.data.buffer)
 		// draw shoulder at x=22, y=49 (to x=42, y=64)
 		c3t4_5(3158, 4); c3t4_5(3163, 5); c3t4_5(3168, 6); c3t4_5(3173, 7)
 		c3t4_5(3478,32); c3t4_5(3483,33); c3t4_5(3488,34); c3t4_5(3493,35)

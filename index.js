@@ -3,7 +3,7 @@ import './utils/prototypes.js'
 import { CONFIG, DB, STATS, DEFAULT_TPS, stat, GAMERULES } from './config.js'
 import { setTPS, entityMap } from './world/tick.js'
 import { PORT, close, httpServer, secure, server } from './misc/server.js'
-import { ready, stats, fs } from './internals.js'
+import { ready, stats, fs, argv } from './internals.js'
 import util from 'node:util'
 import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
 import { commands, err, executeCommand } from './misc/commands.js'
@@ -42,9 +42,6 @@ httpServer.once('listening', () => {
 	repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))
 })
 
-httpServer.listen(PORT)
-setTPS(DEFAULT_TPS)
-
 let promises = []
 process.on('SIGINT', _ => {
 	//Save stuff here
@@ -72,3 +69,10 @@ function saveAll(cb){
 	Promise.all(promises).then(cb)
 }
 void function timeout(){if(exiting) return; promises.length = 0; setTimeout(saveAll, 300e3, timeout)}()
+
+if(argv.manual){
+	console.log('\x1b[mPress enter to start server')
+	const _ = (''+await new Promise(r => process.stdin.once('data', r))).slice(0,-1)
+}
+httpServer.listen(PORT)
+setTPS(DEFAULT_TPS)

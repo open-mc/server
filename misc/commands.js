@@ -234,7 +234,7 @@ export const commands = {
 			const stack = itm(c)
 			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
 			player.give(stack)
-			while(true){
+			if(stack.count) while(true){
 				const e = Entities.item()
 				if(stack.count > 255)
 					e.item = stack.constructor(255), stack.count -= 255
