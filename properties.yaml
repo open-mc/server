@@ -4,7 +4,7 @@
 name: Test Server
 maxplayers: 500
 
-path: null
+path: ../world
 
 # World simulation stuff
 world:
