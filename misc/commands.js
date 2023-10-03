@@ -8,7 +8,7 @@ import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, entityMap } from '../world/tick.js'
-import { started } from './server.js'
+import { server, started } from './server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
@@ -289,36 +289,38 @@ export const commands = {
 		const count = x2*y2+x2+y2+1
 		return log(this, 'Filled '+count+' blocks with ' + type + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : ''))
 	},
-	clear(sel, _item, _max = '2147483647'){
-		const Con = _item && Items[_item] || Item
+	clear(sel = '@s', _item, _max = '2147483647'){
+		const Con = _item && Items[_item] || null
 		let cleared = 0, count = ''
+		_max += 0
 		for(const e of selector(sel, this)){
 			if(!count && e.sock) count = e.name
 			else if(typeof count == 'string') count = 2-!count
 			else count++
-			let max = +_max
+			let max = _max
 			const changed = []
 			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
 				const item = e.inv[i]
-				if(!item || !(item.constructor == Con)) continue
+				if(!item || (Con && item.constructor != Con)) continue
 				changed.push(i)
 				if(item.count <= max)max -= item.count, e.inv[i] = null
 				else item.count -= max, max = 0
 			}
 			if(e.items) for(let i = 0; max && i < e.items.length; i++){
 				const item = e.items[i]
-				if(!item || !(item.constructor == Con)) continue
+				if(!item || (Con && item.constructor != Con)) continue
 				changed.push(i | 128)
 				if(item.count <= max)max -= item.count, e.items[i] = null
 				else item.count -= max, max = 0
 			}
-			cleared += +_max - max
+			cleared += _max - max
 			e.itemschanged(changed)
 		}
 		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)
 	},
 	help(c){
-		const cmds = this.sock.permissions == MOD ? mod_help : this.sock.permissions == OP ? help : anyone_help
+		const perm = this == server ? OP : this.sock ? this.sock.permissions : 0
+		const cmds = perm == MOD ? mod_help : perm == OP ? help : anyone_help
 		if(!c){
 			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
 		}else if(c in cmds){
@@ -431,7 +433,6 @@ export const commands = {
 		return log(this, `Regenerated chunk located at (${x<<6}, ${y<<6}) in the ${w.id}`)
 	},
 	perm(u, a='default'){
-		if(this.sock.permissions < OP) throw 'You do not have permission to use /perm'
 		if(!Object.hasOwn(PERMS, a)) throw 'Invalid permission'
 		a = PERMS[a]
 		let count = ''
@@ -471,7 +472,11 @@ export const commands = {
 		}
 		savePermissions()
 		return log(this, 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString()))
-	}
+	},
+	as(t, c, ...a){
+		for(const e of selector(t, this))
+			executeCommand(c, a, e, 4)
+	},
 }
 Object.setPrototypeOf(commands, null)
 const PERMS = {
@@ -496,7 +501,7 @@ export const anyone_help = {
 	...anyone_help,
 	give: '[player] [item] (count) ',
 	kick: '[player] -- Kick a player',
-	say: '[style] [msg] -- Send a message in chat',
+	say: '[style] [...msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
 	tpe: '[targets] [destEntity]',
 	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
@@ -505,7 +510,7 @@ export const anyone_help = {
 	clear: '[player] (filter_item) (max_amount) -- Remove items from a player',
 	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
 	regen: '(x) (y) -- Re-generate this chunk with fresh terrain',
-	kill: '[target] (cause) -- Kill a player or entity'
+	kill: '[target] (cause) -- Kill a player or entity',
 }, help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
@@ -515,9 +520,19 @@ export const anyone_help = {
 	perm: '[target] <int>|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
 	op: '[target] -- Alias for /perm [target] op',
-	deop: '[target] -- Alias for /perm [target] normal'
+	deop: '[target] -- Alias for /perm [target] normal',
+	as: '[target] [...command] -- Execute a command as a target'
 }
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
 optimize(parseCoords, snbt, ...Object.values(commands))
+
+export function executeCommand(name, params, player, perms = 0){
+	if(!(name in commands)) throw 'No such command: /'+name
+	if(perms < MOD){
+		if(!anyone_help[name]) throw 'You do not have permission to use /'+name
+	}else if(perms == MOD && !mod_help[name]) throw 'You do not have permission to use /'+name
+	stat('misc', 'commands_used')
+	return commands[name].apply(player, params)
+}

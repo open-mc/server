@@ -3,7 +3,7 @@ import { WebSocket, WebSocketServer } from 'ws'
 import { Dimensions, players, PERMISSIONS } from '../world/index.js'
 import { chat, YELLOW } from './chat.js'
 import { PROTOCOL_VERSION, codes, onstring } from './incomingPacket.js'
-import { CONFIG, GAMERULES, DB, packs, stat, STATS } from '../config.js'
+import { CONFIG, GAMERULES, DB, stat, STATS } from '../config.js'
 import { DataReader, DataWriter } from 'dataproto'
 import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import crypto from 'node:crypto'
@@ -116,7 +116,7 @@ WebSocket.prototype.logMalicious = function(reason){
 	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
 }
 
-const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + packs.map(a=>'\0'+a).join(''))))
+const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + (CONFIG.components||['/vanilla/index.js']).map(a=>'\0'+a).join(''))))
 
 const playersConnecting = new Set()
 server.on('connection', function(sock, {url, headers, socket}){

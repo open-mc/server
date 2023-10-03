@@ -62,16 +62,20 @@ function buildBuffer(){
 		if(PM[id] === 65535){
 			PM[id] = palette.length
 			palette.push(id)
-			if(palette.length == 1024) break
+		}
+		if(palette.length == 256){
+			for(let i of palette) PM[i] = 65535
+			palette.length = 0
+			break
 		}
 	}
-	let buf = new Uint8Array(15 + palette.length * 2)
+	let buf = new Uint8Array(14 + palette.length * 2)
 	let buffers = [buf]
-	buf[1] = palette.length-1 >> 8; buf[2] = palette.length-1
-	buf[3] = buf[4] = 255
-	buf.set(chunkBiomes, 5)
+	buf[1] = palette.length-1
+	buf[2] = buf[3] = 255
+	buf.set(chunkBiomes, 4)
 	if(palette.length < 1024)
-		for(let i = 0; i < palette.length; i++) buf[15 + (i << 1)] = palette[i] >> 8, buf[16 + (i << 1)] = palette[i] 
+		for(let i = 0; i < palette.length; i++) buf[14 + (i << 1)] = palette[i] >> 8, buf[15 + (i << 1)] = palette[i] 
 	//encode data
 	if(palette.length < 2);
 	else if(palette.length == 2){

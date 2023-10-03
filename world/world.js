@@ -5,6 +5,7 @@ import { DataWriter } from 'dataproto'
 import { entityMap } from './tick.js'
 import { argv } from '../internals.js'
 import { Dimensions } from './index.js'
+import { BlockIDs } from '../blocks/block.js'
 
 const dimLevel = DB.sublevel('dimensions')
 
@@ -100,13 +101,21 @@ export class World extends Map{
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
 		if(!ch || ch instanceof Promise) return null
 		if(sock && !ch.sockets.includes(sock)) return null
-		return ch.tiles[(x & 63) + ((y & 63) << 6)]
+		const i = (x & 63) + ((y & 63) << 6)
+		return ch[i] == 65535 ? ch.tileData.get(i) : BlockIDs[ch[i]]
 	}
 	chunk(x, y){ return super.get((x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000) }
 	put(x, y, b){
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
 		if(!ch) return
-		ch.tiles[(x & 63) + ((y & 63) << 6)] = b
+		const i = (x & 63) + ((y & 63) << 6)
+		if(b.savedata){
+			ch.tileData.set(i, b)
+			ch[i] = 65535
+		}else{
+			ch.tileData.delete(i)
+			ch[i] = b
+		}
 		let buf = new DataWriter()
 		buf.byte(8)
 		buf.int(x)

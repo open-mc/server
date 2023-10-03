@@ -6,7 +6,7 @@ import { PORT, close, httpServer, secure, server } from './misc/server.js'
 import { ready, stats, fs } from './internals.js'
 import util from 'node:util'
 import { chat, LIGHT_GREY, ITALIC } from './misc/chat.js'
-import { commands, err } from './misc/commands.js'
+import { commands, err, executeCommand } from './misc/commands.js'
 import { input, repl } from 'basic-repl'
 import { Entities } from './entities/entity.js'
 import { Blocks } from './blocks/block.js'
@@ -30,7 +30,7 @@ httpServer.once('listening', () => {
 				}
 				if(!(match[0] in commands)) throw 'No such command: /'+match[0]
 				stat('misc', 'commands_used')
-				let res = await commands[match[0]].apply(server, match.slice(1))
+				const res = await executeCommand(match[0], match.slice(1), server, 4)
 				if(res)console.log(res)
 			}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
 		}else{

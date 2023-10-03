@@ -3,7 +3,7 @@ import { DataWriter } from 'dataproto'
 import { Chunk } from './chunk.js'
 import { Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
-import { stat, statAvg, STATS } from '../config.js'
+import { stat, statAvg } from '../config.js'
 import { mirrorEntity } from './encodemove.js'
 
 export let currentTPS = 0
@@ -47,7 +47,6 @@ function everySecond(){
 	}
 	stat('misc', 'age')
 }
-let lastTick = 0
 let timer = null
 export function setTPS(a){
 	currentTPS = actualTPS = a
@@ -55,8 +54,8 @@ export function setTPS(a){
 	clearInterval(timer)
 	timer = setInterval(everySecond, 1000)
 }
-
 globalThis.exiting = false
+let lastTick = performance.now()
 setTimeout(function s(){
 	setImmediate(s)
 	const mspt = 1000 / currentTPS

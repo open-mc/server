@@ -19,7 +19,7 @@ export function stepEntity(e, dt = 1 / currentTPS){
 	for(let cx = cx0; cx != cx1; cx = cx + 1 & 0x3FFFFFF){
 		for(let cy = cy0; cy != cy1; cy = cy + 1 & 0x3FFFFFF){
 			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world && e.world.get(cx+cy*0x4000000)
-			if(!chunk || !chunk.tiles) continue
+			if(!chunk) continue
 			for(const e2 of chunk.entities){
 				const {collisionPaddingX: ctpx, collisionPaddingY: ctpy} = e2
 				if((!e2.world | e2.netId <= e.netId) || e2.x + e2.width + ctpx < x0 || e2.x - e2.width - ctpx > x1 || e2.y + e2.height + ctpy < y0 || e2.y - ctpy > y1) continue

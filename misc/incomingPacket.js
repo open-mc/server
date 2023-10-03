@@ -1,5 +1,5 @@
 import { chat, prefix } from './chat.js'
-import { anyone_help, commands, err, log, mod_help } from './commands.js'
+import { anyone_help, commands, err, executeCommand, log, mod_help } from './commands.js'
 import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from 'dataproto'
@@ -368,12 +368,7 @@ export function onstring(player, text){
 				const a = match[i]
 				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 			}
-			if(!(match[0] in commands)) throw 'No such command: /'+match[0]
-			if(this.permissions < MOD){
-				if(!anyone_help[match[0]]) throw "You do not have permission to use /"+match[0]
-			}else if(player.permission == MOD && !mod_help[match[0]]) throw "You do not have permission to use /"+match[0]
-			stat('misc', 'commands_used')
-			let res = commands[match[0]].apply(player, match.slice(1))
+			const res = executeCommand(match[0], match.slice(1), player, this.permissions)
 			if(res)
 				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e), 9))
 				else player.chat(res)
@@ -386,4 +381,4 @@ export function onstring(player, text){
 	}
 }
 
-export const PROTOCOL_VERSION = 2
+export const PROTOCOL_VERSION = 3

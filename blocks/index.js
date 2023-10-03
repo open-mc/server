@@ -55,7 +55,6 @@ if(modified){
 	await DB.put('blockindex', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
 }
 
-Chunk.preAllocatedTiles.fill(Blocks.air)
 Chunk.PM = new Uint16Array(BlockIDs.length).fill(65535)
 
 loaded(`${BlockIDs.length} Blocks loaded`)

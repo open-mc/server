@@ -4,7 +4,7 @@
 name: Test Server
 maxplayers: 500
 
-path: ../world
+path: null
 
 # World simulation stuff
 world:
@@ -12,6 +12,10 @@ world:
   seed: 6969420 # 32 bit seed
   netherscale: 16
   chunkloadingrange: 3 # recommended: 3
+
+# Client components/mods
+components:
+  - /vanilla/index.js
 
 # Terrain generators
 generators:
