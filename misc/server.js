@@ -113,7 +113,7 @@ server.once('listening', () => started = Date.now())
 
 WebSocket.prototype.logMalicious = function(reason){
 	if(!argv.log) return
-	console.warn('\x1b[33m' + this._socket.remoteAddress + ' made a malicious packet: ' + reason)
+	throw this._socket.remoteAddress + ' made a malicious packet: ' + reason + new Error().stack.slice(5)
 }
 
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + (CONFIG.components||['/vanilla/index.js']).map(a=>'\0'+a).join(''))))

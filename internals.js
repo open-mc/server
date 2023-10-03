@@ -87,6 +87,7 @@ Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
 if(!parentPort) fs.rm(PATH + '.logs').catch(e=>null)
 
 export function uncaughtErr(e){
+	if(argv.log) console.error(e)
 	e = e && (e.stack || e.message || e)
 	if(!e) return
 	if(!parentPort) fs.appendFile(PATH + '.logs', e+'\n').catch(e=>console.log(e))

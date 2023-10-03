@@ -275,7 +275,7 @@ export const commands = {
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
 		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(x, y, w)
-		if(x2 < 0 || y2 < 0) return;
+		if(x2 < 0 || y2 < 0){x=x+x2|0;y=y+y2|0;x2=abs(x2)|0;y2=abs(y2)|0}
 		if(!(type in Blocks)) throw 'No such block: ' + type
 		const b = Blocks[type]
 		for(y = 0; y != y2+1; y=(y+1)|0){
@@ -292,7 +292,7 @@ export const commands = {
 	clear(sel = '@s', _item, _max = '2147483647'){
 		const Con = _item && Items[_item] || null
 		let cleared = 0, count = ''
-		_max += 0
+		_max = +_max
 		for(const e of selector(sel, this)){
 			if(!count && e.sock) count = e.name
 			else if(typeof count == 'string') count = 2-!count

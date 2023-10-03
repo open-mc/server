@@ -40,6 +40,7 @@ Math.ifloat = x => {
 	const f = Math.floor(x)
 	return (f | 0) + (x - f)
 }
+Math.ifloor = x => Math.floor(x) | 0
 
 /*//PERF!!!
 WebSocket.prototype.send = function(data, cb){
