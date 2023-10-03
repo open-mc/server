@@ -2,7 +2,7 @@
 # Script to install modules and continue running server forever
 
 # Move to folder if not already
-cd "$(dirname $0)"
+[[ $0 == /bin* ]] || cd "$(dirname $0)"
 
 runtime="node --allow-natives-syntax ."
 update="npm i"
@@ -13,6 +13,7 @@ update="npm i"
 
 git fetch
 A="$(git status -sb)"
+FLAGS=
 echo "$A" | grep 'behind ' > /dev/null
 if [ $? -eq 0 ]; then
 echo "$A" | grep 'ahead \| [A-Z] ' > /dev/null
@@ -20,11 +21,12 @@ if [ $? -eq 0 ]; then
 echo "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
 else
 git pull
-node -e "console.log('\\x1b[32mServer has been updated to '+require('./package.json').version+'.\\nPress enter to continue')"
-fi; read A; fi
+node -e "console.log('Server has been updated to '+require('./package.json').version+'.\\nPress enter to continue')"
+fi; FLAGS=" -manual"; fi
 A=
 
 while true; do
-$runtime && break
+$runtime $FLAGS && break
+FLAGS=
 echo "\012\033[31mServer crashed (exit code $?)"
 done
