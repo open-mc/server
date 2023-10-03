@@ -419,7 +419,7 @@ export const commands = {
 		const chunk = w.chunk(x, y)
 		if(!chunk) throw 'Chunk not loaded'
 		chunk.t = 2147483647
-		const buf = await generator(x, y, a, b)
+		const buf = new DataReader(await generator(x, y, a, b))
 		chunk.parse(buf)
 		const delw = new DataWriter()
 		delw.byte(17), delw.int(x), delw.int(y)

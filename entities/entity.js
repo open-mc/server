@@ -18,6 +18,7 @@ export class Entity{
 		this.dx  = this.dy  = this.f  = 0
 		this._dx = this._dy = this._f = 0
 		this.impactDx = this.impactDy = 0
+		this.impactSoftness = 0
 		this.chunk = null
 		this._state = this.state = 0
 		this.netId = -1

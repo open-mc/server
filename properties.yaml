@@ -9,7 +9,7 @@ path: ../world
 # World simulation stuff
 world:
   # Change gamemode by doing /gamerule spawnGamemode <gamemode>
-  seed: 6969420 # 32 bit seed
+  seed: 1234 # 32 bit seed
   netherscale: 16
   chunkloadingrange: 3 # recommended: 3
 

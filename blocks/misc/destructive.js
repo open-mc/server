@@ -8,7 +8,7 @@ Blocks.tnt = class extends Block{
 	static breaktime = 0
 	drops(){ return Items.tnt(4) }
 	destroy(){
-		super.destroy(false, false)
+		super.destroy(false, null)
 		const tnt = summon(Entities.tnt)
 		tnt.age = floor(random() * 20) + 55
 		return

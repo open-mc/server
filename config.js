@@ -66,7 +66,7 @@ export const [
 
 GAMERULES.commandlogs ??= true
 GAMERULES.spawnx ??= 0
-GAMERULES.spawny ??= 20
+GAMERULES.spawny ??= 18
 GAMERULES.spawnworld ??= 'overworld'
 GAMERULES.randomtickspeed ??= 2
 GAMERULES.globalevents ??= true

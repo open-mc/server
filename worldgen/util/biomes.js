@@ -71,11 +71,11 @@ const biomes = [Biomes.void, Biomes.void, Biomes.void, Biomes.void, Biomes.void]
 export const biomesFor = (cx) => {
 	const b = biomesheet(cx >> 5)
 	let i = (cx & 31) << 2
-	biomes[0] = biomemap[(chunkBiomes[0] = b[  i]) >> 3 | (chunkBiomes[1] = b[i + 129]) >> 3 << 5]
-	biomes[1] = biomemap[(chunkBiomes[2] = b[++i]) >> 3 | (chunkBiomes[3] = b[i + 129]) >> 3 << 5]
-	biomes[2] = biomemap[(chunkBiomes[4] = b[++i]) >> 3 | (chunkBiomes[5] = b[i + 129]) >> 3 << 5]
-	biomes[3] = biomemap[(chunkBiomes[6] = b[++i]) >> 3 | (chunkBiomes[7] = b[i + 129]) >> 3 << 5]
-	biomes[4] = biomemap[(chunkBiomes[8] = b[++i]) >> 3 | (chunkBiomes[9] = b[i + 129]) >> 3 << 5]
+	biomes[0] = biomemap[(chunkBiomes[0] = b[  i]) >> 3 | (chunkBiomes[1] = b[i+129]) >> 3 << 5]
+	biomes[1] = biomemap[(chunkBiomes[2] = b[++i]) >> 3 | (chunkBiomes[3] = b[i+129]) >> 3 << 5]
+	biomes[2] = biomemap[(chunkBiomes[4] = b[++i]) >> 3 | (chunkBiomes[5] = b[i+129]) >> 3 << 5]
+	biomes[3] = biomemap[(chunkBiomes[6] = b[++i]) >> 3 | (chunkBiomes[7] = b[i+129]) >> 3 << 5]
+	biomes[4] = biomemap[(chunkBiomes[8] = b[++i]) >> 3 | (chunkBiomes[9] = b[i+129]) >> 3 << 5]
 	return biomes
 }
 export const constantBiome = b => {
