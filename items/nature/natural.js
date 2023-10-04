@@ -3,9 +3,9 @@ import { place } from '../../misc/ant.js'
 import { Item, Items } from '../item.js'
 
 Items.grass = class Grass extends Item{
-	place(){ place(Blocks.grass); super.use(true) }
+	place(){ place(Blocks.grass); super.use() }
 }
 
 Items.dirt = class Dirt extends Item{
-	place(){ place(Blocks.dirt); super.use(true) }
+	place(){ place(Blocks.dirt); super.use() }
 }

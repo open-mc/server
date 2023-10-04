@@ -6,7 +6,7 @@ import { Entities, Entity } from '../entities/entity.js'
 import { optimize, stats } from '../internals.js'
 import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
-import { Blocks } from '../blocks/block.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, entityMap } from '../world/tick.js'
 import { server, started } from './server.js'
 import { generator } from '../world/gendelegator.js'
@@ -206,8 +206,8 @@ export const commands = {
     	const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
 			e.x = x, e.y = y, e.world = w, e.sock && e.rubber(X | Y)
-		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to (${x}, ${y}) in the ${w.id}`)
-		else return log(this, `Teleported ${targets[0].name} to (${x}, ${y}) in the ${w.id}`)
+		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to (${x.toFixed(3)}, ${y.toFixed(3)}) in the ${w.id}`)
+		else return log(this, `Teleported ${targets[0].name} to (${x.toFixed(3)}, ${y.toFixed(3)}) in the ${w.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')
@@ -264,8 +264,15 @@ export const commands = {
 	},
 	setblock(_x = '~', _y = '~', type, data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
-		if(!(type in Blocks)) throw 'No such block: ' + type
-		const b = Blocks[type]()
+		let b
+		if(type == (type & 65535)){
+			type = type & 65535
+			if(type >= BlockIDs.length) throw 'No such block ID: ' + type
+			b = BlockIDs[type]
+		}else{
+			if(!(type in Blocks)) throw 'No such block: ' + type
+			b = Blocks[type]
+		}
 		snbt(data, 0, b, b.savedata)
 		goto(w, floor(x), floor(y))
 		place(b)
@@ -277,8 +284,15 @@ export const commands = {
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
 		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(w, x, y)
 		if(x2 < 0 || y2 < 0){x=x+x2|0;y=y+y2|0;x2=abs(x2)|0;y2=abs(y2)|0}
-		if(!(type in Blocks)) throw 'No such block: ' + type
-		const b = Blocks[type]
+		let b
+		if(type == (type & 65535)){
+			type = type & 65535
+			if(type >= BlockIDs.length) throw 'No such block ID: ' + type
+			b = BlockIDs[type]
+		}else{
+			if(!(type in Blocks)) throw 'No such block: ' + type
+			b = Blocks[type]
+		}
 		for(y = 0; y != y2+1; y=(y+1)|0){
 			for(x = 0; x != x2+1; x=(x+1)|0){
 				place(b)
@@ -289,6 +303,16 @@ export const commands = {
 		n = performance.now() - n
 		const count = x2*y2+x2+y2+1
 		return log(this, 'Filled '+count+' blocks with ' + type + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : ''))
+	},
+	id(type){
+		if(type == (type & 65535)){
+			type = type & 65535
+			if(type >= BlockIDs.length) throw 'No such block ID: ' + type
+			return 'Block ID '+type+' is '+BlockIDs[type].className
+		}else{
+			if(!(type in Blocks)) throw 'No such block: ' + type
+			return 'Block '+type+' has ID '+Blocks[type].id
+		}
 	},
 	clear(sel = '@s', _item, _max = '2147483647'){
 		const Con = _item && Items[_item] || null

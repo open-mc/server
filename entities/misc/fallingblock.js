@@ -1,4 +1,4 @@
-import { BlockIDs } from "../../blocks/block.js"
+import { BlockIDs, Blocks } from "../../blocks/block.js"
 import { goto, peek, place } from "../../misc/ant.js"
 import { Entities, Entity } from "../entity.js"
 
@@ -15,7 +15,7 @@ Entities.falling_block = class extends Entity{
 			const bl = peek()
 			if(!bl.solid){
 				bl.destroy(false)
-				place(BlockIDs[this.block])
+				place(BlockIDs[this.block] ?? Blocks.air)
 				return void this.remove()
 			}
 		}
