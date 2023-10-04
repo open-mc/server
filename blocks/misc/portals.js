@@ -54,7 +54,7 @@ Blocks.portal = class extends Block{
 		
 		// Create a portal
 		// we'll just put it at (targetX, targetY) for now
-		goto(targetX, targetY - 1, dim)
+		goto(dim, targetX, targetY - 1)
 		place(Blocks.obsidian)
 		up(); place(Blocks.portal)
 		antChunk.portals.push(chunkTileIndex)
@@ -89,7 +89,7 @@ Blocks.end_portal = class extends Block{
 			e.x = 100.5
 			e.y = 1
 			if(e.sock) e.rubber(X | Y)
-			goto(98, 0, Dimensions.end)
+			goto(Dimensions.end, 98, 0)
 			for(let i = 0; i < 5; i++)
 				place(Blocks.obsidian), right()
 			for(let i = 0; i < 3; i++){

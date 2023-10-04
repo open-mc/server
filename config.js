@@ -1,33 +1,50 @@
-import { fs,  } from './internals.js'
+import { fs, argv } from './internals.js'
 import { parse } from 'yaml'
 import { Level } from 'level'
 
 export let CONFIG
-
-const w2 = fs.watch(PATH + "properties.yaml")[Symbol.asyncIterator]()
-
-function clone(o){
-	if(Array.isArray(o)) return o.map(clone)
-	else if(o && typeof o === 'object'){
-		o = {...o}
-		for(const k in o) o[k] = clone(o[k])
+if(!argv.length) argv[0] = PATH + 'properties.yaml'
+function argvConfig(){
+	const o = {}
+	for(let i in argv){
+		let v = argv[i]
+		if(i.endsWith('[]')) i = i.slice(0, -2), v = v === true ? [] : new Array(v).fill(null)
+		const path = i.split('.')
+		const k = path.pop()
+		path.reduce((a,b)=>a[b]??={},o)[k] = v
 	}
 	return o
 }
-
-async function loadConfig(a){
-	if(a)console.info("Reloading config...")
+function fallback(o, f){
+	for(const k in f){
+		if(k in o){
+			if(typeof f[k] == 'object') fallback(o[k], f[k])
+		}else o[k] = f[k]
+	}
+	return o
+}
+async function loadConfigs(i){
+	if(i)console.info("Reloading config...")
 	const p = CONFIG && CONFIG.path
-	try{ CONFIG = parse(await fs.readFile(PATH + "properties.yaml").then(a => a.toString())) }catch(e){}
+	const promises = []
+	for(let i = 0; i < argv.length; i++){
+		promises.push(fs.readFile(argv[i]).then(a => parse(a.toString())).catch(e=>({})))
+	}
+	const C = (await Promise.all(promises)).reduce(fallback, argvConfig())
+	if(!C.port | !C.world) throw 'Invalid config file(s)'
+	CONFIG = C
 	if(p && CONFIG.path != p) console.warn('To change world save path, reload the server')
-	w2.next().then(loadConfig)
+}
+for(let i = 0; i < argv.length; i++){
+	const w2 = fs.watch(argv[i])[Symbol.asyncIterator]()
+	w2.next().then(function S(){ loadConfigs(true); w2.next().then(S) }).catch(e=>null)
 }
 
 export const DEFAULT_TPS = 20
 
 export const json = a => JSON.parse(''+a)
 export const filesLoaded = task('Loading config files')
-await loadConfig()
+await loadConfigs(false)
 class VolatileLevel extends Map{
 	sublevels = new Map
 	sublevel(a){let s=this.sublevels.get(a);if(!s)this.sublevels.set(a,s=new VolatileLevel);return s}

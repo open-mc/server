@@ -80,7 +80,7 @@ const handler = (req, res) => {
 	try{
 		if(endpoint in endpoints) return endpoints[endpoint](res, i, req)
 	}catch(e){
-		if(argv.log)
+		if(CONFIG.log)
 			console.warn(e)
 	}
 	return res.end('404')
@@ -98,7 +98,7 @@ if(key && cert){
 	const {subject: {CN}, valid_to} = sock.getCertificate()
 	const expires = +new Date(valid_to)
 	if(expires < Date.now()) console.warn('SSL certificate has expired')
-	wsHost = argv.host ?? CONFIG.host ?? CN.split(',').find(a=>!a.includes('*'))
+	wsHost = CONFIG.host ?? CN.split(',').find(a=>!a.includes('*'))
 	if(!wsHost) throw "Unable to determine host name, which is required for secure servers. Specify one via -host=<host> as a command line argument, or add a property 'host' in properties.yaml\n"
 	wsHost = 'wss://' + wsHost + ':' + PORT
 	httpHost = wsHost.replace('ws', 'http')

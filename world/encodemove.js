@@ -33,7 +33,7 @@ export function calculateMv(e){
 		if(chunk){
 			if(e.chunk) e.chunk.entities.remove(e)
 			void (e.chunk = chunk).entities.push(e)
-		} // VOID ENTITY DILEMMA
+		}
 	}
 	return mv & 255
 }

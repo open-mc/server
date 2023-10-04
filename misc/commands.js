@@ -267,7 +267,7 @@ export const commands = {
 		if(!(type in Blocks)) throw 'No such block: ' + type
 		const b = Blocks[type]()
 		snbt(data, 0, b, b.savedata)
-		goto(floor(x), floor(y), w)
+		goto(w, floor(x), floor(y))
 		place(b)
 		return log(this, 'Set block at ('+(floor(x)|0)+', '+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
 	},
@@ -275,7 +275,7 @@ export const commands = {
 		let n = performance.now()
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
-		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(x, y, w)
+		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(w, x, y)
 		if(x2 < 0 || y2 < 0){x=x+x2|0;y=y+y2|0;x2=abs(x2)|0;y2=abs(y2)|0}
 		if(!(type in Blocks)) throw 'No such block: ' + type
 		const b = Blocks[type]

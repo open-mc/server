@@ -19,8 +19,10 @@ export function tick(){
 		}
 	}
 	for(const e of entityMap.values()){
-		if(!e.sock & !(!e.chunk | !e.world))
-			fastCollision(e), stepEntity(e)
+		if(!e.sock && e.shouldSimulate())
+			fastCollision(e)
+		if(!e.sock && e.shouldSimulate())
+			stepEntity(e)
 		mirrorEntity(e)
 	}
 	for(const pl of players.values()){

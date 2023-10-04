@@ -23,7 +23,7 @@ export class Entity{
 		this._state = this.state = 0
 		this.netId = -1
 		this.sock = null
-		this._name = ''
+		this._name = this.name = ''
 		this.age = 0
 		this.pendingEvents = []
 	}
@@ -42,7 +42,7 @@ export class Entity{
 	 * @return {Function} constructor for that entity
 	 */
 	[Symbol.for('nodejs.util.inspect.custom')](){
-		return `Entities.${this.className} { x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32m${this.world ? 'Dimensions.' + this.world.id : 'null'}\x1b[m${Object.hasOwn(this, 'name') ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} }`
+		return `Entities.${this.className} { x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32m${this.world ? 'Dimensions.' + this.world.id : 'null'}\x1b[m${this.name ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} }`
 	}
 	kill(cause){
 		if(this.state&0x8000) return
@@ -52,6 +52,17 @@ export class Entity{
 		if(this.sock)
 			chatImport.chat((deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
 		else this.remove()
+	}
+	shouldSimulate(){
+		if(!this.world) return false
+		const chunk = this.world.get((floor(this.x)>>6&0x3FFFFFF)+(floor(this.y)>>6&0x3FFFFFF)*0x4000000)
+		if(!chunk) return false
+		if(floor(this.x)>>>5&1)
+			if(floor(this.y)>>>5&1) return (chunk.loadedAround&7)==7
+			else return (chunk.loadedAround&28)==28
+		else
+			if(floor(this.y)>>>5&1) return (chunk.loadedAround&112)==112
+			else return (chunk.loadedAround&193)==193
 	}
 	remove(){
 		// Don't delete it yet, mark it for deletion

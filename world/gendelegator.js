@@ -1,12 +1,12 @@
-import { Worker, argv, uncaughtErr } from '../internals.js'
+import { Worker, uncaughtErr } from '../internals.js'
 import { CONFIG, stat } from '../config.js'
 import { gotStats } from '../internals.js'
-import { DataReader } from 'dataproto'
 import { blockindex } from '../blocks/index.js'
 import { itemindex } from '../items/index.js'
+import { entityindex } from '../entities/index.js'
 
 const loaded = task('Loading WorldGen process...')
-const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv: [blockindex, itemindex] })
+const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv: [blockindex, itemindex, entityindex] })
 
 const waiting = new Map()
 let key = 0

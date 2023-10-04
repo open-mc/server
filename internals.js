@@ -19,9 +19,9 @@ for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args)
 	if(opt.startsWith('-')){
 		const i = opt.indexOf('=')
 		if(i < 0){
-			argv[opt.slice(1)] = true
+			argv[opt.slice(1+(opt[1]=='-'))] = true
 		}else{
-			const k = opt.slice(1, i), v = opt.slice(i + 1)
+			const k = opt.slice(1+(opt[1]=='-'), i), v = opt.slice(i + 1)
 			if(k==k>>>0) throw 'Invalid argument name: '+k
 			const nv = +v
 			argv[k] = nv == nv ? nv : v
@@ -87,7 +87,7 @@ Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
 if(!parentPort) fs.rm(PATH + '.logs').catch(e=>null)
 
 export function uncaughtErr(e){
-	if(argv.log) console.error(e)
+	console.error(e)
 	e = e && (e.stack || e.message || e)
 	if(!e) return
 	if(!parentPort) fs.appendFile(PATH + '.logs', e+'\n').catch(e=>console.log(e))

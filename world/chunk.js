@@ -16,9 +16,9 @@ export class Chunk extends Uint16Array{
 		this.x = x & 0x3ffffff; this.y = y & 0x3ffffff
 		this.entities = []; this.t = -1
 		this.biomes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		this.loadedAround = 0b00_00_00_00
 	}
 	parse(buf){
-		this.world.set(this.x+this.y*0x4000000, this)
 		if(this.world == antWorld) _newchunk(this)
 		//read buf palette
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
@@ -115,8 +115,8 @@ export class Chunk extends Uint16Array{
 		for(const e of this.entities){
 			if(e.sock && !packet)continue
 			buf.short(e.id)
-			buf.short((e.x % 64 + 64) * 1024)
-			buf.short((e.y % 64 + 64) * 1024)
+			buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
+			buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
 			buf.int(e.netId | 0)
 			buf.short(e.netId / 4294967296 | 0)
 			buf.string(e.name)

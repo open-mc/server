@@ -29,7 +29,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	update(){
 		super.update()
 		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
-			goto(this.bx, this.by, this.world)
+			goto(this.world, this.bx, this.by)
 			const tile = peek()
 			blockevent(2)
 			place(Blocks.air)

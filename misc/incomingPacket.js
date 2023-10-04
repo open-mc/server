@@ -68,11 +68,11 @@ function validateMove(sock, player, buf){
 		}
 	}
 	if(!rubber){
-		player.dx = mx * currentTPS * 1.01
-		player.dy = my * currentTPS * 1.01
+		player.dx = mx * currentTPS
+		player.dy = my * currentTPS
 		fastCollision(player)
 		player.impactDx = buf.float(); player.impactDy = buf.float()
-		stepEntity(player)
+		if(player.world) stepEntity(player)
 	}else player.rubber(), buf.double()
 }
 
@@ -88,6 +88,7 @@ function playerMovePacket(player, buf){
 		if(player.state&0x8000) break top
 
 		validateMove(this, player, buf)
+		if(!player.world) return
 		
 		statRecord('player', 'max_speed', Math.sqrt(player.dx * player.dx + player.dy * player.dy))
 		statRecord('player', 'max_dist', Math.sqrt(player.x * player.x + player.y * player.y))
@@ -111,7 +112,7 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
-		goto(bx, by, player.world)
+		goto(player.world, bx, by)
 		const reach = min(sqrt(x * x + y * y), 10)
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach

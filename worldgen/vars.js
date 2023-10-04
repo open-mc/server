@@ -5,6 +5,7 @@ export const air = () => chunk = empty.slice(0)
 
 export const Blocks = {}
 export const Items = {}
+export const Entities = {}
 export const Biomes = {}
 
 export let seed = 0

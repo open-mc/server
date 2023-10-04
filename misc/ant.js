@@ -1,4 +1,5 @@
 import { BlockIDs } from '../blocks/block.js'
+import { Entity } from '../entities/entity.js'
 import { optimize } from '../internals.js'
 
 let cx = 0, cy = 0, pos = 0
@@ -21,8 +22,12 @@ export function gotozero(w){
 	chunk = (world = w).get(0)
 }
 
-export function goto(x, y, w){
-	if(typeof x == 'object')w=x.world,y=floor(x.y)|0,x=floor(x.x)|0
+export function goto(w, x=0, y=0){
+	if(w instanceof Entity){
+		x = floor(w.x+x)|0
+		y = floor(w.y+y)|0
+		w = w.world
+	}
 	cx = x >>> 6; cy = y >>> 6; world = w; pos = (x & 0b000000111111) | (y & 0b000000111111) << 6
 	cachex = cachey = 0x4000000
 	chunk = world.get(cx+cy*0x4000000)
@@ -178,14 +183,13 @@ export function select(x0, y0, x1, y1, cb){
 	y0 += cy<<6|pos>>6; y1 += (cy<<6|pos>>6) + 1
 	const cx0 = floor(x0) >>> 6, cx1 = ceil(x1 / 64) & 0x3FFFFFF
 	const cy0 = floor(y0) >>> 6, cy1 = ceil(y1 / 64) & 0x3FFFFFF
-	let i = 0
 	for(let cxa = cx0; cxa != cx1; cxa = cxa + 1 & 0x3FFFFFF){
 		for(let cya = cy0; cya != cy1; cya = cya + 1 & 0x3FFFFFF){
 			const ch = (cxa == cx & cya == cy) && chunk || world.get(cxa+cya*0x4000000)
 			if(!ch || !ch.entities) continue
-			for(const e2 of ch.entities){
-				if((e2.state&0x8000 | !e2.world) || (e2.x < x0 | e2.x > x1) || (e2.y < y0 | e2.y > y1)) continue
-				cb(e2)
+			for(const e of ch.entities){
+				if((e.state&0x8000 | !e.world) || (e.x < x0 | e.x > x1) || (e.y < y0 | e.y > y1)) continue
+				cb(e)
 			}
 		}
 	}

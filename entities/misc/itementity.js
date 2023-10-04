@@ -31,8 +31,8 @@ Entities.item = class ItemEntity extends Entity{
 		}
 		if(this.age < 10 || !e.inv) return
 		if(e.give(this.item)){
-			if(this.item.count <= 0) this.item = null, this.remove()
-			else this.event(1, buf => buf.byte(this.item.count))
+			this.event(1, buf => buf.byte(this.item.count))
+			if(this.item.count <= 0) this.remove()
 		}
 	}
 }

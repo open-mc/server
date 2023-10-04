@@ -22,18 +22,39 @@ export class World extends Map{
 		else this.gend = a, this.genn = b
 	}
 	static new(id){ return Dimensions[id] ??= new World(id) }
+	make(cx, cy){
+		const ch = new Chunk(cx, cy, this)
+		super.set((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000, ch)
+		const l = super.get((cx-1&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000),
+			r = super.get((cx+1&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000),
+			u = super.get((cx&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
+			d = super.get((cx&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000),
+			ul = super.get((cx-1&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
+			ur = super.get((cx+1&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
+			dl = super.get((cx-1&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000),
+			dr = super.get((cx+1&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000)
+		if(u) ch.loadedAround |= 1, u.loadedAround |= 16
+		if(ur) ch.loadedAround |= 2, ur.loadedAround |= 32
+		if(r) ch.loadedAround |= 4, r.loadedAround |= 64
+		if(dr) ch.loadedAround |= 8, dr.loadedAround |= 128
+		if(d) ch.loadedAround |= 16, d.loadedAround |= 1
+		if(dl) ch.loadedAround |= 32, dl.loadedAround |= 2
+		if(l) ch.loadedAround |= 64, l.loadedAround |= 4
+		if(ul) ch.loadedAround |= 128, ul.loadedAround |= 8
+		return ch
+	}
 	load(cx, cy){
 		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(!ch){
-			super.set(k, ch = new Chunk(cx, cy, this))
+			ch = this.make(cx, cy)
 			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
 				ch.t = 20
-				try{ch.parse(buf)}catch(e){if(argv.log)console.warn(e)}
+				try{ch.parse(buf)}catch(e){if(CONFIG.log)console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				for(const sock of ch.sockets)
 					sock.send(buf)
@@ -45,14 +66,14 @@ export class World extends Map{
 		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(!ch){
-			super.set(k, ch = new Chunk(cx, cy, this))
+			ch = this.make(cx, cy)
 			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
 				ch.t = 20
-				try{ch.parse(buf)}catch(e){if(argv.log)console.warn(e)}
+				try{ch.parse(buf)}catch(e){if(CONFIG.log)console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				for(const sock of ch.sockets)
 					sock.send(buf)
@@ -85,6 +106,23 @@ export class World extends Map{
 		this.level.put(''+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
 			super.delete(k) //Completely unloaded with no re-loads, delete chunk
+			let c = super.get((ch.x-1&0x3FFFFFF)+ch.y*0x4000000)
+			if(c) c.loadedAround &= ~4
+			c = super.get((ch.x+1&0x3FFFFFF)+ch.y*0x4000000)
+			if(c) c.loadedAround &= ~64
+			c = super.get(ch.x+(ch.y+1&0x3FFFFFF)*0x4000000)
+			if(c) c.loadedAround &= ~16
+			c = super.get(ch.x+(ch.y-1&0x3FFFFFF)*0x4000000)
+			if(c) c.loadedAround &= ~1
+			c = super.get((ch.x-1&0x3FFFFFF)+(ch.y+1&0x3FFFFFF)*0x4000000)
+			if(c) c.loadedAround &= ~8
+			c = super.get((ch.x+1&0x3FFFFFF)+(ch.y+1&0x3FFFFFF)*0x4000000)
+			if(c) c.loadedAround &= ~32
+			c = super.get((ch.x-1&0x3FFFFFF)+(ch.y-1&0x3FFFFFF)*0x4000000)
+			if(c) c.loadedAround &= ~2
+			c = super.get((ch.x+1&0x3FFFFFF)+(ch.y-1&0x3FFFFFF)*0x4000000)
+			if(c) c.loadedAround &= ~128
+
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
 		})
 	}

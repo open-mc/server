@@ -1,6 +1,6 @@
-import { fs, parentPort, argv } from '../internals.js'
+import { fs, parentPort } from '../internals.js'
 import { jsonToType } from 'dataproto'
-import { air, Blocks, chunk, chunkBiomes, empty, Items, setSeed } from './vars.js'
+import { air, Blocks, chunk, chunkBiomes, empty, Items, Entities, setSeed } from './vars.js'
 import { Level } from 'level'
 
 parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
@@ -25,7 +25,7 @@ parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'})
 	}
 })
 
-let blockCount = 0, itemCount = 0
+let blockCount = 0, itemCount = 0, entityCount = 0
 let i = 0
 for(let a of process.argv[2].split('\n')){
 	a = a.split(' ')
@@ -43,6 +43,15 @@ for(let a of process.argv[3].split('\n')){
 	Object.assign(f, def)
 	Items[a[0]] = f
 	itemCount++
+}
+i = 0
+for(let a of process.argv[4].split('\n')){
+	a = a.split(' ')
+	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
+	const f = (x, y, data = {}) => (data.x=x,data.y=y,Object.assign(data, def))
+	Object.assign(f, def)
+	Entities[a[0]] = f
+	entityCount++
 }
 
 const GENERATORS = Object.create(null)

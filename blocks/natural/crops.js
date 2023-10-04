@@ -1,6 +1,7 @@
 import { Items } from '../../items/item.js'
 import { load, peek, peekdown, place, save, up, down } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
+import './grass.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
@@ -56,11 +57,17 @@ Blocks.pumpkin_leaf3 = class extends PumpkinLeaf{
 	}
 }
 
-Blocks.farmland = class extends Block{
-	
-}
-Blocks.hydrated_farmland = class extends Block{
+Blocks.farmland = class extends Blocks.dirt{
+	static blockShape = [0, 0, 1, 0.9375]
+	randomtick(){
 
+	}
+}
+Blocks.hydrated_farmland = class extends Blocks.dirt{
+	static blockShape = [0, 0, 1, 0.9375]
+	randomtick(){
+		
+	}
 }
 
 function growthRate(){

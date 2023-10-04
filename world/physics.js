@@ -18,13 +18,14 @@ export function stepEntity(e, dt = 1 / currentTPS){
 	const cy0 = floor(y0) >>> 6, cy1 = ceil((y1 + 32) / 64) & 0x3FFFFFF
 	for(let cx = cx0; cx != cx1; cx = cx + 1 & 0x3FFFFFF){
 		for(let cy = cy0; cy != cy1; cy = cy + 1 & 0x3FFFFFF){
-			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world && e.world.get(cx+cy*0x4000000)
+			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world.get(cx+cy*0x4000000)
 			if(!chunk) continue
 			for(const e2 of chunk.entities){
 				const {collisionPaddingX: ctpx, collisionPaddingY: ctpy} = e2
 				if((!e2.world | e2.netId <= e.netId) || e2.x + e2.width + ctpx < x0 || e2.x - e2.width - ctpx > x1 || e2.y + e2.height + ctpy < y0 || e2.y - ctpy > y1) continue
 				e.touch?.(e2)
-				e2.touch?.(e)
+				if(!e.world) return
+				if(e2.world) e2.touch?.(e)
 			}
 		}
 	}
@@ -33,14 +34,15 @@ export function stepEntity(e, dt = 1 / currentTPS){
 }
 
 export const EPSILON = .0001
+export const COSMIC_SPEED_LIMIT = 32
 export function fastCollision(e, dt = 1 / currentTPS){
-	const dx = e.dx * dt, dy = e.dy * dt
+	const dx = max(-COSMIC_SPEED_LIMIT, min(e.dx * dt, COSMIC_SPEED_LIMIT)), dy = max(-COSMIC_SPEED_LIMIT, min(e.dy * dt, COSMIC_SPEED_LIMIT))
 	e.state &= 0xFFFF
 	const CLIMB = e.impactDy < 0 ? e.stepHeight ?? 0.01 : 0.01
-	e.impactDx = e.impactDy = 0
+	e.impactDx = e.impactDy = e.impactSoftness = 0
 	let x0 = floor(e.x - e.width + EPSILON)
 	let y0 = floor(e.y + EPSILON)
-	goto(x0, y0, e.world)
+	goto(e.world, x0, y0)
 	const xw = e.x + e.width - EPSILON - x0
 	y: if(dy > 0){
 		const ey = ceil(e.y + e.height + dy - EPSILON) + 1 - y0
@@ -82,13 +84,20 @@ export function fastCollision(e, dt = 1 / currentTPS){
 			if((y === ey + 1 ? ty <= e.y + dy - EPSILON : ys < 0) || ty > e.y + EPSILON) continue
 			e.y = ty
 			e.impactDy = e.dy
+			{
+				const ey = floor(e.y - EPSILON) - y0
+				for(let x = 0; x < xw; x++){
+					const s = peekat(x, ey).softness ?? 0
+					if(s > e.impactSoftness) e.impactSoftness = s
+				}
+			}
 			e.dy = 0
 			break y
 		}
 		e.y = ifloat(e.y + dy)
 	}
 	y0 = floor(e.y + EPSILON)
-	goto(x0, y0, e.world)
+	goto(e.world, x0, y0)
 	x: if(dx > 0){
 		const ex = ceil(e.x + e.width + dx - EPSILON) - x0
 		for(let x = ceil(e.x + e.width - EPSILON) - x0 - 1; x < ex; x++){
@@ -153,11 +162,12 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		}
 		e.x = ifloat(e.x + dx)
 	}
-	x0 = floor(e.x - e.width + EPSILON)
-	goto(x0, y0, e.world)
+	x0 = floor(e.x - e.width - EPSILON)
+	y0 = floor(e.y - EPSILON)
+	goto(e.world, x0, y0)
 	const p = save()
-	a: for(let y = ceil(e.y + e.height - EPSILON) - y0 - 1; y >= 0; y--)
-		b: for(let x = ceil(e.x + e.width - EPSILON) - x0 - 1; x >= 0; x--){
+	a: for(let y = ceil(e.y + e.height + EPSILON) - y0 - 1; y >= 0; y--)
+		b: for(let x = ceil(e.x + e.width + EPSILON) - x0 - 1; x >= 0; x--){
 			const b = peekat(x, y)
 			if(!b.touched) continue b
 			const {blockShape} = b
