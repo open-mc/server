@@ -26,7 +26,7 @@ fi; FLAGS=" -manual"; fi
 A=
 
 while true; do
-$runtime $FLAGS && break
+$runtime $FLAGS "$@" && break
 FLAGS=
 echo "\012\033[31mServer crashed (exit code $?)"
 sleep 2

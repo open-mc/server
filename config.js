@@ -3,7 +3,7 @@ import { parse } from 'yaml'
 import { Level } from 'level'
 
 export let CONFIG
-if(!argv.length) argv[0] = PATH + 'properties.yaml'
+if(!argv.length) argv[0] = PATH + '../properties.yaml'
 function argvConfig(){
 	const o = {}
 	for(let i in argv){
@@ -28,7 +28,7 @@ async function loadConfigs(i){
 	const p = CONFIG && CONFIG.path
 	const promises = []
 	for(let i = 0; i < argv.length; i++){
-		promises.push(fs.readFile(argv[i]).then(a => parse(a.toString())).catch(e=>({})))
+		promises.push(fs.readFile(argv[i]).catch(e=>fs.readFile(PATH+'.default_properties.yaml').then(buf=>(fs.writeFile(argv[i],buf).catch(e=>null),buf))).then(a => parse(a.toString())))
 	}
 	const C = (await Promise.all(promises)).reduce(fallback, argvConfig())
 	if(!C.port | !C.world) throw 'Invalid config file(s)'
