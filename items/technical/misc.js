@@ -1,7 +1,6 @@
 import { Blocks } from '../../blocks/block.js'
-import { GAMERULES } from '../../config.js'
 import { antChunk, jump, peek, place, right } from '../../misc/ant.js'
-import { players } from '../../world/index.js'
+import { players, GAMERULES } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
 Items.end_portal_frame = class extends Item{

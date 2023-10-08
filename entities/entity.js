@@ -1,8 +1,8 @@
 import { Item } from '../items/item.js'
-import { DataWriter } from 'dataproto'
+import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
-import { GAMERULES } from '../config.js'
+import { GAMERULES } from '../world/index.js'
 
 export const chatImport = {chat: null}
 

@@ -1,9 +1,8 @@
 //import all block files
-import { fs } from '../internals.js'
-import { jsonToType, typeToJson } from 'dataproto'
+import fs from 'fs/promises'
+import { jsonToType, typeToJson } from '../modules/dataproto.js'
 import { Chunk } from '../world/chunk.js'
 import { BlockIDs, Blocks, Block } from './block.js'
-import { DB } from '../config.js'
 
 const loaded = task('Loading blocks...')
 

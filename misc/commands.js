@@ -1,14 +1,13 @@
-import { GAMERULES, version, stat } from '../config.js'
 import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world/index.js'
-import { Dimensions } from '../world/index.js'
+import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { Entities, Entity } from '../entities/entity.js'
-import { optimize, stats } from '../internals.js'
+import '../node/internals.js'
 import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, entityMap } from '../world/tick.js'
-import { server, started } from './server.js'
+import { server } from '../node/server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
@@ -417,7 +416,7 @@ export const commands = {
 		return log(this, `Set the spawn point to (${GAMERULES.spawnx.toFixed(2)}, ${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(stats.elu[0]*100).toFixed(1)}%, RAM: ${(stats.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime you\'ve spent on this server: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime you\'ve spent on this server: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+currentTPS
@@ -551,7 +550,7 @@ export const anyone_help = {
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
-optimize(parseCoords, snbt, ...Object.values(commands))
+Function.optimizeImmediately(parseCoords, snbt, ...Object.values(commands))
 
 export function executeCommand(name, params, player, perms = 0){
 	if(!(name in commands)) throw 'No such command: /'+name

@@ -51,8 +51,9 @@ generators:
 
 port: 27277
 # Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
-key:
-cert:
+# Empty values will attempt to use a self signed certificate for localhost
+key: ""
+cert: ""
 
 showhealth: true # Show everyone's health on the TAB menu and server page
 

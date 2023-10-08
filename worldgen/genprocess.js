@@ -1,7 +1,9 @@
-import { fs, parentPort } from '../internals.js'
-import { jsonToType } from 'dataproto'
+import '../node/internals.js'
+import { jsonToType } from '../modules/dataproto.js'
 import { air, Blocks, chunk, chunkBiomes, empty, Items, Entities, setSeed } from './vars.js'
-import { Level } from 'level'
+
+parentPort.postMessage({key:-3})
+const indexes = await new Promise(r => parentPort.once('message', r))
 
 parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
 	if(name=='void'){
@@ -27,38 +29,35 @@ parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'})
 
 let blockCount = 0, itemCount = 0, entityCount = 0
 let i = 0
-for(let a of process.argv[2].split('\n')){
+for(let a of indexes[0].split('\n')){
 	a = a.split(' ')
-	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
-	const f = def.savedata ? (data = {}) => Object.assign(data, def) : () => def
-	Object.assign(f, def)
-	Blocks[a[0]] = f
+	const name = a.shift(); a = a.map(jsonToType)
+	const savedata = a.pop()
+	const f = savedata ? (data = {}) => {data.id=f.id;data.savedata=savedata;data.savedatahistory=a;return data} : () => f
+	f.id = i++; f.savedata = savedata; f.savedatahistory = a
+	Blocks[name] = f
 	blockCount++
 }
 i = 0
-for(let a of process.argv[3].split('\n')){
+for(let a of indexes[1].split('\n')){
 	a = a.split(' ')
-	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
-	const f = (count, data = {}) => (data.count = count, Object.assign(data, def))
-	Object.assign(f, def)
-	Items[a[0]] = f
+	const name = a.shift(); a = a.map(jsonToType)
+	const f = (count, data = {}) => (data.count=count,data.id=f.id,data.savedata=f.savedata,data.savedatahistory=a,data)
+	f.id = i++; f.savedata = a.pop(); f.savedatahistory = a
+	Items[name] = f
 	itemCount++
 }
 i = 0
-for(let a of process.argv[4].split('\n')){
+for(let a of indexes[2].split('\n')){
 	a = a.split(' ')
-	const def = {id: i++, savedata: jsonToType(a.length > 1 ? a.pop() : 'null')}
-	const f = (x, y, data = {}) => (data.x=x,data.y=y,Object.assign(data, def))
-	Object.assign(f, def)
-	Entities[a[0]] = f
+	const name = a.shift(); a = a.map(jsonToType)
+	const f = (x, y, data = {}) => (data.x=x,data.y=y,data.id=f.id,data.savedata=f.savedata,data.savedatahistory=a,data)
+	f.id = i++; f.savedata = a.pop(); f.savedatahistory = a
+	Entities[name] = f
 	entityCount++
 }
 
-const GENERATORS = Object.create(null)
-const loaded = []
-for(const gen of await fs.readdir(PATH + 'worldgen/dimensions'))
-	loaded.push(import('./dimensions/'+gen).then(m => GENERATORS[gen.replace('.js','')] = {...m}))
-await Promise.all(loaded)
+const GENERATORS = await import('./dimensions/index.js')
 
 empty.fill(Blocks.air)
 air()
@@ -130,11 +129,15 @@ function buildBuffer(){
 		buf[i<<1] = chunk[i].id>>8
 		buf[i<<1|1] = chunk[i].id
 	}
+	const bdata = new DataWriter()
 	//save block entities
-	/*for(let i = 0; i < 4096; i++){
-		let type = chunk[i].savedata
-		if(!type)continue
-	}*/
+	for(let i = 0; i < 4096; i++){
+		let b = chunk[i]
+		if(!b.savedata)continue
+		bdata.flint(b.savedatahistory.length)
+		bdata.write(b.savedata, b)
+	}
+	buffers.push(bdata.build())
 	for(let i of palette) PM[i] = 65535
 
 	let final = new Uint8Array(buffers.reduce((a, b) => a + b.byteLength, 0)), i = 0

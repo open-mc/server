@@ -1,7 +1,6 @@
-import { jsonToType, typeToJson } from 'dataproto'
+import { jsonToType, typeToJson } from '../modules/dataproto.js'
 import { Chunk } from '../world/chunk.js'
 import { World } from '../world/world.js'
-import { DB } from '../config.js'
 
 const loaded = task('Loading misc defs...')
 

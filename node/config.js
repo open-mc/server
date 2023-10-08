@@ -1,8 +1,9 @@
-import { fs, argv } from './internals.js'
+import fs from 'fs/promises'
+import { argv } from './internals.js'
 import { parse } from 'yaml'
 import { Level } from 'level'
 
-export let CONFIG
+globalThis.CONFIG = null
 if(!argv.length) argv[0] = PATH + '../properties.yaml'
 function argvConfig(){
 	const o = {}
@@ -28,7 +29,7 @@ async function loadConfigs(i){
 	const p = CONFIG && CONFIG.path
 	const promises = []
 	for(let i = 0; i < argv.length; i++){
-		promises.push(fs.readFile(argv[i]).catch(e=>fs.readFile(PATH+'.default_properties.yaml').then(buf=>(fs.writeFile(argv[i],buf).catch(e=>null),buf))).then(a => parse(a.toString())))
+		promises.push(fs.readFile(argv[i]).catch(e=>fs.readFile(PATH+'node/.default_properties.yaml').then(buf=>(fs.writeFile(argv[i],buf).catch(e=>null),buf))).then(a => parse(a.toString())))
 	}
 	const C = (await Promise.all(promises)).reduce(fallback, argvConfig())
 	if(!C.port | !C.world) throw 'Invalid config file(s)'
@@ -39,12 +40,6 @@ for(let i = 0; i < argv.length; i++){
 	const w2 = fs.watch(argv[i])[Symbol.asyncIterator]()
 	w2.next().then(function S(){ loadConfigs(true); w2.next().then(S) }).catch(e=>null)
 }
-
-export const DEFAULT_TPS = 20
-
-export const json = a => JSON.parse(''+a)
-export const filesLoaded = task('Loading config files')
-await loadConfigs(false)
 class VolatileLevel extends Map{
 	sublevels = new Map
 	sublevel(a){let s=this.sublevels.get(a);if(!s)this.sublevels.set(a,s=new VolatileLevel);return s}
@@ -67,44 +62,11 @@ class VolatileLevel extends Map{
 		return t
 	}
 }
-export const DB = CONFIG.path ? new Level(CONFIG.path[0] == '/' || CONFIG.path[0] == '~' ? CONFIG.path : PATH + CONFIG.path) : new VolatileLevel()
-if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
-await DB.open()
-
-export const [
-	GAMERULES,
-	STATS,
-	{ version }
-] = await Promise.all([
-	DB.get('gamerules').then(json).catch(e=>({})),
-	DB.get('stats').then(json).catch(e=>({})),
-	fs.readFile(PATH + 'package.json').then(json),
-])
-
-GAMERULES.commandlogs ??= true
-GAMERULES.spawnx ??= 0
-GAMERULES.spawny ??= 18
-GAMERULES.spawnworld ??= 'overworld'
-GAMERULES.randomtickspeed ??= 2
-GAMERULES.globalevents ??= true
-GAMERULES.keepinventory ??= false
-GAMERULES.mobloot ??= true
-
-export function stat(cat, name, v = 1){
-	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
-	return o[name] = (o[name] ?? 0) + v
-}
-export function statAvg(cat, name, v, lower = 0){
-	const countProp = name + '_count'
-	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0, [countProp]: 0})
-	const count = 1 / (o[countProp] = (o[countProp] ?? 0) + 1)
-	return o[name] = (o[name] ?? 0) * (1 - count) + v * count
-}
-export function statRecord(cat, name, v){
-	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
-	return o[name] = max(o[name] ?? 0, v)
-}
-export function setStat(cat, name, v){
-	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
-	return o[name] = (o[name] ?? 0) + v
-}
+void([globalThis.version] = await Promise.all([
+	fs.readFile(PATH + 'node/package.json').then(a=>JSON.parse(a+'').version),
+	loadConfigs(false).then(a => {
+		globalThis.DB = CONFIG.path ? new Level(CONFIG.path[0] == '/' || CONFIG.path[0] == '~' ? CONFIG.path : PATH + CONFIG.path) : new VolatileLevel()
+		if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
+		return DB.open()
+	})
+]))

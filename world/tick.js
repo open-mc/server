@@ -1,9 +1,8 @@
-import { players } from '../world/index.js'
-import { DataWriter } from 'dataproto'
+import { players, stat, statAvg } from '../world/index.js'
+import { DataWriter } from '../modules/dataproto.js'
 import { Chunk } from './chunk.js'
 import { Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
-import { stat, statAvg } from '../config.js'
 import { mirrorEntity } from './encodemove.js'
 
 export let currentTPS = 0

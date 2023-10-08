@@ -1,5 +1,4 @@
-import { CONFIG } from '../config.js'
-import { DataWriter } from 'dataproto'
+import { DataWriter } from '../modules/dataproto.js'
 
 export const ChunkLoader = T => class extends T{
 	radius = CONFIG.world.chunkloadingrange

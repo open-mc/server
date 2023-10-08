@@ -1,9 +1,8 @@
-import { DB, stat, CONFIG } from '../config.js'
+import { stat } from './index.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
-import { DataWriter } from 'dataproto'
+import { DataWriter } from '../modules/dataproto.js'
 import { entityMap } from './tick.js'
-import { argv } from '../internals.js'
 import { Dimensions } from './index.js'
 import { BlockIDs } from '../blocks/block.js'
 

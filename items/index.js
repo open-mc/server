@@ -1,7 +1,6 @@
-import { fs } from '../internals.js'
-import { jsonToType, typeToJson } from 'dataproto'
+import fs from 'fs/promises'
+import { jsonToType, typeToJson } from '../modules/dataproto.js'
 import { Item, ItemIDs, Items } from './item.js'
-import { DB } from '../config.js'
 
 const loaded = task('Loading items...')
 

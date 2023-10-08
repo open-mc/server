@@ -1,4 +1,4 @@
-import { optimize } from '../internals.js'
+import '../node/internals.js'
 import { goto, jump, load, peekat, save } from '../misc/ant.js'
 import { currentTPS } from './tick.js'
 
@@ -34,6 +34,21 @@ export function stepEntity(e, dt = 1 / currentTPS){
 }
 
 export const EPSILON = .0001
+function solidCheck(x0, y0, x1, y1){
+	const ex = floor(x1 - EPSILON), ey = floor(y1 - EPSILON), sx = floor(x0 + EPSILON), sy = floor(y0 + EPSILON)
+	for(let x = sx; x <= ex; x++) for(let y = sy; y <= ey; y++){
+		const {solid, blockShape} = peekat(x, y)
+		if(!solid) continue
+		if(!blockShape) return true
+		for(let i = 0; i < blockShape.length; i+=4){
+			if(blockShape[i]+x>=x1 | blockShape[i+2]+x<=x0) continue
+			if(blockShape[i+1]+y>=y1 | blockShape[i+3]+y<=y0) continue
+			return true
+		}
+	}
+	return false
+}
+
 export const COSMIC_SPEED_LIMIT = 32
 export function fastCollision(e, dt = 1 / currentTPS){
 	const dx = max(-COSMIC_SPEED_LIMIT, min(e.dx * dt, COSMIC_SPEED_LIMIT)), dy = max(-COSMIC_SPEED_LIMIT, min(e.dy * dt, COSMIC_SPEED_LIMIT))
@@ -108,15 +123,15 @@ export function fastCollision(e, dt = 1 / currentTPS){
 				ey0 -= 1
 				const {solid, blockShape} = peekat(x, y)
 				if(!solid) continue
-				if(!blockShape){ xs = 0; if(1-ey0>climb)climb=1-ey0; continue }
+				if(!blockShape){ xs = 0; if(1-ey0>climb)climb=1-ey0-climb>CLIMB?Infinity:1-ey0; continue }
 				for(let i = 0; i < blockShape.length; i += 4){
 					const c = blockShape[i+3] - ey0
-					if(c > climb) climb = c
+					if(c > climb) climb = c-climb>CLIMB?Infinity:c
 					if(c <= 0 | ey0+e.height-EPSILON-EPSILON <= blockShape[i+1]) continue
 					if(blockShape[i] <= xs) xs = blockShape[i]
 				}
 			}
-			if(climb > 0 && climb <= CLIMB){
+			if(climb > 0 && climb < Infinity && !solidCheck(xs + x - e.width - e.width, e.y + e.height - y0, x === ex - 1 ? e.x - x0 + dx + e.width + EPSILON : x + 1, e.y - y0 + e.height + climb)){
 				e.y += climb
 				jump(0, -(y0 - (y0 = floor(e.y + EPSILON))))
 				continue
@@ -139,16 +154,16 @@ export function fastCollision(e, dt = 1 / currentTPS){
 				ey0 -= 1
 				const {solid, blockShape} = peekat(x, y)
 				if(!solid) continue
-				if(!blockShape){ xs = 1; if(1-ey0>climb)climb=1-ey0; continue }
+				if(!blockShape){ xs = 1; if(1-ey0>climb)climb=1-ey0-climb>CLIMB?Infinity:1-ey0; continue }
 				for(let i = 0; i < blockShape.length; i += 4){
 					const c = blockShape[i+3] - ey0
-					if(c > climb) climb = c
+					if(c > climb) climb = c-climb>CLIMB?Infinity:c
 					if(c <= 0 | ey0+e.height-EPSILON-EPSILON <= blockShape[i+1]) continue
 					if(blockShape[i+2] >= xs) xs = blockShape[i+2]
 				}
 				
 			}
-			if(climb > 0 && climb <= CLIMB){
+			if(climb > 0 && climb < Infinity && !solidCheck(x === ex + 1 ? e.x - x0 + dx - e.width - EPSILON : x, e.y - y0 + e.height, xs + x + e.width + e.width, e.y - y0 + e.height + climb)){
 				e.y += climb
 				jump(0, -(y0 - (y0 = floor(e.y + EPSILON))))
 				continue
@@ -183,5 +198,5 @@ export function fastCollision(e, dt = 1 / currentTPS){
 }
 
 
-optimize(stepEntity)
-optimize(fastCollision)
+Function.optimizeImmediately(stepEntity)
+Function.optimizeImmediately(fastCollision)

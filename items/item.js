@@ -1,5 +1,5 @@
 import { blockevent } from '../misc/ant.js'
-import { registerTypes } from 'dataproto'
+import { registerTypes } from '../modules/dataproto.js'
 
 export class Item{
 	constructor(count = 0){

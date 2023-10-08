@@ -1,10 +1,18 @@
 import { imxs32 } from './random.js'
-import { PNG } from 'pngjs'
-import { fs } from '../../internals.js'
+import '../../node/internals.js'
 import { Biomes, chunkBiomes } from '../vars.js'
+import '../biomes/desert.js'
+import '../biomes/nether.js'
+import '../biomes/ocean.js'
+import '../biomes/plains.js'
+import '../biomes/river.js'
+import '../biomes/rocky.js'
+import '../biomes/rocky.js'
+import '../biomes/snowy.js'
+import '../biomes/void.js'
+
 const biomemap = []
-biomemap.buffer = new DataView(PNG.sync.read(await fs.readFile(PATH + 'worldgen/util/biomes.png')).data.buffer)
-await Promise.all((await fs.readdir(PATH + 'worldgen//biomes')).map(a=>import(PATH + 'worldgen/biomes/'+a)))
+biomemap.buffer = new DataView((await PNG.read(await loadFile(import.meta, './biomes.png'))).buffer)
 const biomeconvert = {
 	0x2eb300: Biomes.plains,
 	0x0048b3: Biomes.ocean,

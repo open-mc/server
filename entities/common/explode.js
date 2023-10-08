@@ -1,5 +1,5 @@
-import { stat } from '../../config.js'
-import { optimize } from '../../internals.js'
+import { stat } from '../../world/index.js'
+import '../../node/internals.js'
 import { getX, getY, up, jump, peek, right, select, goto } from '../../misc/ant.js'
 import { damageTypes } from '../deathmessages.js'
 import { DXDY } from '../entity.js'
@@ -78,4 +78,4 @@ export function explode(entity, strength = 100, fire = false){
 		if(e.sock) e.rubber(DXDY)
 	})
 }
-optimize(explode)
+Function.optimizeImmediately(explode)

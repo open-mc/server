@@ -1,12 +1,11 @@
 import { chat, prefix } from './chat.js'
 import { anyone_help, commands, err, executeCommand, log, mod_help } from './commands.js'
-import { CONFIG, GAMERULES, stat, statRecord } from '../config.js'
 import { Entities } from '../entities/entity.js'
-import { DataWriter } from 'dataproto'
+import { DataWriter } from '../modules/dataproto.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
-import { Dimensions } from '../world/index.js'
+import { Dimensions, GAMERULES, stat, statRecord } from '../world/index.js'
 
 const REACH = 10
 
@@ -234,31 +233,30 @@ function respawnPacket(player, _){
 }
 
 function openContainerPacket(player, buf){
-	if(player.interface) return
+	if(this.interface) return
 	const x = buf.int(), y = buf.int()
 }
 function openEntityPacket(player, buf){
-	if(player.interface) return
+	if(this.interface) return
 	const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
 	const dx = e.x - player.x, dy = e.y - player.y
 	if(dx * dx + dy * dy > (REACH + 2) * REACH || !e.chunk.sockets.includes(this)) return
-	player.interface = e
-	player.interfaceId = 0
+	this.interface = e
 	const res = new DataWriter()
 	res.byte(13)
 	res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
 	res.byte(0)
-	player.sock.send(res.build())
+	this.send(res.build())
 }
 function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory
-	if(!player.interface) return
+	if(!this.interface) return
 	let slot = buf.byte()
 	let changed = 0
 	if(slot > 127){
 		slot &= 127
-		if(!player.interface.items || slot == 128) return
-		const {items} = player.interface
+		if(!this.interface.items || slot == 128) return
+		const {items} = this.interface
 		if(slot >= items.length) return
 		const t = items[slot], h = player.items[0]
 		if(!t && !h) return
@@ -291,12 +289,12 @@ function inventoryPacket(player, buf){
 
 function altInventoryPacket(player, buf){
 	// Right-clicked on a slot in their inventory
-	if(!player.interface) return
+	if(!this.interface) return
 	let slot = buf.byte()
 	if(slot > 127){
 		slot &= 127
-		if(!player.interface.items) return
-		const {items} = player.interface
+		if(!this.interface.items) return
+		const {items} = this.interface
 		if(slot >= items.length) return
 		const t = items[slot], h = player.items[0]
 		if(t && !h){
@@ -310,7 +308,7 @@ function altInventoryPacket(player, buf){
 			if(!--h.count)player.items[0] = null
 		}else items[slot] = h, player.items[0] = t
 		player.itemschanged([128])
-		player.interface.itemschanged([slot | 128])
+		this.interface.itemschanged([slot | 128])
 		return
 	}
 	if(slot >= player.inv.length) return
@@ -339,7 +337,7 @@ function dropItemPacket(player, buf){
 }
 
 function closeInterfacePacket(player, _){
-	player.interface = null
+	this.interface = null
 	if(player.items[0]){
 		const e = Entities.item()
 		e.item = player.items[0]

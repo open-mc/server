@@ -1,6 +1,6 @@
 import { Items } from '../../items/item.js'
 import { Block, Blocks } from '../block.js'
-import { BlockShape } from '../blockshapes.js'
+import { BlockShape, blockShaped } from '../blockshapes.js'
 
 //Template for defining a bunch of blocks
 class Planks extends Block{
@@ -28,38 +28,20 @@ Blocks.acacia_planks = class extends Planks{
 Blocks.jungle_planks = class extends Planks{
 	drops(){ return Items.oak_planks() }
 }
-Blocks.oak_planks_slab = class extends Blocks.oak_planks{
-	static blockShape = BlockShape.SLAB
-	drops(){ return Items.oak_planks_slab() }
-}
-Blocks.oak_planks_upper_slab = class extends Blocks.oak_planks_slab{ static blockShape = BlockShape.UPPER_SLAB }
+Blocks.oak_planks_slab = blockShaped(Blocks.oak_planks, BlockShape.SLAB, () => Items.oak_planks_slab())
+Blocks.oak_planks_upper_slab = blockShaped(Blocks.oak_planks, BlockShape.UPPER_SLAB, () => Items.oak_planks_slab())
 
-Blocks.birch_planks_slab = class extends Blocks.birch_planks{
-	static blockShape = BlockShape.SLAB
-	drops(){ return Items.birch_planks_slab() }
-}
-Blocks.birch_planks_upper_slab = class extends Blocks.birch_planks_slab{ static blockShape = BlockShape.UPPER_SLAB }
+Blocks.birch_planks_slab = blockShaped(Blocks.birch_planks, BlockShape.SLAB, () => Items.birch_planks_slab())
+Blocks.birch_planks_upper_slab = blockShaped(Blocks.birch_planks, BlockShape.UPPER_SLAB, () => Items.birch_planks_slab())
 
-Blocks.spruce_planks_slab = class extends Blocks.spruce_planks{
-	static blockShape = BlockShape.SLAB
-	drops(){ return Items.spruce_planks_slab() }
-}
-Blocks.spruce_planks_upper_slab = class extends Blocks.spruce_planks_slab{ static blockShape = BlockShape.UPPER_SLAB }
+Blocks.spruce_planks_slab = blockShaped(Blocks.spruce_planks, BlockShape.SLAB, () => Items.spruce_planks_slab())
+Blocks.spruce_planks_upper_slab = blockShaped(Blocks.spruce_planks, BlockShape.UPPER_SLAB, () => Items.spruce_planks_slab())
 
-Blocks.dark_oak_planks_slab = class extends Blocks.dark_oak_planks{
-	static blockShape = BlockShape.SLAB
-	drops(){ return Items.dark_oak_planks_slab() }
-}
-Blocks.dark_oak_planks_upper_slab = class extends Blocks.dark_oak_planks_slab{ static blockShape = BlockShape.UPPER_SLAB }
+Blocks.dark_oak_planks_slab = blockShaped(Blocks.dark_oak_planks, BlockShape.SLAB, () => Items.dark_oak_planks_slab())
+Blocks.dark_oak_planks_upper_slab = blockShaped(Blocks.dark_oak_planks, BlockShape.UPPER_SLAB, () => Items.dark_oak_planks_slab())
 
-Blocks.acacia_planks_slab = class extends Blocks.acacia_planks{
-	static blockShape = BlockShape.SLAB
-	drops(){ return Items.acacia_planks_slab() }
-}
-Blocks.acacia_planks_upper_slab = class extends Blocks.acacia_planks_slab{ static blockShape = BlockShape.UPPER_SLAB }
+Blocks.acacia_planks_slab = blockShaped(Blocks.acacia_planks, BlockShape.SLAB, () => Items.acacia_planks_slab())
+Blocks.acacia_planks_upper_slab = blockShaped(Blocks.acacia_planks, BlockShape.UPPER_SLAB, () => Items.acacia_planks_slab())
 
-Blocks.jungle_planks_slab = class extends Blocks.jungle_planks{
-	static blockShape = BlockShape.SLAB
-	drops(){ return Items.jungle_planks_slab() }
-}
-Blocks.jungle_planks_upper_slab = class extends Blocks.jungle_planks_slab{ static blockShape = BlockShape.UPPER_SLAB }
+Blocks.jungle_planks_slab = blockShaped(Blocks.jungle_planks, BlockShape.SLAB, () => Items.jungle_planks_slab())
+Blocks.jungle_planks_upper_slab = blockShaped(Blocks.jungle_planks, BlockShape.UPPER_SLAB, () => Items.jungle_planks_slab())

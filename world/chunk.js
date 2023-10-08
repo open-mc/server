@@ -1,7 +1,6 @@
 import { BlockIDs } from '../blocks/block.js'
-import { GAMERULES } from '../config.js'
+import { GAMERULES } from './index.js'
 import { EntityIDs } from '../entities/entity.js'
-import { optimize } from '../internals.js'
 import { _newchunk, antWorld, gotochunk, peekpos } from '../misc/ant.js'
 
 const _IDs = new Uint16Array(4096)
@@ -205,4 +204,4 @@ export class Chunk extends Uint16Array{
 	}
 }
 
-optimize(Chunk, Chunk.prototype.toBuf)
+Function.optimizeImmediately(Chunk.prototype.parse, Chunk.prototype.toBuf)

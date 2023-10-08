@@ -1,6 +1,6 @@
 import { BlockIDs } from '../blocks/block.js'
 import { Entity } from '../entities/entity.js'
-import { optimize } from '../internals.js'
+import '../node/internals.js'
 
 let cx = 0, cy = 0, pos = 0
 let world = null, chunk = undefined
@@ -195,4 +195,4 @@ export function select(x0, y0, x1, y1, cb){
 	}
 }
 
-optimize(nc, npeek, place, goto, peek, jump, peekat, right, left, up, down, peekright, peekleft, peekup, peekdown, summon, gridevent, cancelgridevent, select)
+Function.optimizeImmediately(nc, npeek, place, goto, peek, jump, peekat, right, left, up, down, peekright, peekleft, peekup, peekdown, summon, gridevent, cancelgridevent, select)
