@@ -63,7 +63,7 @@ class VolatileLevel extends Map{
 	}
 }
 void([globalThis.version] = await Promise.all([
-	fs.readFile(PATH + 'node/package.json').then(a=>JSON.parse(a+'').version),
+	fs.readFile(PATH + 'package.json').then(a=>JSON.parse(a+'').version),
 	loadConfigs(false).then(a => {
 		globalThis.DB = CONFIG.path ? new Level(CONFIG.path[0] == '/' || CONFIG.path[0] == '~' ? CONFIG.path : PATH + CONFIG.path) : new VolatileLevel()
 		if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')

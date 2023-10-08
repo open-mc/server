@@ -5,7 +5,7 @@ import { Item, ItemIDs, Items } from './item.js'
 const loaded = task('Loading items...')
 
 // Monstrosity for importing all ./*/*.js
-await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import(PATH + 'items/' + name + '/' + file))))))
+await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import('./' + name + '/' + file))))))
 let modified = false
 export let itemindex
 for(const a of await DB.get('itemindex').catch(e=>'stone').then(a=>(itemindex = a+'').split('\n'))){

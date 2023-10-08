@@ -1,17 +1,14 @@
 {
-  "type": "module",
-  "version": "0.0.8",
-  "scripts": {
-    "start": "[ -d node_modules ] || npm i; node ."
-  },
-  "dependencies": {
-    "basic-repl": "^2.2.1",
-    "level": "^8.0.0",
-    "mime-types": "^2.1.35",
-    "node": "^19.8.1",
-    "node-fetch": "^3.3.0",
-    "pngjs": "^6.0.0",
-    "uWebSockets.js": "uNetworking/uWebSockets.js#v20.31.0",
-    "yaml": "^2.1.0"
-  }
+	"type": "module",
+	"scripts": { "start": "[ -d node_modules ] || npm i; node ."},
+	"dependencies": {
+		"basic-repl": "^2.2.1",
+		"level": "^8.0.0",
+		"mime-types": "^2.1.35",
+		"node": "^19.8.1",
+		"node-fetch": "^3.3.0",
+		"pngjs": "^6.0.0",
+		"uWebSockets.js": "uNetworking/uWebSockets.js#v20.31.0",
+		"yaml": "^2.1.0"
+	}
 }
