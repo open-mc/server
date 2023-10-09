@@ -177,12 +177,12 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		}
 		e.x = ifloat(e.x + dx)
 	}
-	x0 = floor(e.x - e.width - EPSILON)
-	y0 = floor(e.y - EPSILON)
+	x0 = floor(e.x - e.width + EPSILON)
+	y0 = floor(e.y + EPSILON)
 	goto(e.world, x0, y0)
 	const p = save()
-	a: for(let y = ceil(e.y + e.height + EPSILON) - y0 - 1; y >= 0; y--)
-		b: for(let x = ceil(e.x + e.width + EPSILON) - x0 - 1; x >= 0; x--){
+	a: for(let y = ceil(e.y + e.height - EPSILON) - y0 - 1; y >= 0; y--)
+		b: for(let x = ceil(e.x + e.width - EPSILON) - x0 - 1; x >= 0; x--){
 			const b = peekat(x, y)
 			if(!b.touched) continue b
 			const {blockShape} = b

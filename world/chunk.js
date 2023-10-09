@@ -15,12 +15,14 @@ export class Chunk extends Uint16Array{
 		this.x = x & 0x3ffffff; this.y = y & 0x3ffffff
 		this.entities = []; this.t = -1
 		this.biomes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-		this.loadedAround = 0b00_00_00_00
+		this.loadedAround = 0b00000000
 	}
 	parse(buf){
 		if(this.world == antWorld) _newchunk(this)
 		//read buf palette
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
+		let ticks = buf.short()
+		while(ticks--) this.blockupdates.add(buf.short())
 		let palettelen = buf.byte() + 1 & 0xFF
 		let id
 		while((id = buf.short()) != 65535){
@@ -109,6 +111,11 @@ export class Chunk extends Uint16Array{
 			buf.int(this.y)
 		}
 		buf.flint(Chunk.savedatahistory.length)
+		if(packet) buf.short(0)
+		else{
+			buf.short(this.blockupdates.size)
+			for(const t of this.blockupdates) buf.short(t)
+		}
 		buf.byte(palette.length - 1)
 
 		for(const e of this.entities){
@@ -196,10 +203,14 @@ export class Chunk extends Uint16Array{
 		this.blockupdates = this.blockupdates2
 		this.blockupdates2 = s
 		let i = GAMERULES.randomtickspeed + 1
-		while(--i) peekpos(floor(random() * 4096)).randomtick?.()
-		for(const p of s){
-			peekpos(p).update?.()
+		let aliveQuarters = (this.loadedAround&193)==193|(this.loadedAround&7==7)<<1|(this.loadedAround&3==28)<<2|(this.loadedAround&112==112)<<3
+		while(--i){
+			const pos = floor(random() * 4096)
+			if(aliveQuarters>>(pos>>5&1|pos>>10&2)&1)
+				peekpos(pos).randomtick?.()
 		}
+		for(const p of s)
+			peekpos(p).update?.()
 		if(s.size) s.clear()
 	}
 }
