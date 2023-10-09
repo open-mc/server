@@ -117,8 +117,8 @@ function playerMovePacket(player, buf){
 		const dx = x / reach, dy = y / reach
 		let l = 0
 		a: while(d < reach){
-			const {solid, blockShape = DEFAULT_BLOCKSHAPE} = peek()
-			if(solid){
+			const {solid, replacable, blockShape = DEFAULT_BLOCKSHAPE} = peek()
+			if(solid && !replacable){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -155,8 +155,8 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		if(d >= reach){
-			const {solid, blockShape} = peekat(l << 24 >> 24, l << 16 >> 24)
-			if(solid && blockShape && blockShape.length == 0){
+			const {solid, replacable, blockShape} = peekat(l << 24 >> 24, l << 16 >> 24)
+			if(solid && !replacable && blockShape && blockShape.length == 0){
 				jump(l << 24 >> 24, l << 16 >> 24)
 				px -= l << 24 >> 24; py -= l << 16 >> 24
 				l >>>= 16
@@ -202,7 +202,7 @@ function playerMovePacket(player, buf){
 		jump(l << 24 >> 24, l << 16 >> 24)
 		if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
 		b = peek()
-		if(b.solid) break top
+		if(!b.replacable) break top
 		{
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top

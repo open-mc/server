@@ -8,6 +8,7 @@ export class Block{
 	static breaktime = 3
 	static blast = 20
 	static solid = true
+	static replacable = false
 	static tool = ''
 	static savedata = null
 	destroy(sound = true, drop = this.drops?.()){

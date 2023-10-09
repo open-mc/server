@@ -26,6 +26,6 @@ Items.flint_and_steel = class extends Item{
 		e.dx = random() * 4 - 2
 	}
 	place(){
-		place(Blocks.fire)
+		place(Blocks.fire); blockevent(1)
 	}
 }
