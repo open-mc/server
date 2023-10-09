@@ -1,3 +1,4 @@
+import { Item } from "../items/item.js"
 import { place } from "../misc/ant.js"
 
 export const BlockShape = {}
@@ -23,3 +24,7 @@ export const blockShaped = (C, s, d, o = class extends C{
 	static itemVariant = null
 	static drops = d
 }) => { const k = variantKeys.get(s); if(k)C[k]=o; return o }
+
+export const itemify = C => class extends Item{
+	place(){ place(C); super.use() }
+}

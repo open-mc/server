@@ -229,6 +229,7 @@ function respawnPacket(player, _){
 	player.rubber()
 	player.damage(-Infinity, null)
 	player.state &= ~0x8000
+	player.age = 0
 	player.dx = player.dy = 0
 }
 

@@ -69,6 +69,7 @@ Date.formatTime = function(t){
 }
 
 Object.defineProperties(globalThis, Object.getOwnPropertyDescriptors(Math))
+globalThis.PI2 = PI*2
 
 fs.exists = a => new Promise(r => exists(a, (a,b=a)=>r(b)))
 fs.createReadStream = createReadStream

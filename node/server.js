@@ -13,7 +13,7 @@ import { itemindex } from '../items/index.js'
 import { blockindex } from '../blocks/index.js'
 import { index } from '../misc/miscdefs.js'
 import { open, close } from '../misc/sock.js'
-import { players, STATS, DEFAULT_TPS, stat, GAMERULES } from '../world/index.js'
+import { players, STATS, DEFAULT_TPS, stat, saveAll, saving } from '../world/index.js'
 import { PROTOCOL_VERSION, codes, onstring } from '../misc/incomingPacket.js'
 import { Dimensions } from '../world/index.js'
 import { setTPS } from '../world/tick.js'
@@ -45,8 +45,8 @@ const endpoints = {
 		res.cork(()=>res.end(a))
 	},
 	play(res){
-		res.writeHeader('Location', 'https://preview.openmc.pages.dev/?' + wsHost)
-		res.writeHead(301)
+		res.writeStatus('301')
+		res.writeHeader('Location', 'https://openmc.pages.dev/?' + wsHost)
 		res.end('')
 	},
 	static(res, url=''){
@@ -76,12 +76,12 @@ const endpoints = {
 }
 Object.setPrototypeOf(endpoints, null)
 const [statsHtml0, statsHtml1] = (await fs.readFile(PATH+'node/index.html')).toString().split('[[SERVER_INSERT]]')
-export const PORT = argv.port || CONFIG.port || 27277
-export let wsHost = '', httpHost = ''
+const PORT = argv.port || CONFIG.port || 27277
+let wsHost = ''
 const {key, cert} = CONFIG
-export const secure = !(key==null || cert==null)
+const secure = !(key==null || cert==null)
 const certPath = secure ? cert ? cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert : PATH+'node/default.crt':null
-export const server = secure ? SSLApp({
+const server = secure ? SSLApp({
 	key_file_name: key ? key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key : PATH+'node/default.key',
 	cert_file_name: certPath,
 }) : App()
@@ -127,11 +127,11 @@ server.any('/*', (res, req) => {
 })
 
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + (CONFIG.components||['/vanilla/index.js']).map(a=>'\0'+a).join(''))))
-export const clients = new Set
+const clients = new Set
 const rand = new Uint8Array(32)
 let patchWs = function(sock){patchWs = null; const p = sock.__proto__; p._send = p.send; p.send = function(a){this._send(a,typeof a!='string')}}
 server.ws('/*', {
-	sendPingsAutomatically: false,
+	sendPingsAutomatically: false, maxBackpressure: 67108864,
 	maxPayloadLength: 1048576, closeOnBackpressureLimit: true,
 	upgrade(res, req, ctx){
 		const h = req.getHeader('host')
@@ -216,41 +216,28 @@ setInterval(() => {
 }, 10e3)
 
 let listenSocket = null
-let promises = []
 process.on('SIGINT', _ => {
 	//Save stuff here
 	if(exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')
 	if(listenSocket) us_listen_socket_close(listenSocket)
 	exiting = true
-	Promise.all(promises).then(() => {
-		promises.length = 0
-		for(const sock of clients) promises.push(close.call(sock))
+	saving.then(() => {
+		const pr = []
+		for(const sock of clients) pr.push(close.call(sock))
 		clients.clear()
-		saveAll(() => DB.close(() => process.exit(0)))
+		pr.push(saveAll())
+		Promise.all(pr).then(() => DB.close(() => process.exit(0)))
 	})
 })
-function saveAll(cb){
-	for(const name in Dimensions){
-		const d = Dimensions[name]
-		const buf = new DataWriter()
-		buf.flint(d.constructor.savedatahistory.length)
-		buf.write(d.constructor.savedata, d)
-		promises.push(d.level.put('meta', buf.build()))
-		for (const ch of d.values()) d.save(ch)
-	}
-	promises.push(DB.put('stats', JSON.stringify(STATS)))
-	promises.push(DB.put('gamerules', JSON.stringify(GAMERULES)))
-	Promise.all(promises).then(cb)
-}
-void function timeout(){if(exiting) return; promises.length = 0; setTimeout(saveAll, 300e3, timeout)}()
+void function timeout(){if(exiting) return; setTimeout(() => saveAll().then(timeout), 300e3)}()
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 const serverObject = {
 	sock: {permissions: 4},
 	x: 0, y: 0,
 	world: Dimensions.overworld
 }
-export function openServer(){
+export default function openServer(){
 	const serverLoaded = task('Starting server...')
 	server.listen(PORT, lS => {
 		lS = listenSocket

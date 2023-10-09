@@ -7,7 +7,6 @@ import { Item, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, entityMap } from '../world/tick.js'
-import { server } from '../node/server.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
@@ -343,7 +342,7 @@ export const commands = {
 		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)
 	},
 	help(c){
-		const perm = this == server ? OP : this.sock ? this.sock.permissions : 0
+		const perm = this.isServer ? OP : this.sock ? this.sock.permissions : 0
 		const cmds = perm == MOD ? mod_help : perm == OP ? help : anyone_help
 		if(!c){
 			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
@@ -416,7 +415,7 @@ export const commands = {
 		return log(this, `Set the spawn point to (${GAMERULES.spawnx.toFixed(2)}, ${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime you\'ve spent on this server: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
+		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+currentTPS

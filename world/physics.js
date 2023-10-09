@@ -18,7 +18,7 @@ export function stepEntity(e, dt = 1 / currentTPS){
 	const cy0 = floor(y0) >>> 6, cy1 = ceil((y1 + 32) / 64) & 0x3FFFFFF
 	for(let cx = cx0; cx != cx1; cx = cx + 1 & 0x3FFFFFF){
 		for(let cy = cy0; cy != cy1; cy = cy + 1 & 0x3FFFFFF){
-			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world.get(cx+cy*0x4000000)
+			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world?.get(cx+cy*0x4000000)
 			if(!chunk) continue
 			for(const e2 of chunk.entities){
 				const {collisionPaddingX: ctpx, collisionPaddingY: ctpy} = e2

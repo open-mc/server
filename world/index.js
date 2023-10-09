@@ -1,3 +1,5 @@
+import { DataWriter } from "../modules/dataproto.js"
+
 export const Dimensions = {}
 Object.setPrototypeOf(Dimensions, null)
 
@@ -57,3 +59,19 @@ export function setStat(cat, name, v){
 }
 
 export const DEFAULT_TPS = 20
+export let saving = Promise.resolve(undefined)
+export function saveAll(){
+	const promises = []
+	for(const name in Dimensions){
+		const d = Dimensions[name]
+		const buf = new DataWriter()
+		buf.flint(d.constructor.savedatahistory.length)
+		buf.write(d.constructor.savedata, d)
+		promises.push(d.level.put('meta', buf.build()))
+		for (const ch of d.values()) d.save(ch)
+	}
+	promises.push(DB.put('stats', JSON.stringify(STATS)))
+	promises.push(DB.put('gamerules', JSON.stringify(GAMERULES)))
+	saving = Promise.all(promises)
+	return saving
+}

@@ -1,7 +1,5 @@
 import { Item, Items } from '../item.js'
 import { Blocks } from '../../blocks/block.js'
-import { place } from '../../misc/ant.js'
+import { itemify } from '../../blocks/blockshapes.js'
 
-Items.glass = class Glass extends Item{
-	place(){ place(Blocks.glass); super.use() }
-}
+Items.glass = itemify(Blocks.glass)
