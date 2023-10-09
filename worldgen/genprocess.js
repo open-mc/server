@@ -77,13 +77,13 @@ function buildBuffer(){
 			break
 		}
 	}
-	let buf = new Uint8Array(14 + palette.length * 2)
+	let buf = new Uint8Array(16 + palette.length * 2)
 	let buffers = [buf]
-	buf[1] = palette.length-1
-	buf[2] = buf[3] = 255
-	buf.set(chunkBiomes, 4)
-	if(palette.length < 1024)
-		for(let i = 0; i < palette.length; i++) buf[14 + (i << 1)] = palette[i] >> 8, buf[15 + (i << 1)] = palette[i] 
+	buf[3] = palette.length-1
+	buf[4] = buf[5] = 255
+	buf.set(chunkBiomes, 6)
+	if(palette.length)
+		for(let i = 0; i < palette.length; i++) buf[16 + (i << 1)] = palette[i] >> 8, buf[17 + (i << 1)] = palette[i] 
 	//encode data
 	if(palette.length < 2);
 	else if(palette.length == 2){
@@ -112,18 +112,10 @@ function buildBuffer(){
 			buf[i>>1] = PM[chunk[i].id]
 			| (PM[chunk[i + 1].id] << 4)
 		}
-	}else if(palette.length <= 256){
+	}else if(palette.length < 256){
 		buffers.push(buf = new Uint8Array(4096))
 		for(let i = 0; i < 4096; i++){
 			buf[i] = PM[chunk[i].id]
-		}
-	}else if(palette.length < 1024){
-		buffers.push(buf = new Uint8Array(6144))
-		let j = 0
-		for(let i = 0; i < 6144; i+=3, j+=2){
-			buf[i] = PM[chunk[j].id]
-			buf[i+2] = PM[chunk[j + 1].id]
-			buf[i+1] = (PM[chunk[j].id] >> 8) | ((PM[chunk[j + 1].id] >> 4) & 0xF0)
 		}
 	}else for(let i = 0; i < 4096; i++){
 		buf[i<<1] = chunk[i].id>>8
