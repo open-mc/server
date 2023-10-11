@@ -2,9 +2,7 @@ import { Block, Blocks } from '../block.js'
 import { Item } from '../../items/item.js'
 
 Blocks.chest = class Chest extends Block{
-	items = [null, null, null, null, null, null, null, null, null,
-					 null, null, null, null, null, null, null, null, null,
-					 null, null, null, null, null, null, null, null, null]
+	items = Array.null(27)
 	name = ''
 	static tool = 'axe'
 	static savedata = {

@@ -24,9 +24,18 @@ export class LivingEntity extends Entity{
 	}
 	lastNaturalDamage = 0
 	update(){
-		goto(this, 0, this.head)
-		if(peek().solid && this.world.tick%10==0){
-			this.damage(1, damageTypes.suffocation)
+		if(this.world.tick%10==0){
+			let x = floor(this.x), y = floor(this.y + this.head)
+			const {solid, blockShape} = this.world.peek(x|0, y|0)
+			y = this.y + this.head - y; x = this.x - x
+			a: if(solid){
+				if(blockShape){
+					if(!blockShape.length) break a
+					for(let i = 0; i < blockShape.length; i++)
+						if(blockShape[i] > x | blockShape[i+2] < x | blockShape[i+1] > y | blockShape[i + 3] < y) break a
+				}
+				this.damage(1, damageTypes.suffocation)
+			}
 		}
 		super.update()
 		const dy = this.impactDy * (1 - this.impactSoftness)

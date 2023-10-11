@@ -28,9 +28,9 @@ export function calculateMv(e){
 	if(e.pendingEvents.length) mv |= 32
 	
 	const cx = floor(e.x)>>>6, cy = floor(e.y)>>>6
-	if(!e.chunk || (mv & 256 | cx^e.chunk.x | cy^e.chunk.y)){
+	if(!e.chunk || (e.chunk.world!=e.world | cx^e.chunk.x | cy^e.chunk.y)){
 		const chunk = e.world.get(cx+cy*0x4000000)
-		if(chunk){
+		if(chunk?.loadedAround&0x100){
 			if(e.chunk) e.chunk.entities.remove(e)
 			void (e.chunk = chunk).entities.push(e)
 		}

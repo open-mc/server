@@ -45,7 +45,7 @@ generators:
   # void is a special dimension, acts as a "spare" dimension for things like map-making
   # The only way to get there is with /tp
   # It doesnt have any of its own generators, so it must borrow from another dimension
-  void: overworld/flat
+  void: void
 
 # Related to network configuration
 
@@ -72,9 +72,10 @@ motd:
   - Potassium-free!
   - New motd every day! (maybe)
   - Zero warranty!
-  - 44 Hours without sleep!
-  - "! ! ! ! !"
-  - <b>xss</b>
+  - One must imagine sisyphus happy
+  - And I have become death, the destroyer of worlds
+  - MOTD unavailable
+  - <img src=x onerror=xss()/>
 
 # info displayed on the banned notice screen
 ban_appeal_info: 

@@ -1,9 +1,9 @@
 import { BlockIDs } from '../blocks/block.js'
 import { GAMERULES } from './index.js'
 import { EntityIDs } from '../entities/entity.js'
-import { _newchunk, antWorld, gotochunk, peekpos } from '../misc/ant.js'
+import { _newChunk, antWorld, gotochunk, peekpos } from '../misc/ant.js'
 
-const _IDs = new Uint16Array(4096)
+const IDs = new Uint8Array(4096)
 
 export class Chunk extends Uint16Array{
 	static PM
@@ -18,7 +18,7 @@ export class Chunk extends Uint16Array{
 		this.loadedAround = 0b00000000
 	}
 	parse(buf){
-		if(this.world == antWorld) _newchunk(this)
+		if(this.world == antWorld) _newChunk(this)
 		//read buf palette
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
 		let ticks = buf.short()
@@ -81,6 +81,7 @@ export class Chunk extends Uint16Array{
 		}else for(;j<4096;j++) this[j] = palette[buf.byte()]
 		//parse block entities
 		for(j=0;j<4096;j++){
+			if(this[j] == 65535) this[j] = buf.short()
 			const block = BlockIDs[this[j]]
 			if(!block.savedata)continue
 			this[j] = 65535
@@ -89,21 +90,19 @@ export class Chunk extends Uint16Array{
 		buf.read(Schema, this)
 	}
 	toBuf(buf, packet = false){
-		let palette = []
+		let palette = [], paletteFull = []
 		const PM = Chunk.PM
 		for(let i = 0; i < 4096; i++){
 			let id = this[i]
 			if(id == 65535) id = this.tileData.get(i).id
-			_IDs[i] = id
-			if(PM[id] === 65535){
-				PM[id] = palette.length
-				palette.push(id)
-			}
-			if(palette.length == 256){
-				for(let i of palette) PM[i] = 65535
-				palette.length = 0
-				break
-			}
+			const a = PM[IDs[i] = id]
+			if(a < 0x0100) continue
+			if(a > 0x0100){
+				if(a < 0x010A){ PM[id] = a+1; continue }
+				PM[id] = palette.push(id)-1
+				if(palette.length+(palette.length!=paletteFull.length) == 256){ palette.length = 0; break }
+			}else if(palette.length != 255) PM[id] = 0x0101, paletteFull.push(id)
+			else{ palette.length = 0; break }
 		}
 		if(packet){
 			buf.byte(16)
@@ -116,7 +115,7 @@ export class Chunk extends Uint16Array{
 			buf.short(this.blockupdates.size)
 			for(const t of this.blockupdates) buf.short(t)
 		}
-		buf.byte(palette.length - 1)
+		buf.byte(palette.length ? palette.length - (palette.length == paletteFull.length) : 255)
 
 		for(const e of this.entities){
 			if(e.sock && !packet)continue
@@ -137,46 +136,47 @@ export class Chunk extends Uint16Array{
 		for(const b of this.biomes) buf.byte(b)
 
 		//encode palette
-		for(const p of palette) buf.short(p)
+		if(palette.length){
+			let encode65535 = false
+			for(const p of paletteFull)
+				if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
+			if(encode65535) palette.push(65535)
+			for(const p of palette) buf.short(p)
+		}
 
 		//encode blocks
 		if(palette.length == 0) buf.uint8array(new Uint8Array(this.buffer, this.byteOffset, this.byteLength), 8192)
 		else if(palette.length == 1);
 		else if(palette.length == 2){
-			for(let i = 0; i < 4096; i+=8){
-				buf.byte(((_IDs[i] == palette[1]) << 0)
-				| ((_IDs[i + 1] == palette[1]) << 1)
-				| ((_IDs[i + 2] == palette[1]) << 2)
-				| ((_IDs[i + 3] == palette[1]) << 3)
-				| ((_IDs[i + 4] == palette[1]) << 4)
-				| ((_IDs[i + 5] == palette[1]) << 5)
-				| ((_IDs[i + 6] == palette[1]) << 6)
-				| ((_IDs[i + 7] == palette[1]) << 7))
-			}
+			for(let i = 0; i < 4096; i+=8)
+				buf.byte((PM[IDs[i]] << 0)
+				| (PM[IDs[i+1]] << 1)
+				| (PM[IDs[i+2]] << 2)
+				| (PM[IDs[i+3]] << 3)
+				| (PM[IDs[i+4]] << 4)
+				| (PM[IDs[i+5]] << 5)
+				| (PM[IDs[i+6]] << 6)
+				| (PM[IDs[i+7]] << 7))
 		}else if(palette.length <= 4){
-			for(let i = 0; i < 4096; i+=4){
-				buf.byte(PM[_IDs[i]]
-				| (PM[_IDs[i + 1]] << 2)
-				| (PM[_IDs[i + 2]] << 4)
-				| (PM[_IDs[i + 3]] << 6))
-			}
+			for(let i = 0; i < 4096; i+=4)
+				buf.byte(PM[IDs[i]]
+				| (PM[IDs[i+1]] << 2)
+				| (PM[IDs[i+2]] << 4)
+				| (PM[IDs[i+3]] << 6))
 		}else if(palette.length <= 16){
-			for(let i = 0; i < 4096; i+=2){
-				buf.byte(PM[_IDs[i]]
-				| (PM[_IDs[i + 1]] << 4))
-			}
-		}else for(let i = 0; i < 4096; i++) buf.byte(PM[_IDs[i]])
-		// reset PM
-		for(let i of palette) PM[i] = 65535
-		palette.length = 0
+			for(let i = 0; i < 4096; i+=2)
+				buf.byte(PM[IDs[i]] | (PM[IDs[i+1]] << 4))
+		}else for(let i = 0; i < 4096; i++) buf.byte(PM[IDs[i]])
 
 		//save block entities
 		for(let i = 0; i < 4096; i++){
+			if(PM[IDs[i]] == palette.length-1) buf.short(IDs[i])
 			if(this[i] != 65535)continue
 			const tile = this.tileData.get(i)
 			buf.flint(tile.savedatahistory.length)
 			buf.write(tile.savedata, tile)
 		}
+		for(const p of paletteFull) PM[p] = 0x0100
 		buf.write(Chunk.savedata, this)
 		return buf
 	}
@@ -191,10 +191,6 @@ export class Chunk extends Uint16Array{
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return 'Chunk { x: \x1b[33m'+(this.x<<6>>6)+'\x1b[m, y: \x1b[33m'+(this.y<<6>>6)+'\x1b[m }'}
 
-	static savedata = {portals: [Uint16]}
-	
-	portals = []
-
 	blockupdates = new Set
 	blockupdates2 = new Set
 	tick(){
@@ -203,16 +199,24 @@ export class Chunk extends Uint16Array{
 		this.blockupdates = this.blockupdates2
 		this.blockupdates2 = s
 		let i = GAMERULES.randomtickspeed + 1
-		let aliveQuarters = (this.loadedAround&193)==193|(this.loadedAround&7==7)<<1|(this.loadedAround&3==28)<<2|(this.loadedAround&112==112)<<3
+		let aliveQuarters = (this.loadedAround&193)==193|((this.loadedAround&7)==7)<<1|((this.loadedAround&28)==28)<<2|((this.loadedAround&112)==112)<<3
 		while(--i){
 			const pos = floor(random() * 4096)
 			if(aliveQuarters>>(pos>>5&1|pos>>10&2)&1)
 				peekpos(pos).randomtick?.()
 		}
+		aliveQuarters = (aliveQuarters&8)<<12|(aliveQuarters&4)<<10|(aliveQuarters&2)<<2|(aliveQuarters&1)
+			| (this.loadedAround<<31>>31&0x6000) | (this.loadedAround<<29>>31&0x0880) | (this.loadedAround<<27>>31&0x0006) | (this.loadedAround<<25>>31&0x0110) | 0x0660
 		for(const p of s)
-			peekpos(p).update?.()
+			if(aliveQuarters>>(p>>4&3|p>>8&12)&1)
+				peekpos(p).update?.()
+			else this.blockupdates.add(p)
 		if(s.size) s.clear()
 	}
+
+	static savedata = {portals: [Uint16]}
+	
+	portals = []
 }
 
-Function.optimizeImmediately(Chunk.prototype.parse, Chunk.prototype.toBuf)
+Function.optimizeImmediately(Chunk, Chunk.prototype.parse, Chunk.prototype.toBuf, Chunk.prototype.tick, Chunk.diskBufToPacket)

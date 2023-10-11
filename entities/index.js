@@ -44,6 +44,7 @@ for(const name in Entities){
 		proto = Object.getPrototypeOf(proto)
 	}
 }
+if(EntityIDs.length > 65535) throw 'Limit of 65535 Entity IDs exceeded'
 if(modified){
 	await DB.put('entityindex', entityindex = EntityIDs.map(E=>E.prototype.className + E.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.prototype.savedata ? ' ' + typeToJson(E.prototype.savedata) : '')).join('\n'))
 }

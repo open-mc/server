@@ -9,6 +9,7 @@ export class Block{
 	static blast = 20
 	static solid = true
 	static replacable = false
+	static mustBreak = false
 	static tool = ''
 	static savedata = null
 	destroy(sound = true, drop = this.drops?.()){

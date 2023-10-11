@@ -8,7 +8,8 @@ export {pos as chunkTileIndex, world as antWorld, chunk as antChunk}
 // Our functions run on so little overhead that array or map caching becomes a big burden for close-together world access
 let cachec = undefined, cachex = 0, cachey = 0
 
-export function _newchunk(c){if(c.x==cx&&c.y==cy)chunk=c;if(c.x==cachex&&c.y==cachey)cachec=c}
+export function _newChunk(c){if(c.x===cx&&c.y===cy)chunk=c;if(c.x===cachex&&c.y===cachey)cachec=c}
+export function _invalidateCache(cx, cy){if(cachex==cx&&cachey==cy)cachec=undefined}
 
 export const getX = () => cx<<6|(pos&0b000000111111)
 export const getY = () => cy<<6|pos>>6
@@ -28,7 +29,7 @@ export function goto(w, x=0, y=0){
 		y = floor(w.y+y)|0
 		w = w.world
 	}
-	cx = x >>> 6; cy = y >>> 6; world = w; pos = (x & 0b000000111111) | (y & 0b000000111111) << 6
+	cx = x >>> 6; cy = y >>> 6; world = w; pos = (x & 63) | (y & 63) << 6
 	cachex = cachey = 0x4000000
 	chunk = world.get(cx+cy*0x4000000)
 }
@@ -38,7 +39,7 @@ export function gotochunk(ch){
 	cachex = cachey = 0x4000000
 	chunk = ch
 }
-export const peekpos = p => {const b=chunk?chunk[pos=p]:0;return b==65535?chunk.tileData.get(p):BlockIDs[b]}
+export const peekpos = p => {const b=chunk?chunk[pos=p]:0;return b===65535?chunk.tileData.get(p):BlockIDs[b]}
 
 export function place(bl){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
@@ -51,8 +52,8 @@ export function place(bl){
 		_chunk[_pos] = 65535
 		_chunk.tileData.set(_pos, bl = bl())
 	}else{
+		if(_chunk[_pos] == 65535) _chunk.tileData.delete(_pos)
 		_chunk[_pos] = bl.id
-		_chunk.tileData.delete(_pos)
 	}
 	if(bl.set){
 		bl.set()
@@ -60,29 +61,72 @@ export function place(bl){
 	}
 	for(const {tbuf} of _chunk.sockets){
 		tbuf.byte(0)
-		tbuf.int(_cx << 6 | (_pos&0b000000111111))
+		tbuf.int(_cx << 6 | (_pos&63))
 		tbuf.int(_cy << 6 | (_pos>>6))
 		tbuf.short(bl.id)
 		if(bl.savedata) tbuf.write(bl.savedata, bl)
 	}
-	const {blockupdates} = chunk
-	if((pos & 0b000000111111) == 0b000000111111){
+	if((pos & 63) === 0b000000111111){
 		const ncx = cx+1&0x3FFFFFF
-		void (ncx==cachex&cy==cachey ? cachec : world.get(ncx+cy*0x4000000))?.blockupdates.add(pos|0b000000111111)
-	}else blockupdates.add(pos+1)
-	if((pos & 0b000000111111) == 0){
+		const c = ncx===cachex&cy===cachey ? cachec : world.get(ncx+cy*0x4000000)
+		if(c){
+			const p = pos|0b000000111111
+			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
+			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.update) c.blockupdates.add(p)
+		}
+	}else{
+		const p = pos+1
+		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		if(b.variant){pos=p;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
+		if(b.update) chunk.blockupdates.add(pos+1)
+	}
+	if((pos & 63) === 0){
 		const ncx = cx-1&0x3FFFFFF
-		void (ncx==cachex&cy==cachey ? cachec : world.get(ncx+cy*0x4000000))?.blockupdates.add(pos&0b111111000000)
-	}else blockupdates.add(pos-1)
-	if((pos >> 6) == 0b000000111111){
+		const c = ncx===cachex&cy===cachey ? cachec : world.get(ncx+cy*0x4000000)
+		if(c){
+			const p = pos&0b111111000000
+			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
+			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.update) c.blockupdates.add(p)
+		}
+	}else{
+		const p = pos-1
+		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		if(b.variant){pos=p;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
+		if(b.update) chunk.blockupdates.add(pos-1)
+	}
+	if((pos >> 6) === 0b111111){
 		const ncy = cy+1&0x3FFFFFF
-		void (cx==cachex&ncy==cachey ? cachec : world.get(cx+ncy*0x4000000))?.blockupdates.add(pos&0b000000111111)
-	}else blockupdates.add(pos+64)
-	if((pos >> 6) == 0){
+		const c = cx===cachex&ncy===cachey ? cachec : world.get(cx+ncy*0x4000000)
+		if(c){
+			const p = pos&0b000000111111
+			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
+			if(b.variant){pos=p,chunk=c,cy=ncy;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.update) c.blockupdates.add(p)
+		}
+	}else{
+		const p = pos+64
+		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		if(b.variant){pos=p;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
+		if(b.update) chunk.blockupdates.add(pos+64)
+	}
+	if((pos >> 6) === 0){
 		const ncy = cy-1&0x3FFFFFF
-		void (cx==cachex&ncy==cachey ? cachec : world.get(cx+ncy*0x4000000))?.blockupdates.add(pos|0b111111000000)
-	}else blockupdates.add(pos-64)
-	blockupdates.add(pos)
+		const c = cx===cachex&ncy===cachey ? cachec : world.get(cx+ncy*0x4000000)
+		if(c){
+			const p = pos|0b111111000000
+			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
+			if(b.variant){pos=p,chunk=c,cy=ncy;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.update) c.blockupdates.add(p)
+		}
+	}else{
+		const p = pos-64
+		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		if(b.variant){pos=p;b=b.variant();pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
+		if(b.update) chunk.blockupdates.add(pos-64)
+	}
+	chunk.blockupdates.add(pos)
 	return bl
 }
 
@@ -91,7 +135,7 @@ export function blockevent(ev, fn){
 	if(!chunk || !ev) return
 	for(const {tbuf} of chunk.sockets){
 		tbuf.byte(ev)
-		if(ev == 255) tbuf.byte(0)
+		if(ev === 255) tbuf.byte(0)
 		tbuf.int(cx << 6 | (pos&0b000000111111))
 		tbuf.int(cy << 6 | (pos>>6))
 		if(fn) fn(tbuf)
@@ -123,11 +167,10 @@ export function summon(fn){
 	return e
 }
 
-export const peek = () => {const b=chunk?chunk[pos]:0;return b==65535?chunk.tileData.get(pos):BlockIDs[b]}
+export const peek = () => {const b=chunk?chunk[pos]:0;return b===65535?chunk.tileData.get(pos):BlockIDs[b]}
 
-// V8, I beg you, please inline!
-function nc(x,y){if(x==cachex&y==cachey){cachex=cx;cachey=cy;cx=x;cy=y;const c=cachec;cachec=chunk;chunk=c}else{cachex=cx;cachey=cy;cachec=chunk;chunk=world.get((cx=x)+(cy=y)*0x4000000)}}
-function npeek(x,y,p){if(x==cachex&y==cachey){const b=cachec?cachec[p]:0;return b==65535?cachec.tileData.get(pos):BlockIDs[b]}else{const c=world.get(x+y*0x4000000);const b=c?c[p]:0;return b==65535?c.tileData.get(pos):BlockIDs[b]}}
+function nc(x,y){if(x===cachex&y===cachey){cachex=cx;cachey=cy;cx=x;cy=y;const c=cachec;cachec=chunk;chunk=c}else{cachex=cx;cachey=cy;cachec=chunk;chunk=world.get((cx=x)+(cy=y)*0x4000000)}}
+function npeek(x,y,p){if(x===cachex&y===cachey){const b=cachec?cachec[p]:0;return b===65535?cachec.tileData.get(pos):BlockIDs[b]}else{const c=world.get(x+y*0x4000000);const b=c?c[p]:0;return b===65535?c.tileData.get(pos):BlockIDs[b]}}
 
 export function left(){
 	if(pos & 0b000000111111){ pos--; return }
@@ -147,19 +190,19 @@ export function up(){
 }
 
 export function peekleft(){
-	if(pos & 0b000000111111){const b=chunk?chunk[pos-1]:0;return b==65535?chunk.tileData.get(pos-1):BlockIDs[b]}
+	if(pos & 0b000000111111){const b=chunk?chunk[pos-1]:0;return b===65535?chunk.tileData.get(pos-1):BlockIDs[b]}
 	return npeek(cx-1 & 0x3FFFFFF, cy, pos | 0b000000111111)
 }
 export function peekright(){
-	if((pos & 0b000000111111) != 0b000000111111){const b=chunk?chunk[pos+1]:0;return b==65535?chunk.tileData.get(pos+1):BlockIDs[b]}
+	if((pos & 0b000000111111) != 0b000000111111){const b=chunk?chunk[pos+1]:0;return b===65535?chunk.tileData.get(pos+1):BlockIDs[b]}
 	return npeek(cx+1 & 0x3FFFFFF, cy, pos & 0b111111000000)
 }
 export function peekdown(){
-	if(pos & 0b111111000000){const b=chunk?chunk[pos-64]:0;return b==65535?chunk.tileData.get(pos-64):BlockIDs[b]}
+	if(pos & 0b111111000000){const b=chunk?chunk[pos-64]:0;return b===65535?chunk.tileData.get(pos-64):BlockIDs[b]}
 	return npeek(cx,cy-1 & 0x3FFFFFF, pos | 0b111111000000)
 }
 export function peekup(){
-	if((pos & 0b111111000000) != 0b111111000000){const b=chunk?chunk[pos+64]:0;return b==65535?chunk.tileData.get(pos+64):BlockIDs[b]}
+	if((pos & 0b111111000000) != 0b111111000000){const b=chunk?chunk[pos+64]:0;return b===65535?chunk.tileData.get(pos+64):BlockIDs[b]}
 	return npeek(cx,cy+1 & 0x3FFFFFF, pos & 0b000000111111)
 }
 
@@ -171,11 +214,11 @@ export function jump(dx, dy){
 
 export function peekat(dx, dy){
 	const nx = (pos & 0b000000111111) + dx, ny = (pos >> 6) + dy
-	if(!((nx | ny) >>> 6) && chunk){const b=chunk?chunk[nx|ny<<6]:0;return b==65535?chunk.tileData.get(nx|ny<<6):BlockIDs[b]}
+	if(!((nx | ny) >>> 6) && chunk){const b=chunk?chunk[nx|ny<<6]:0;return b===65535?chunk.tileData.get(nx|ny<<6):BlockIDs[b]}
 	const c = world.get((cx + (nx >>> 6) & 0x3FFFFFF) + (cy + (ny >>> 6) & 0x3FFFFFF) * 0x4000000)
 	const i = (nx & 0b000000111111) | (ny & 0b000000111111) << 6
 	const b = c?c[i]:0
-	return b==65535?c.tileData.get(i):BlockIDs[b]
+	return b===65535?c.tileData.get(i):BlockIDs[b]
 }
 
 export function select(x0, y0, x1, y1, cb){
@@ -185,7 +228,7 @@ export function select(x0, y0, x1, y1, cb){
 	const cy0 = floor(y0) >>> 6, cy1 = ceil(y1 / 64) & 0x3FFFFFF
 	for(let cxa = cx0; cxa != cx1; cxa = cxa + 1 & 0x3FFFFFF){
 		for(let cya = cy0; cya != cy1; cya = cya + 1 & 0x3FFFFFF){
-			const ch = (cxa == cx & cya == cy) && chunk || world.get(cxa+cya*0x4000000)
+			const ch = (cxa === cx & cya === cy) && chunk || world.get(cxa+cya*0x4000000)
 			if(!ch || !ch.entities) continue
 			for(const e of ch.entities){
 				if((e.state&0x8000 | !e.world) || (e.x < x0 | e.x > x1) || (e.y < y0 | e.y > y1)) continue

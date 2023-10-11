@@ -1,10 +1,11 @@
-import { X, Y } from '../../entities/entity.js'
+import { DXDY, X, Y } from '../../entities/entity.js'
 import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right, up } from '../../misc/ant.js'
 import { Dimensions, GAMERULES } from '../../world/index.js'
 import { Block, Blocks } from '../block.js'
 
 Blocks.portal = class extends Block{
 	static solid = false
+	static blockShape = [0.375, 0, 0.625, 1]
 	static breaktime = Infinity
 	static blast = Infinity
 	update(){
@@ -86,7 +87,8 @@ Blocks.end_portal = class extends Block{
 			e.world = Dimensions.end
 			e.x = 100.5
 			e.y = 1
-			if(e.sock) e.rubber(X | Y)
+			e.dx = e.dy = 0
+			if(e.sock) e.rubber(X | Y | DXDY)
 			goto(Dimensions.end, 98, 0)
 			for(let i = 0; i < 5; i++)
 				place(Blocks.obsidian), right()

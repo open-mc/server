@@ -18,6 +18,8 @@ Blocks.tnt = class extends Block{
 Blocks.fire = class extends Block{
 	static solid = false
 	static replacable = true
+	static mustBreak = true
+	static breaktime = 0
 	update(){
 		const b = peekdown()
 		if(b == Blocks.obsidian){

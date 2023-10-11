@@ -19,6 +19,10 @@ import { Dimensions } from '../world/index.js'
 import { setTPS } from '../world/tick.js'
 import { chat, LIGHT_GREY, ITALIC } from '../misc/chat.js'
 import { commands, err, executeCommand } from '../misc/commands.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
+import { ItemIDs, Items } from '../items/item.js'
+import { Entities, EntityIDs } from '../entities/entity.js'
+import { Chunk } from '../world/chunk.js'
 
 const PUBLICKEY = `-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEA1umjA6HC1ZqCFRSVK1Pd3iSVl82m3UYvSOeZOJgL/yaYnWx47hvo

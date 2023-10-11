@@ -23,7 +23,7 @@ function withinDa(incoming, target){
 function validateMove(sock, player, buf){
 	// where the player wants to be
 	const x = buf.double() || 0, y = buf.double() || 0
-	player.state = player.state & 0xFFFF0000 | buf.short(); let rubber = false
+	player.state = player.state & 0xFFFF8000 | buf.short()&0x7fff; let rubber = false
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
 
@@ -117,8 +117,8 @@ function playerMovePacket(player, buf){
 		const dx = x / reach, dy = y / reach
 		let l = 0
 		a: while(d < reach){
-			const {solid, replacable, blockShape = DEFAULT_BLOCKSHAPE} = peek()
-			if(solid && !replacable){
+			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE} = peek()
+			if((solid && !replacable) || (sel > 127 && mustBreak)){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -172,7 +172,7 @@ function playerMovePacket(player, buf){
 		px -= l << 24 >> 24; py -= l << 16 >> 24
 		if(sel > 127){
 			const block = peek(), item = player.inv[sel & 127]
-			if(block.solid){
+			if(block.solid | block.mustBreak){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
@@ -226,11 +226,11 @@ function respawnPacket(player, _){
 	player.x = GAMERULES.spawnx
 	player.y = GAMERULES.spawny
 	player.world = Dimensions[GAMERULES.spawnworld]
-	player.rubber()
 	player.damage(-Infinity, null)
 	player.state &= ~0x8000
 	player.age = 0
 	player.dx = player.dy = 0
+	player.rubber()
 }
 
 function openContainerPacket(player, buf){

@@ -53,7 +53,7 @@ for(const name in Blocks){
 if(modified){
 	await DB.put('blockindex', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
 }
-
-Chunk.PM = new Uint16Array(BlockIDs.length).fill(65535)
+if(BlockIDs.length > 65535) throw 'Limit of 65535 Block IDs exceeded'
+Chunk.PM = new Uint16Array(BlockIDs.length).fill(0x0100)
 
 loaded(`${BlockIDs.length} Blocks loaded`)

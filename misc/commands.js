@@ -455,7 +455,7 @@ export const commands = {
 		if(moved) this.rubber(Y)
 		return log(this, `Regenerated chunk located at (${x<<6}, ${y<<6}) in the ${w.id}`)
 	},
-	perm(u, a='default'){
+	perm(u = '@s', a='default'){
 		if(!Object.hasOwn(PERMS, a)) throw 'Invalid permission'
 		a = PERMS[a]
 		let count = ''

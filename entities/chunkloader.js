@@ -20,10 +20,10 @@ export const ChunkLoader = T => class extends T{
 			this.load(cx, cy, world)
 			return
 		}
-		if(cx>999999&&ocx<-999999)cx-=0x4000000
-		if(cx<-999999&&ocx>999999)cx+=0x4000000
-		if(cy>999999&&ocy<-999999)cy-=0x4000000
-		if(cy<-999999&&ocy>999999)cy+=0x4000000
+		if(cx>999999&ocx<-999999)cx-=0x4000000
+		else if(cx<-999999&ocx>999999)cx+=0x4000000
+		if(cy>999999&ocy<-999999)cy-=0x4000000
+		else if(cy<-999999&ocy>999999)cy+=0x4000000
 		let tx = cx + ocx
 		let ty = cy + ocy
 		let y0 = ocy + radius

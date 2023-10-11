@@ -44,6 +44,7 @@ for(const name in Items){
 		proto = Object.getPrototypeOf(proto)
 	}
 }
+if(ItemIDs.length > 65535) throw 'Limit of 65535 Item IDs exceeded'
 if(modified){
 	await DB.put('itemindex', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
 }

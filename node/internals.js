@@ -29,8 +29,7 @@ Object.defineProperties(Array.prototype, {
 			if(j > i)this[i] = this[j]
 			if(this[i] != a)i++
 		}
-		this.length = i
-		return this
+		return this.length = i
 	}},
 	mutmap: {enumerable: false, value(fn){
 		const len = this.length
