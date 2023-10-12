@@ -201,15 +201,15 @@ export class Chunk extends Uint16Array{
 		let i = GAMERULES.randomtickspeed + 1
 		let aliveQuarters = (this.loadedAround&193)==193|((this.loadedAround&7)==7)<<1|((this.loadedAround&28)==28)<<2|((this.loadedAround&112)==112)<<3
 		while(--i){
-			const pos = floor(random() * 4096)
-			if(aliveQuarters>>(pos>>5&1|pos>>10&2)&1)
-				peekpos(pos).randomtick?.()
+			const p = floor(random() * 4096)
+			if(aliveQuarters>>(p>>5&1|p>>10&2)&1)
+				peekpos(this,p).randomtick?.()
 		}
 		aliveQuarters = (aliveQuarters&8)<<12|(aliveQuarters&4)<<10|(aliveQuarters&2)<<2|(aliveQuarters&1)
 			| (this.loadedAround<<31>>31&0x6000) | (this.loadedAround<<29>>31&0x0880) | (this.loadedAround<<27>>31&0x0006) | (this.loadedAround<<25>>31&0x0110) | 0x0660
 		for(const p of s)
 			if(aliveQuarters>>(p>>4&3|p>>8&12)&1)
-				peekpos(p).update?.()
+				peekpos(this,p).update?.()
 			else this.blockupdates.add(p)
 		if(s.size) s.clear()
 	}

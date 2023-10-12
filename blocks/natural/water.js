@@ -10,7 +10,8 @@ class Water extends Block{
 void({
 	filled: Blocks.water,
 	top: Blocks.waterTop,
-	flowing: Blocks.waterFlowing
+	flowing: Blocks.waterFlowing,
+	levels: [, Blocks.waterFlowing1, Blocks.waterFlowing2, Blocks.waterFlowing3, Blocks.waterFlowing4, Blocks.waterFlowing5, Blocks.waterFlowing6, Blocks.waterFlowing7]
 } = fluidify(Water))
 
 class Lava extends Water{
@@ -19,5 +20,6 @@ class Lava extends Water{
 void({
 	filled: Blocks.lava,
 	top: Blocks.lavaTop,
-	flowing: Blocks.lavaFlowing
+	flowing: Blocks.lavaFlowing,
+	levels: [, Blocks.lavaFlowing1, Blocks.lavaFlowing2, Blocks.lavaFlowing3, Blocks.lavaFlowing4, Blocks.lavaFlowing5, Blocks.lavaFlowing6, Blocks.lavaFlowing7]
 } = fluidify(Lava))

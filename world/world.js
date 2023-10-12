@@ -4,7 +4,7 @@ import { generator } from './gendelegator.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { entityMap } from './tick.js'
 import { Dimensions } from './index.js'
-import { BlockIDs } from '../blocks/block.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
 import { _invalidateCache, antWorld } from '../misc/ant.js'
 
 const dimLevel = DB.sublevel('dimensions')
@@ -142,8 +142,8 @@ export class World extends Map{
 	}
 	peek(x, y, sock = null){
 		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
-		if(!ch || ch instanceof Promise) return null
-		if(sock && !ch.sockets.includes(sock)) return null
+		if(!ch || ch instanceof Promise) return Blocks.air
+		if(sock && !ch.sockets.includes(sock)) return Blocks.air
 		const i = (x & 63) + ((y & 63) << 6)
 		return ch[i] == 65535 ? ch.tileData.get(i) : BlockIDs[ch[i]]
 	}

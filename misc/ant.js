@@ -39,18 +39,19 @@ export function gotochunk(ch){
 	cachex = cachey = 0x4000000
 	chunk = ch
 }
-export const peekpos = p => {const b=chunk?chunk[pos=p]:0;return b===65535?chunk.tileData.get(p):BlockIDs[b]}
+export const peekpos = (c,p) => {const b=(cx=chunk.x,cy=chunk.y,chunk=c)[pos=p];return b===65535?chunk.tileData.get(p):BlockIDs[b]}
 
 export function place(bl){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
-	if(!_chunk) return bl()
+	bl = bl === bl.constructor && bl.savedata ? new bl : bl
+	if(!_chunk) return bl
 	if(_chunk[_pos].unset){
 		_chunk[_pos].unset()
 		world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
 	}
 	if(bl.savedata){
 		_chunk[_pos] = 65535
-		_chunk.tileData.set(_pos, bl = bl === bl.constructor ? new bl : bl)
+		_chunk.tileData.set(_pos, bl)
 	}else{
 		if(_chunk[_pos] == 65535) _chunk.tileData.delete(_pos)
 		_chunk[_pos] = bl.id
