@@ -19,7 +19,7 @@ for(const a of await DB.get('entityindex').catch(e=>'player {}').then(a=>(entity
 		if(E.className != name) Entities[name] = class extends E{static id = EntityIDs.length; static className = name}
 		else Object.hasOwn(E, 'otherIds') ? E.otherIds.push(EntityIDs.length) : E.otherIds = [EntityIDs.length]
 	else E.id = EntityIDs.length, E.className = name
-	EntityIDs.push(null)
+	EntityIDs.push(E)
 }
 for(const name in Entities){
 	const E = Entities[name]
@@ -30,9 +30,7 @@ for(const name in Entities){
 		Object.setPrototypeOf(E.prototype, Entity.prototype)
 	}
 	if(!Object.hasOwn(E, 'id'))
-		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), E.className = name, modified = true
-	E.constructor = EntityIDs[E.id] = Entities[name] = (...e) => new E(...e)
-	E.constructor.prototype = E.prototype
+		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(E), E.className = name, modified = true
 	if(E.otherIds) for(const i of E.otherIds) EntityIDs[i] = EntityIDs[E.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want

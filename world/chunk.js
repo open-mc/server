@@ -26,7 +26,7 @@ export class Chunk extends Uint16Array{
 		let palettelen = buf.byte() + 1 & 0xFF
 		let id
 		while((id = buf.short()) != 65535){
-			const e = EntityIDs[id]()
+			const e = new EntityIDs[id]()
 			e.place(this.world, buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
 			e.chunk = this
 			this.entities.push(e)
@@ -85,7 +85,7 @@ export class Chunk extends Uint16Array{
 			const block = BlockIDs[this[j]]
 			if(!block.savedata)continue
 			this[j] = 65535
-			this.tileData.set(j, buf.read(block.savedatahistory[buf.flint()] || block.savedata, block()))
+			this.tileData.set(j, buf.read(block.savedatahistory[buf.flint()] || block.savedata, new block))
 		}
 		buf.read(Schema, this)
 	}

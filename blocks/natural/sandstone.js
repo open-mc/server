@@ -5,7 +5,7 @@ class Sandstone extends Block{
 	static blast = 20
 	static breaktime = 4
 	static tool = 'pick'
-	drops(){ return Items.sandstone(1) }
+	drops(){ return new Items.sandstone(1) }
 }
 
 Blocks.sandstone = Sandstone

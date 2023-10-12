@@ -13,5 +13,5 @@ Blocks.sand = class extends Block{
 			return
 		}
 	}
-	drops(){ return Items.sand(1) }
+	drops(){ return new Items.sand(1) }
 }

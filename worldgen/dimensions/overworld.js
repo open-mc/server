@@ -23,9 +23,9 @@ export function superflat(_,cy){
 
 export const fill = generation(() => void(chunk.fill(Blocks.stone)))
 export const flat = generation(superflat)
-export const perlin = generation(filler(Blocks.stone, Blocks.water, 0, biomesFor, 1))
+export const perlin = generation(filler(Blocks.stone, Blocks.water, Blocks.waterTop, 0, biomesFor, 1))
 
-const defaultFiller = filler(Blocks.stone, Blocks.water, 0, biomesFor)
+const defaultFiller = filler(Blocks.stone, Blocks.water, Blocks.waterTop, 0, biomesFor)
 export default generation(function(cx,cy){
 	if(cy > 3){
 		air()

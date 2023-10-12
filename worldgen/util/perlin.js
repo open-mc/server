@@ -57,7 +57,7 @@ const facs = new Float64Array(64)
 const heights = new Float64Array(64)
 const L = new Float64Array(16)
 
-export const filler = (fill = Blocks.stone, liquid = Blocks.water, level = 0, biomer, flags = 0) => (cx, cy) => {
+export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface = Blocks.waterTop, level = 0, biomer, flags = 0) => (cx, cy) => {
 	const biomes = biomer(cx, cy)
 	let g = L[0] = imxs32_2(cx, cy); makeVector(0, g)
 	for(let i = 1; i < 16; i++) makeVector(i, L[i]=g=imxs32(g,-150702732))
@@ -140,7 +140,7 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, level = 0, bi
 			: s > -5/height && deepsurface ?
 				deepsurface
 			: fill
-		: cy < level ? liquid : Blocks.air
+		: cy < level ? i >= 4032 ? liquidSurface : liquid : Blocks.air
 		i += 65
 	}
 }

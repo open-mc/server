@@ -22,8 +22,7 @@ Blocks.sugar_cane = class extends Block{
 	update(){
 		if(!peekdown().solid) this.destroy() // drops item
 	}
-	// Single liners on one line unless you think you'll need to expand it in the future
-	drops(){ return Items.sugar_cane(1) }
+	drops(){ return new Items.sugar_cane(1) }
 }
 class PumpkinLeaf extends Block{
 	static breaktime = 0

@@ -22,7 +22,7 @@ for(const a of await DB.get('blockindex').catch(e=>'air').then(a=>(blockindex = 
 		if(B.className != name) Blocks[name] = class extends B{static id = BlockIDs.length; static className = name}
 		else Object.hasOwn(B, 'otherIds') ? B.otherIds.push(BlockIDs.length) : B.otherIds = [BlockIDs.length]
 	else B.id = BlockIDs.length, B.className = name
-	BlockIDs.push(null)
+	BlockIDs.push(B)
 }
 
 for(const name in Blocks){
@@ -34,9 +34,7 @@ for(const name in Blocks){
 		Object.setPrototypeOf(B.prototype, Block.prototype)
 	}
 	if(!Object.hasOwn(B, 'id'))
-		B.id = BlockIDs.length, B.savedatahistory = [], BlockIDs.push(null), B.className = name, modified = true
-	B.constructor = BlockIDs[B.id] = Blocks[name] = B.savedata ? (...a) => new B(...a) : function a(){return a}
-	B.constructor.prototype = B.prototype
+		B.id = BlockIDs.length, B.savedatahistory = [], BlockIDs.push(B), B.className = name, modified = true
 	if(B.otherIds) for(const i of B.otherIds) BlockIDs[i] = BlockIDs[B.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -46,10 +44,12 @@ for(const name in Blocks){
 		delete desc.length; delete desc.name
 		Object.defineProperties(proto.prototype, desc)
 		proto = Object.getPrototypeOf(proto)
-	}	
-	Object.setPrototypeOf(Blocks[name], B.prototype)
-	Object.defineProperties(Blocks[name], Object.getOwnPropertyDescriptors(new B()))
+	}
+	if(!B.savedata){
+		Object.defineProperties(B, Object.getOwnPropertyDescriptors(new B))
+	}
 }
+for(const b in Blocks) Object.setPrototypeOf(Blocks[b], Blocks[b].prototype)
 if(modified){
 	await DB.put('blockindex', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
 }

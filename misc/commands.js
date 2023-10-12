@@ -229,11 +229,11 @@ export const commands = {
 			if(!count && player.sock) count = player.name
 			else if(typeof count == 'string') count = 2-!count
 			else count++
-			const stack = itm(c)
+			const stack = new itm(c)
 			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
 			player.give(stack)
 			if(stack.count) while(true){
-				const e = Entities.item()
+				const e = new Entities.item()
 				if(stack.count > 255)
 					e.item = stack.constructor(255), stack.count -= 255
 				else e.item = stack
@@ -246,7 +246,7 @@ export const commands = {
 	summon(type, _x = '~', _y = '~', data = '{}', d = this.world || 'overworld'){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		if(!(type in Entities)) throw 'No such entity: ' + type
-		const e = Entities[type]()
+		const e = new Entities[type]()
 		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
 		e.place(w, x, y)
 		return log(this, 'Summoned a(n) '+type+' with an ID of '+e.netId)

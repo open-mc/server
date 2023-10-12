@@ -12,18 +12,18 @@ export class Block{
 	static mustBreak = false
 	static tool = ''
 	static savedata = null
-	destroy(sound = true, drop = this.drops?.()){
+	destroy(sound = true, drop = this.drops?.(), replace = Blocks.air){
 		if(sound) blockevent(2)
-		place(Blocks.air)
+		place(replace)
 		if(drop instanceof Item){
-			const itm = Entities.item()
+			const itm = new Entities.item()
 			itm.item = drop
 			itm.dx = random() * 6 - 3
 			itm.dy = 6
 			itm.place(antWorld, getX(), getY())
 		}else if(drop instanceof Array){
 			for(const d of drop){
-				const itm = Entities.item()
+				const itm = new Entities.item()
 				itm.item = d
 				itm.dx = random() * 6 - 3
 				itm.dy = 6

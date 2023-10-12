@@ -37,7 +37,7 @@ Example for using our cheese block and item from earlier:
 const blockToPlace = Blocks.cheese_block
 //Items:
 //Item.<name>(count)
-player.give(Items.cheese_pickaxe(1))
+player.give(new Items.cheese_pickaxe(1))
 //Entities:
 //Entity.<name>(x, y)
 

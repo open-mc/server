@@ -203,7 +203,7 @@ function playerMovePacket(player, buf){
 		if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
 		b = peek()
 		if(!b.replacable) break top
-		{
+		if(false){ // TODO better entity check allowing for quasi-solid blocks like sugar_cane
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
@@ -329,7 +329,7 @@ function altInventoryPacket(player, buf){
 
 function dropItemPacket(player, buf){
 	if(!player.inv[player.selected]) return
-	const e = Entities.item()
+	const e = new Entities.item()
 	e.item = player.inv[player.selected]
 	e.dx = player.dx + player.f > 0 ? 7 : -7
 	e.place(player.world, player.x, player.y + player.head - 0.5)
@@ -340,7 +340,7 @@ function dropItemPacket(player, buf){
 function closeInterfacePacket(player, _){
 	this.interface = null
 	if(player.items[0]){
-		const e = Entities.item()
+		const e = new Entities.item()
 		e.item = player.items[0]
 		e.dx = player.dx + player.f > 0 ? 7 : -7
 		e.place(player.world, player.x, player.y + player.head - 0.5)

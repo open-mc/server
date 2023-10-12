@@ -184,8 +184,7 @@ export function fastCollision(e, dt = 1 / currentTPS){
 	a: for(let y = ceil(e.y + e.height - EPSILON) - y0 - 1; y >= 0; y--)
 		b: for(let x = ceil(e.x + e.width - EPSILON) - x0 - 1; x >= 0; x--){
 			const b = peekat(x, y)
-			if(!b.touched) continue b
-			const {blockShape} = b
+			const {blockShape, fluid} = b
 			if(blockShape){
 				const bx0 = e.x - e.width - x - x0, bx1 = e.x + e.width - x - x0
 				const by0 = e.y - y - y0, by1 = e.y + e.height - y - y0
@@ -193,6 +192,8 @@ export function fastCollision(e, dt = 1 / currentTPS){
 					if((bx0 > blockShape[i+2] | bx1 < blockShape[i]) || (by0 > blockShape[i+3] | by1 < blockShape[i+1])) continue b
 				}
 			}
+			if(fluid) e.impactSoftness = 1
+			if(!b.touched) continue b
 			if(b.touched(e)){load(p);break a}else load(p)
 		}
 }

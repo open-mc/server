@@ -19,7 +19,7 @@ for(const a of await DB.get('itemindex').catch(e=>'stone').then(a=>(itemindex = 
 		if(I.className != name) Items[name] = class extends I{static id = ItemIDs.length; static className = name}
 		else Object.hasOwn(I, 'otherIds') ? I.otherIds.push(ItemIDs.length) : I.otherIds = [ItemIDs.length]
 	else I.id = ItemIDs.length, I.className = name
-	ItemIDs.push(null)
+	ItemIDs.push(I)
 }
 for(const name in Items){
 	const I = Items[name]
@@ -30,9 +30,7 @@ for(const name in Items){
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
 	if(!Object.hasOwn(I, 'id'))
-		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = name, modified = true
-	I.constructor = ItemIDs[I.id] = Items[name] = (...c) => new I(...c)
-	I.constructor.prototype = I.prototype
+		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(I), I.className = name, modified = true
 	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want

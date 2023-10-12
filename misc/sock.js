@@ -74,7 +74,7 @@ export async function open(){
 		const buf = new DataReader(await playersLevel.get(this.username))
 		playersConnecting.delete(this.username)
 		if(!this.state) return
-		player = EntityIDs[buf.short()]()
+		player = new EntityIDs[buf.short()]()
 		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]
 		player._state = player.state = buf.short()
@@ -83,20 +83,20 @@ export async function open(){
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		other = null
 	}catch(e){
-		player = Entities.player()
+		player = new Entities.player()
 		x = GAMERULES.spawnx; y = GAMERULES.spawny
 		dim = Dimensions[GAMERULES.spawnworld]
-		player.inv[0] = Items.stone(20)
-		player.inv[1] = Items.oak_log(20)
-		player.inv[2] = Items.oak_planks(20)
-		player.inv[3] = Items.tnt(10)
-		player.inv[4] = Items.flint_and_steel()
-		player.inv[5] = Items.obsidian(64)
-		player.inv[6] = Items.grass(32)
-		player.inv[7] = Items.diamond_pickaxe()
-		player.inv[8] = Items.diamond_shovel()
-		player.inv[9] = Items.netherrack(10)
-		player.inv[10] = Items.sandstone(10)
+		player.inv[0] = new Items.stone(20)
+		player.inv[1] = new Items.oak_log(20)
+		player.inv[2] = new Items.oak_planks(20)
+		player.inv[3] = new Items.tnt(10)
+		player.inv[4] = new Items.flint_and_steel()
+		player.inv[5] = new Items.obsidian(64)
+		player.inv[6] = new Items.grass(32)
+		player.inv[7] = new Items.diamond_pickaxe()
+		player.inv[8] = new Items.diamond_shovel()
+		player.inv[9] = new Items.netherrack(10)
+		player.inv[10] = new Items.sandstone(10)
 		stat('misc', 'unique_players')
 		playersConnecting.delete(this.username)
 	}

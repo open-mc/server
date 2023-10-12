@@ -9,65 +9,65 @@ class Wool extends Block{
 
 Blocks.white_wool = class extends Wool{
 	static color = 'white'
-	drops(){ return Items.white_wool() }
+	drops(){ return new Items.white_wool() }
 }
 Blocks.light_grey_wool = class extends Wool{
 	static color = 'light_grey'
-	drops(){ return Items.light_grey_wool() }
+	drops(){ return new Items.light_grey_wool() }
 }
 Blocks.grey_wool = class extends Wool{
 	static color = 'grey'
-	drops(){ return Items.grey_wool() }
+	drops(){ return new Items.grey_wool() }
 }
 Blocks.black_wool = class extends Wool{
 	static color = 'black'
-	drops(){ return Items.black_wool() }
+	drops(){ return new Items.black_wool() }
 }
 Blocks.red_wool = class extends Wool{
 	static color = 'red'
-	drops(){ return Items.red_wool() }
+	drops(){ return new Items.red_wool() }
 }
 Blocks.orange_wool = class extends Wool{
 	static color = 'orange'
-	drops(){ return Items.orange_wool() }
+	drops(){ return new Items.orange_wool() }
 }
 Blocks.yellow_wool = class extends Wool{
 	static color = 'yellow'
-	drops(){ return Items.yellow_wool() }
+	drops(){ return new Items.yellow_wool() }
 }
 Blocks.lime_wool = class extends Wool{
 	static color = 'lime'
-	drops(){ return Items.lime_wool() }
+	drops(){ return new Items.lime_wool() }
 }
 Blocks.green_wool = class extends Wool{
 	static color = 'green'
-	drops(){ return Items.green_wool() }
+	drops(){ return new Items.green_wool() }
 }
 Blocks.cyan_wool = class extends Wool{
 	static color = 'cyan'
-	drops(){ return Items.cyan_wool() }
+	drops(){ return new Items.cyan_wool() }
 }
 Blocks.light_blue_wool = class extends Wool{
 	static color = 'light_blue'
-	drops(){ return Items.light_blue_wool() }
+	drops(){ return new Items.light_blue_wool() }
 }
 Blocks.blue_wool = class extends Wool{
 	static color = 'blue'
-	drops(){ return Items.blue_wool() }
+	drops(){ return new Items.blue_wool() }
 }
 Blocks.purple_wool = class extends Wool{
 	static color = 'purple'
-	drops(){ return Items.purple_wool() }
+	drops(){ return new Items.purple_wool() }
 }
 Blocks.magenta_wool = class extends Wool{
 	static color = 'magenta'
-	drops(){ return Items.magenta_wool() }
+	drops(){ return new Items.magenta_wool() }
 }
 Blocks.pink_wool = class extends Wool{
 	static color = 'pink'
-	drops(){ return Items.pink_wool() }
+	drops(){ return new Items.pink_wool() }
 }
 Blocks.brown_wool = class extends Wool{
 	static color = 'brown'
-	drops(){ return Items.brown_wool() }
+	drops(){ return new Items.brown_wool() }
 }

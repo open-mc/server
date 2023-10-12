@@ -11,7 +11,7 @@ let i = -1
 export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
 export class Entity{
-	constructor(){
+	constructor(name = ''){
 		this._x = this.x = 0
 		this._y = this.y = 0
 		this._world = this.world = null
@@ -23,7 +23,7 @@ export class Entity{
 		this._state = this.state = 0
 		this.netId = -1
 		this.sock = null
-		this._name = this.name = ''
+		this._name = this.name = name
 		this.age = 0
 		this.pendingEvents = []
 	}
@@ -74,7 +74,7 @@ export class Entity{
 			const changed = []
 			if(this.inv) for(let i = 0; i < this.inv.length; i++){
 				if(!this.inv[i]) continue
-				const itm = Entities.item()
+				const itm = new Entities.item()
 				itm.item = this.inv[i]
 				itm.dx = random() * 30 - 15
 				itm.dy = random() * 4 + 4
@@ -84,7 +84,7 @@ export class Entity{
 			}
 			if(this.items) for(let i = 0; i < this.items.length; i++){
 				if(!this.items[i]) continue
-				const itm = Entities.item()
+				const itm = new Entities.item()
 				itm.item = this.items[i]
 				itm.dx = random() * 30 - 15
 				itm.dy = random() * 4 + 4
@@ -101,7 +101,7 @@ export class Entity{
 		for(let i = 0; i < this.inv.length; i++){
 			const amount = min(stack.count, stack.maxStack)
 			if(!this.inv[i]){
-				this.inv[i] = stack.constructor(amount)
+				this.inv[i] = new stack.constructor(amount)
 				stack.count -= amount
 			}else if(this.inv[i].constructor == stack.constructor && !stack.savedata){
 				const amount2 = min(amount, this.inv[i].maxStack - this.inv[i].count)

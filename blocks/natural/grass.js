@@ -1,3 +1,4 @@
+import { Enchantments } from '../../items/enchantments.js'
 import { Items } from '../../items/item.js'
 import { down, getX, getY, jump, peekleft, peekright, peekup, place, up } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
@@ -6,7 +7,7 @@ class Grass extends Block{
 	static tool = 'shovel'
 	static breaktime = 1.5
 	drops(){
-		return Items.dirt(1)
+		return new Items.dirt(1)
 	}
 	randomtick(){
 		if(peekup().solid)
@@ -21,8 +22,8 @@ Blocks.snowy_grass = class SnowyGrass extends Grass{
 Blocks.dirt = class Dirt extends Block{
 	static tool = 'shovel'
 	static breaktime = 1
-	drops(){
-		return Items.dirt(1)
+	drops(item){
+		return item.ench?.has(Enchantments.silk_touch) ? new Items.grass(1) : new Items.dirt(1)
 	}
 	randomtick(){
 		if(peekup().solid) return

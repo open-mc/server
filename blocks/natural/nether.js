@@ -3,6 +3,6 @@ import { Block, Blocks } from '../block.js'
 
 Blocks.netherrack = class Netherrack extends Block{
 	static breaktime = 2
-	drops(){ return Items.netherrack(1) }
+	drops(){ return new Items.netherrack(1) }
 	static tool = 'pick'
 }

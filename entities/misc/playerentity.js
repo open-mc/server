@@ -34,14 +34,14 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			place(Blocks.air)
 			const drop = tile.drops?.(this.inv[this.selected])
 			if(drop instanceof Item){
-				const itm = Entities.item()
+				const itm = new Entities.item()
 				itm.item = drop
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
 				itm.place(this.world, this.bx + 0.5, this.by + 0.375)
 			}else if(drop instanceof Array){
 				for(const d of drop){
-					const itm = Entities.item()
+					const itm = new Entities.item()
 					itm.item = d
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
