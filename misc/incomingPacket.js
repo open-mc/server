@@ -118,8 +118,8 @@ function playerMovePacket(player, buf){
 		let l = 0
 		const item = player.inv[sel&127], {interactFluid} = item
 		a: while(d < reach){
-			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, fluidLevel} = peek()
-			if((solid && !replacable) || (sel > 127 && mustBreak) || (interactFluid && fluidLevel)){
+			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, fluidLevel, flows} = peek()
+			if((solid && !replacable) || (sel > 127 && mustBreak) || (interactFluid && fluidLevel && !flows)){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -193,9 +193,9 @@ function playerMovePacket(player, buf){
 		if(b.solid | (item.interactFluid&&b.fluidLevel)){
 			if(item && item.interact){
 				const c = item.count
-				const i2 = item.interact(b) ?? item
+				const i2 = item.interact(b, player) ?? item
 				if(i2 !== item || c !== i2.count){
-					if(i2.count === 0) player.inv[sel] = null
+					if(!i2 || i2.count === 0) player.inv[sel] = null
 					else player.inv[sel] = i2
 					player.itemschanged([sel])
 				}
@@ -213,11 +213,10 @@ function playerMovePacket(player, buf){
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
 		if(item.place){
-			item.place(px, py)
 			const c = item.count
-			const i2 = item.place() ?? item
+			const i2 = item.place(px, py, player) ?? item
 			if(i2 !== item || c !== i2.count){
-				if(i2.count === 0) player.inv[sel] = null
+				if(!i2 || i2.count === 0) player.inv[sel] = null
 				else player.inv[sel] = i2
 				player.itemschanged([sel])
 			}

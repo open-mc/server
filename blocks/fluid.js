@@ -11,6 +11,7 @@ export const fluidify = (B, t) => {
 			down()
 			const b = peek()
 			if(b.solid | b.fluidLevel >= 8){
+				if(b.fluidLevel && B.fluidType != t && this.combine) return void this.combine(b)
 				up(); right()
 				let b = peek()
 				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
