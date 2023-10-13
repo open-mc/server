@@ -12,4 +12,5 @@ Items.flint_and_steel = class extends Item{
 	place(){
 		place(Blocks.fire); blockevent(1)
 	}
+	static maxStack = 1
 }

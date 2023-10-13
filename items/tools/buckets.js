@@ -16,16 +16,19 @@ Items.bucket = class extends Item{
 		}
 	}
 	static interactFluid = true
+	static maxStack = 1
 }
 
 Items.bucket_of_water = class extends Item{
 	place(){
 		place(Blocks.water); blockevent(33); return new Items.bucket()
 	}
+	static maxStack = 1
 }
 
 Items.bucket_of_lava = class extends Item{
 	place(){
 		place(Blocks.lava); blockevent(33); return new Items.bucket()
 	}
+	static maxStack = 1
 }
