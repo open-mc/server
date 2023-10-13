@@ -116,7 +116,7 @@ function playerMovePacket(player, buf){
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach
 		let l = 0
-		const item = player.inv[sel&127], {interactFluid} = item
+		const item = player.inv[sel&127], {interactFluid = false} = item ?? 0
 		a: while(d < reach){
 			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, fluidLevel, flows} = peek()
 			if((solid && !replacable) || (sel > 127 && mustBreak) || (interactFluid && fluidLevel && !flows)){
