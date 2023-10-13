@@ -19,7 +19,7 @@ void({
 	top: Blocks.waterTop,
 	flowing: Blocks.waterFlowing,
 	levels: [, Blocks.waterFlowing1, Blocks.waterFlowing2, Blocks.waterFlowing3, Blocks.waterFlowing4, Blocks.waterFlowing5, Blocks.waterFlowing6, Blocks.waterFlowing7]
-} = fluidify(Water, 'water'))
+} = fluidify(Water, 'water', true))
 
 class Lava extends Water{
 	static viscosity = 0.5

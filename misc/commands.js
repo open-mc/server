@@ -305,6 +305,7 @@ export const commands = {
 		}
 	},
 	clear(sel = '@s', _item, _max = '2147483647'){
+		if(_item && !Object.hasOwn(Items, _item)) throw 'No such item: '+_item
 		const Con = _item && Items[_item] || null
 		let cleared = 0, count = ''
 		_max = +_max

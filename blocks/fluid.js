@@ -2,7 +2,7 @@ import { down, getX, getY, left, peek, peekdown, peekleft, peekright, peekup, pl
 import { Blocks } from "./block.js"
 import { BlockShape } from "./blockshapes.js"
 
-export const fluidify = (B, t) => {
+export const fluidify = (B, t, renewable = false) => {
 	B.fluidType = t
 	const filled = class extends B{
 		variant(){ return !peekup().fluidLevel ? top : undefined }
@@ -32,6 +32,7 @@ export const fluidify = (B, t) => {
 			}else b.destroy?.(false, undefined, flowing)
 		}
 		static fluidLevel = 8
+		static flows = false
 	}
 	const top = class extends filled{
 		variant(){ return peekup().fluidLevel ? filled : undefined }
@@ -49,12 +50,26 @@ export const fluidify = (B, t) => {
 			down()
 			b = peek()
 			if(b.fluidLevel >= 8){
-				if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.fluidType != t) this.combine?.(b)
+				else if(renewable && !b.flows){
+					up()
+					b = peekright()
+					if(b.solid){
+						b = peekleft()
+						if(b.fluidType != t || b.flows) return
+					}else{
+						if(b.fluidType != t || b.flows) return
+						b = peekleft()
+						if((b.fluidType != t || b.flows) && !b.solid) return
+					}
+					place(filled)
+				}
 				return
 			}
 			if(b.solid){
 				up(); right()
 				let b = peek()
+				const sourceRight = renewable && b.fluidType == t && !b.flows
 				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
 				else if(!b.solid && b.fluidLevel < 7){
 					if(b.fluidType != t && this.combine) this.combine(b)
@@ -66,6 +81,9 @@ export const fluidify = (B, t) => {
 				else if(!b.solid && b.fluidLevel < 7){
 					if(b.fluidType != t && this.combine) this.combine(b)
 					else place(levels[7])
+				}
+				if(sourceRight && b.fluidType == t && !b.flows){
+					right(); place(filled)
 				}
 			}else if(b.fluidLevel){
 				if(b.fluidType != t && this.combine) this.combine(b)
@@ -82,15 +100,29 @@ export const fluidify = (B, t) => {
 			const lvl = max(peekup().fluidLevel??0, peekright().fluidLevel??0, peekleft().fluidLevel??0)
 			if(this.fluidLevel >= lvl) return void place(levels[max(0,this.fluidLevel-2)])
 			down()
-			const b = peek()
+			let b = peek()
 			if(b.fluidLevel >= 8){
-				if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.fluidType != t) this.combine(b)
+				else if(renewable && !b.flows){
+					up()
+					b = peekright()
+					if(b.solid){
+						b = peekleft()
+						if(b.fluidType != t || b.flows) return
+					}else{
+						if(b.fluidType != t || b.flows) return
+						b = peekleft()
+						if((b.fluidType != t || b.flows) && !b.solid) return
+					}
+					place(filled)
+				}
 				return
 			}
 			if(b.solid){
 				const L = this.fluidLevel - 1
 				up(); right()
 				let b = peek()
+				const sourceRight = renewable && b.fluidType == t && !b.flows
 				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
 				else if(!b.solid && b.fluidLevel < L){
 					if(b.fluidType != t && this.combine) this.combine(b)
@@ -102,6 +134,9 @@ export const fluidify = (B, t) => {
 				else if(!b.solid && b.fluidLevel < L){
 					if(b.fluidType != t && this.combine) this.combine(b)
 					else place(levels[L])
+				}
+				if(sourceRight && b.fluidType == t && !b.flows){
+					right(); place(filled)
 				}
 			}else if(b.fluidLevel){
 				if(b.fluidType != t && this.combine) this.combine(b)
