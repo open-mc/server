@@ -116,9 +116,10 @@ function playerMovePacket(player, buf){
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach
 		let l = 0
+		const item = player.inv[sel&127], {interactFluid} = item
 		a: while(d < reach){
-			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE} = peek()
-			if((solid && !replacable) || (sel > 127 && mustBreak)){
+			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, fluidLevel} = peek()
+			if((solid && !replacable) || (sel > 127 && mustBreak) || (interactFluid && fluidLevel)){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -171,7 +172,7 @@ function playerMovePacket(player, buf){
 		}
 		px -= l << 24 >> 24; py -= l << 16 >> 24
 		if(sel > 127){
-			const block = peek(), item = player.inv[sel & 127]
+			const block = peek()
 			if(block.solid | block.mustBreak){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
@@ -189,11 +190,15 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		let b = peek()
-		const item = player.inv[sel]
-		if(b.solid){
-			if(item && item.interact && !item.interact(b)){
-				if(!item.count) player.inv[sel] = null
-				player.itemschanged([sel])
+		if(b.solid | (item.interactFluid&&b.fluidLevel)){
+			if(item && item.interact){
+				const c = item.count
+				const i2 = item.interact(b) ?? item
+				if(i2 !== item || c !== i2.count){
+					if(i2.count === 0) player.inv[sel] = null
+					else player.inv[sel] = i2
+					player.itemschanged([sel])
+				}
 				return
 			}
 			if(!l) break top
@@ -209,6 +214,13 @@ function playerMovePacket(player, buf){
 		}
 		if(item.place){
 			item.place(px, py)
+			const c = item.count
+			const i2 = item.place() ?? item
+			if(i2 !== item || c !== i2.count){
+				if(i2.count === 0) player.inv[sel] = null
+				else player.inv[sel] = i2
+				player.itemschanged([sel])
+			}
 			stat('player', 'blocks_placed')
 		}
 		if(!item.count) player.inv[sel&127] = null

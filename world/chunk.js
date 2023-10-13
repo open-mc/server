@@ -1,7 +1,7 @@
 import { BlockIDs } from '../blocks/block.js'
 import { GAMERULES } from './index.js'
 import { EntityIDs } from '../entities/entity.js'
-import { _newChunk, antWorld, gotochunk, peekpos } from '../misc/ant.js'
+import { _newChunk, antWorld, peekpos } from '../misc/ant.js'
 
 const IDs = new Uint8Array(4096)
 
@@ -22,7 +22,7 @@ export class Chunk extends Uint16Array{
 		//read buf palette
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
 		let ticks = buf.short()
-		while(ticks--) this.blockupdates.add(buf.short())
+		while(ticks--) this.blockupdates.set(buf.short(), 0)
 		let palettelen = buf.byte() + 1 & 0xFF
 		let id
 		while((id = buf.short()) != 65535){
@@ -113,7 +113,7 @@ export class Chunk extends Uint16Array{
 		if(packet) buf.short(0)
 		else{
 			buf.short(this.blockupdates.size)
-			for(const t of this.blockupdates) buf.short(t)
+			for(const t of this.blockupdates.keys()) buf.short(t)
 		}
 		buf.byte(palette.length ? palette.length - (palette.length == paletteFull.length) : 255)
 
@@ -191,10 +191,9 @@ export class Chunk extends Uint16Array{
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return 'Chunk { x: \x1b[33m'+(this.x<<6>>6)+'\x1b[m, y: \x1b[33m'+(this.y<<6>>6)+'\x1b[m }'}
 
-	blockupdates = new Set
-	blockupdates2 = new Set
+	blockupdates = new Map
+	blockupdates2 = new Map
 	tick(){
-		gotochunk(this)
 		const s = this.blockupdates
 		this.blockupdates = this.blockupdates2
 		this.blockupdates2 = s
@@ -205,12 +204,16 @@ export class Chunk extends Uint16Array{
 			if(aliveQuarters>>(p>>5&1|p>>10&2)&1)
 				peekpos(this,p).randomtick?.()
 		}
-		aliveQuarters = (aliveQuarters&8)<<12|(aliveQuarters&4)<<10|(aliveQuarters&2)<<2|(aliveQuarters&1)
-			| (this.loadedAround<<31>>31&0x6000) | (this.loadedAround<<29>>31&0x0880) | (this.loadedAround<<27>>31&0x0006) | (this.loadedAround<<25>>31&0x0110) | 0x0660
-		for(const p of s)
-			if(aliveQuarters>>(p>>4&3|p>>8&12)&1)
-				peekpos(this,p).update?.()
-			else this.blockupdates.add(p)
+		aliveQuarters = ~((aliveQuarters&8)<<12|(aliveQuarters&4)<<10|(aliveQuarters&2)<<2|(aliveQuarters&1)
+			| (this.loadedAround<<31>>31&0x6000) | (this.loadedAround<<29>>31&0x0880) | (this.loadedAround<<27>>31&0x0006) | (this.loadedAround<<25>>31&0x0110) | 0x0660)
+		for(const [p, v] of s){
+			if(aliveQuarters>>(p>>4&3|p>>8&12)&1){ this.blockupdates.set(p, v); continue }
+			const b = peekpos(this,p)
+			if(b.update){
+				const v2 = b.update(v)
+				if(v2 !== undefined) this.blockupdates.set(p, v2)
+			}
+		}
 		if(s.size) s.clear()
 	}
 

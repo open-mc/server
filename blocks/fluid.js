@@ -2,22 +2,33 @@ import { down, getX, getY, left, peek, peekdown, peekleft, peekright, peekup, pl
 import { Blocks } from "./block.js"
 import { BlockShape } from "./blockshapes.js"
 
-export const fluidify = B => {
+export const fluidify = (B, t) => {
+	B.fluidType = t
 	const filled = class extends B{
 		variant(){ return !peekup().fluidLevel ? top : undefined }
-		update(){
+		update(v){
+			if(v < B.delay) return v+1
 			down()
 			const b = peek()
 			if(b.solid | b.fluidLevel >= 8){
 				up(); right()
 				let b = peek()
-				if(!b.solid && (b.fluidLevel??0) < 7) b.destroy?.(false, undefined, levels[7])
+				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(!b.solid && b.fluidLevel < 7){
+					if(b.fluidType != t && this.combine) this.combine(b)
+					else place(levels[7])
+				}
 				left(); left()
 				b = peek()
-				if(!b.solid && (b.fluidLevel??0) < 7) b.destroy?.(false, undefined, levels[7])
-			}else{
-				b.destroy?.(false, undefined, flowing)
-			}
+				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(!b.solid && b.fluidLevel < 7){
+					if(b.fluidType != t && this.combine) this.combine(b)
+					else place(levels[7])
+				}
+			}else if(b.fluidLevel){
+				if(b.fluidType != t && this.combine) this.combine(b)
+				else place(flowing)
+			}else b.destroy?.(false, undefined, flowing)
 		}
 		static fluidLevel = 8
 	}
@@ -26,43 +37,75 @@ export const fluidify = B => {
 		static blockShape = BlockShape.TWO_SHORT
 	}
 	const flowing = class extends B{
-		update(){
+		update(v){
+			if(v < B.delay) return v+1
 			let b = peekup()
-			if(!(b instanceof B)) return place(Blocks.air)
+			if(!(b instanceof B)){
+				const l = max(peekleft().fluidLevel??0, peekright().fluidLevel??0) - 1
+				if(l <= 0) place(Blocks.air)
+				else place(levels[l])
+			}
 			down()
 			b = peek()
-			if(b.fluidLevel >= 8) return
+			if(b.fluidLevel >= 8){
+				if(b.fluidType != t && this.combine) this.combine(b)
+				return
+			}
 			if(b.solid){
 				up(); right()
 				let b = peek()
-				if(!b.solid && (b.fluidLevel??0) < 7) b.destroy?.(false, undefined, levels[7])
+				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(!b.solid && b.fluidLevel < 7){
+					if(b.fluidType != t && this.combine) this.combine(b)
+					else place(levels[7])
+				}
 				left(); left()
 				b = peek()
-				if(!b.solid && (b.fluidLevel??0) < 7) b.destroy?.(false, undefined, levels[7])
-			}else{
-				b.destroy?.(false, undefined, flowing)
-			}
+				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(!b.solid && b.fluidLevel < 7){
+					if(b.fluidType != t && this.combine) this.combine(b)
+					else place(levels[7])
+				}
+			}else if(b.fluidLevel){
+				if(b.fluidType != t && this.combine) this.combine(b)
+				else place(flowing)
+			}else b.destroy?.(false, undefined, flowing)
 		}
 		static fluidLevel = 8
+		static flows = true
 	}
 	const level = class extends B{
-		update(){
+		static flows = true
+		update(v){
+			if(v < B.delay) return v+1
 			const lvl = max(peekup().fluidLevel??0, peekright().fluidLevel??0, peekleft().fluidLevel??0)
-			if(this.fluidLevel >= lvl) return place(levels[max(0,this.fluidLevel-2)])
+			if(this.fluidLevel >= lvl) return void place(levels[max(0,this.fluidLevel-2)])
 			down()
 			const b = peek()
-			if(b.fluidLevel >= this.fluidLevel) return
+			if(b.fluidLevel >= 8){
+				if(b.fluidType != t && this.combine) this.combine(b)
+				return
+			}
 			if(b.solid){
 				const L = this.fluidLevel - 1
 				up(); right()
 				let b = peek()
-				if(!b.solid && (b.fluidLevel??0) < L) b.destroy?.(false, undefined, levels[L])
+				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
+				else if(!b.solid && b.fluidLevel < L){
+					if(b.fluidType != t && this.combine) this.combine(b)
+					else place(levels[L])
+				}
 				left(); left()
 				b = peek()
-				if(!b.solid && (b.fluidLevel??0) < L) b.destroy?.(false, undefined, levels[L])
-			}else{
-				b.destroy?.(false, undefined, flowing)
-			}
+				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
+				else if(!b.solid && b.fluidLevel < L){
+					if(b.fluidType != t && this.combine) this.combine(b)
+					else place(levels[L])
+				}
+			}else if(b.fluidLevel){
+				if(b.fluidType != t && this.combine) this.combine(b)
+				else place(flowing)
+			}else b.destroy?.(false, undefined, flowing)
 		}
 	}
 	const levels = [

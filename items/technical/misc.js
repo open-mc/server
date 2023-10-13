@@ -8,8 +8,8 @@ Items.end_portal_frame = class extends Item{
 }
 
 Items.eye_of_ender = class extends Item{
-	interact(){
-		if(peek() != Blocks.end_portal_frame) return true
+	interact(b){
+		if(b != Blocks.end_portal_frame) return
 		place(Blocks.filled_end_portal_frame)
 		super.use()
 		check: {

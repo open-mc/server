@@ -33,13 +33,7 @@ export function goto(w, x=0, y=0){
 	cachex = cachey = 0x4000000
 	chunk = world.get(cx+cy*0x4000000)
 }
-
-export function gotochunk(ch){
-	cx = ch.x; cy = ch.y; world = ch.world
-	cachex = cachey = 0x4000000
-	chunk = ch
-}
-export const peekpos = (c,p) => {const b=(cx=chunk.x,cy=chunk.y,chunk=c)[pos=p];return b===65535?chunk.tileData.get(p):BlockIDs[b]}
+export const peekpos = (c,p) => {const b=(world=c.world,cx=c.x,cy=c.y,chunk=c)[pos=p];return b===65535?chunk.tileData.get(p):BlockIDs[b]}
 
 export function place(bl){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
@@ -74,13 +68,13 @@ export function place(bl){
 			const p = pos|0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
 			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
-			if(b.update) c.blockupdates.add(p)
+			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
 		const p = pos+1
 		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
-		if(b.update) chunk.blockupdates.add(pos+1)
+		if(b.update && !chunk.blockupdates.has(pos+1)) chunk.blockupdates.set(pos+1, 0)
 	}
 	if((pos & 63) === 0){
 		const ncx = cx-1&0x3FFFFFF
@@ -89,13 +83,13 @@ export function place(bl){
 			const p = pos&0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
 			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
-			if(b.update) c.blockupdates.add(p)
+			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
 		const p = pos-1
 		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
-		if(b.update) chunk.blockupdates.add(pos-1)
+		if(b.update && !chunk.blockupdates.has(pos-1)) chunk.blockupdates.set(pos-1, 0)
 	}
 	if((pos >> 6) === 0b111111){
 		const ncy = cy+1&0x3FFFFFF
@@ -104,13 +98,13 @@ export function place(bl){
 			const p = pos&0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
 			if(b.variant){pos=p,chunk=c,cy=ncy;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
-			if(b.update) c.blockupdates.add(p)
+			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
 		const p = pos+64
 		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
-		if(b.update) chunk.blockupdates.add(pos+64)
+		if(b.update && !chunk.blockupdates.has(pos+64)) chunk.blockupdates.set(pos+64, 0)
 	}
 	if((pos >> 6) === 0){
 		const ncy = cy-1&0x3FFFFFF
@@ -119,16 +113,16 @@ export function place(bl){
 			const p = pos|0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
 			if(b.variant){pos=p,chunk=c,cy=ncy;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
-			if(b.update) c.blockupdates.add(p)
+			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
 		const p = pos-64
 		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
-		if(b.update) chunk.blockupdates.add(pos-64)
+		if(b.update && !chunk.blockupdates.has(pos-64)) chunk.blockupdates.set(pos-64, 0)
 	}
 	if(bl.variant){bl=bl.variant()??bl;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(bl.savedata)chunk[pos]=65535,chunk.tileData.set(pos,bl=bl===bl.constructor?new bl:bl);else{if(chunk[pos]==65535)chunk.tileData.delete(pos);chunk[pos]=bl.id}}
-	if(bl.update) chunk.blockupdates.add(pos)
+	if(bl.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, 0)
 	return bl
 }
 
