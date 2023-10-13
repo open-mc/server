@@ -11,10 +11,12 @@ Items.bucket = class extends Item{
 			switch(b.fluidType){
 				case 'water':
 					i = new Items.bucket_of_water()
+					break
 				case 'lava':
 					i = new Items.bucket_of_lava()
+					break
 			}
-			if(this.count) this.count--, i && e.give(i)
+			if(this.count > 1) super.use(false), i && e.giveAndDrop(i)
 			else return i
 		}
 	}

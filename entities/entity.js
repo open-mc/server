@@ -116,6 +116,17 @@ export class Entity{
 		this.itemschanged(changed)
 		return true
 	}
+	giveAndDrop(stack){
+		this.give(stack)
+		if(stack.count) while(true){
+			const e = new Entities.item()
+			if(stack.count > 255)
+				e.item = stack.constructor(255), stack.count -= 255
+			else e.item = stack
+			e.place(this.world, this.x, this.y + this.head - 0.5)
+			if(e.item == stack) break
+		}
+	}
 	itemschanged(slots){
 		const buf = new DataWriter()
 		buf.byte(32)
