@@ -1,4 +1,5 @@
 import { down, getX, getY, left, peek, peekdown, peekleft, peekright, peekup, place, right, up } from "../misc/ant.js"
+import { GAMERULES } from "../world/index.js"
 import { Blocks } from "./block.js"
 import { BlockShape } from "./blockshapes.js"
 
@@ -7,7 +8,7 @@ export const fluidify = (B, t, renewable = false) => {
 	const filled = class extends B{
 		variant(){ return !peekup().fluidLevel ? top : undefined }
 		update(v){
-			if(v < B.delay) return v+1
+			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			down()
 			const b = peek()
 			if(b.fluidLevel && b.fluidType != t && this.combine) return void this.combine(b)
@@ -40,10 +41,10 @@ export const fluidify = (B, t, renewable = false) => {
 	}
 	const flowing = class extends B{
 		update(v){
-			if(v < B.delay) return v+1
+			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			let b = peekup()
 			if(!(b instanceof B)){
-				const l = max(peekleft().fluidLevel??0, peekright().fluidLevel??0) - 1
+				const l = max(peekleft().fluidLevel??0, peekright().fluidLevel??0) - 1 - (B.delay > 10)*2
 				if(l <= 0) place(Blocks.air)
 				else place(levels[l])
 			}
@@ -96,9 +97,9 @@ export const fluidify = (B, t, renewable = false) => {
 	const level = class extends B{
 		static flows = true
 		update(v){
-			if(v < B.delay) return v+1
+			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			const lvl = max(peekup().fluidLevel??0, peekright().fluidLevel??0, peekleft().fluidLevel??0)
-			if(this.fluidLevel >= lvl) return void place(levels[max(0,this.fluidLevel-2)])
+			if(this.fluidLevel >= lvl) return void place(levels[max(0,this.fluidLevel-2-(B.delay > 10)*2)])
 			down()
 			let b = peek()
 			if(b.fluidLevel >= 8){
@@ -119,7 +120,7 @@ export const fluidify = (B, t, renewable = false) => {
 				return
 			}
 			if(b.solid){
-				const L = this.fluidLevel - 1
+				const L = this.fluidLevel - 1 - (B.delay > 10)*2
 				up(); right()
 				let b = peek()
 				const sourceRight = renewable && b.fluidType == t && !b.flows

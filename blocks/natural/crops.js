@@ -5,7 +5,8 @@ import './grass.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
-	static blockShape = []
+	static solid = false
+	static targettable = true
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1
@@ -20,7 +21,7 @@ Blocks.sugar_cane = class extends Block{
 		}
 	}
 	update(){
-		if(!peekdown().solid) this.destroy() // drops item
+		if(!peekdown().solid && peekdown() !== Blocks.sugar_cane) this.destroy() // drops item
 	}
 	drops(){ return new Items.sugar_cane(1) }
 }

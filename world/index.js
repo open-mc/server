@@ -38,6 +38,7 @@ GAMERULES.randomtickspeed ??= 2
 GAMERULES.globalevents ??= true
 GAMERULES.keepinventory ??= false
 GAMERULES.mobloot ??= true
+GAMERULES.fastfluids ??= false
 
 export function stat(cat, name, v = 1){
 	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
