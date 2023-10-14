@@ -61,11 +61,11 @@ export function place(bl){
 		tbuf.short(bl.id)
 		if(bl.savedata) tbuf.write(bl.savedata, bl)
 	}
-	if((pos & 63) === 0b000000111111){
+	if((pos & 63) === 0b111111){
 		const ncx = cx+1&0x3FFFFFF
 		const c = ncx===cachex&cy===cachey ? cachec : world.get(ncx+cy*0x4000000)
 		if(c){
-			const p = pos|0b000000111111
+			const p = pos&0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
 			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
 			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
@@ -80,7 +80,7 @@ export function place(bl){
 		const ncx = cx-1&0x3FFFFFF
 		const c = ncx===cachex&cy===cachey ? cachec : world.get(ncx+cy*0x4000000)
 		if(c){
-			const p = pos&0b111111000000
+			const p = pos|0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
 			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
 			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
