@@ -115,18 +115,17 @@ export class DataWriter extends Array{
 	}
 	write(type, v){
 		if(!type) return
-		if(typeof type == 'number' && this.i > this.cur.byteLength - (type < 7 ? 1 << (type >> 1) : 4)) this.allocnew()
 		let buf = this.cur
 		switch(type){
-			case Uint8: buf.setUint8(this.i++, v); return
-			case Int8: buf.setInt8(this.i++, v); return
-			case Uint16: buf.setUint16((this.i += 2) - 2, v); return
-			case Int16: buf.setInt16((this.i += 2) - 2, v); return
-			case Uint32: buf.setUint32((this.i += 4) - 4, v); return
-			case Int32: buf.setInt32((this.i += 4) - 4, v); return
-			case Float64: buf.setFloat64((this.i += 8) - 8, v); return
-			case Float32: buf.setFloat32((this.i += 4) - 4, v); return
-			case Boolean: buf.setUint8(this.i++, v); return
+			case Uint8: if(this.i == this.cur.byteLength) this.allocnew(); buf.setUint8(this.i++, v); return
+			case Int8: if(this.i == this.cur.byteLength) this.allocnew(); buf.setInt8(this.i++, v); return
+			case Uint16: if(this.i > this.cur.byteLength - 2) this.allocnew(); buf.setUin26((this.i += 2) - 2, v); return
+			case Int16: if(this.i > this.cur.byteLength - 2) this.allocnew(); buf.setInt16((this.i += 2) - 2, v); return
+			case Uint32: if(this.i > this.cur.byteLength - 4) this.allocnew(); buf.setUint32((this.i += 4) - 4, v); return
+			case Int32: if(this.i > this.cur.byteLength - 4) this.allocnew(); buf.setInt32((this.i += 4) - 4, v); return
+			case Float64: if(this.i > this.cur.byteLength - 8) this.allocnew(); buf.setFloat64((this.i += 8) - 8, v); return
+			case Float32: if(this.i > this.cur.byteLength - 4) this.allocnew(); buf.setFloat32((this.i += 4) - 4, v); return
+			case Boolean: if(this.i == this.cur.byteLength) this.allocnew(); buf.setUint8(this.i++, v); return
 			case String: this.string(v); return
 			case Uint8Array: this.uint8array(v); return
 		}
