@@ -21,7 +21,7 @@ if [ $? -eq 0 ]; then
 echo "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
 else
 git pull
-node -e "console.log('Server has been updated to '+require('./package.json').version+'\\n\\n')"
+node -e "console.log('Server has been updated to '+require('../package.json').version+'\\n\\n')"
 fi; FLAGS=" -manual"; fi
 A=
 
