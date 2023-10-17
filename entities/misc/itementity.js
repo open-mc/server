@@ -9,6 +9,9 @@ Entities.item = class ItemEntity extends Entity{
 	static collisionPaddingY = 0.5
 	static head = 0.125
 	static savedata = {item: Item}
+	damage(){
+		this.remove()
+	}
 	touch(e){
 		if(!this.item){
 			this.remove()

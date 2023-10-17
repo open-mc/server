@@ -3,7 +3,7 @@ import { Block, Blocks } from '../block.js'
 import { BlockShape, blockShaped } from '../blockshapes.js'
 
 //Template for defining a bunch of blocks
-class Planks extends Block{
+export class Planks extends Block{
 	static flammability = 5
 	static tool = 'axe'
 	static breaktime = 3

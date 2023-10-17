@@ -115,7 +115,7 @@ export class DataWriter extends Array{
 	}
 	write(type, v){
 		if(!type) return
-		if(typeof type == 'number' && this.i > this.cur.byteLength - (type < 7 ? 1 << (type >> 1) : 4))this.allocnew()
+		if(typeof type == 'number' && this.i > this.cur.byteLength - (type < 7 ? 1 << (type >> 1) : 4)) this.allocnew()
 		let buf = this.cur
 		switch(type){
 			case Uint8: buf.setUint8(this.i++, v); return
@@ -139,6 +139,7 @@ export class DataWriter extends Array{
 			if(type.length > 1)len = type[1]
 			else{
 				len = v.length
+				if(this.i > this.cur.byteLength - 1 - (len > 63)*3) this.allocnew()
 				if(len > 0x3FFF){
 					if(len > 0x7FFFFFFF)throw new RangeError('Encoded arrays may not have more than 2147483647 items')
 					else buf.setUint32((this.i += 4) - 4, len | 0x80000000)

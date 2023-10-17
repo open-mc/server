@@ -1,7 +1,7 @@
 import { BlockIDs } from '../blocks/block.js'
-import { GAMERULES } from './index.js'
-import { EntityIDs } from '../entities/entity.js'
-import { _newChunk, antWorld, peekpos } from '../misc/ant.js'
+import { GAMERULES, players } from './index.js'
+import { Entities, EntityIDs } from '../entities/entity.js'
+import { _newChunk, antWorld, down, gotopos, peek, peekpos, summon, up } from '../misc/ant.js'
 
 const IDs = new Uint8Array(4096)
 
@@ -21,8 +21,8 @@ export class Chunk extends Uint16Array{
 		if(this.world == antWorld) _newChunk(this)
 		//read buf palette
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
-		let ticks = buf.short()
-		while(ticks--) this.blockupdates.set(buf.short(), 0)
+		let updates = buf.short()
+		while(updates--) this.blockupdates.set(buf.short(), 0)
 		let palettelen = buf.byte() + 1 & 0xFF
 		let id
 		while((id = buf.short()) != 65535){
@@ -215,6 +215,19 @@ export class Chunk extends Uint16Array{
 			}
 		}
 		if(s.size) s.clear()
+
+		if(this.loadedAround != 511) return
+
+		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunkloadingrange-1)*sqrt(this.sockets.length/players.size)){
+			const p = floor(random() * 64) | 4032
+			gotopos(this, p)
+			let highest = 64
+			while(highest >= 0 && !peek().solid) down(), highest--
+			if(highest >= 0 && highest < 64){
+				gotopos(this, p&~4032|highest<<6)
+				summon(Entities.lightning_bolt)
+			}
+		}
 	}
 
 	static savedata = {portals: [Uint16]}

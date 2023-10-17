@@ -1,4 +1,4 @@
-import { blockevent } from '../misc/ant.js'
+import { gridevent } from '../misc/ant.js'
 import { registerTypes } from '../modules/dataproto.js'
 
 export class Item{
@@ -11,8 +11,8 @@ export class Item{
 	static burns = false
 	static maxStack = 64
 	breaktime(block){ return block.breaktime }
-	use(b = true){
-		if(b) blockevent(1)
+	use(b = 0){
+		if(b) gridevent(b)
 		this.count--
 	}
 	static decode(buf, target){

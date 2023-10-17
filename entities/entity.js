@@ -164,7 +164,16 @@ export class Entity{
 		this.sock.packets.push(buf.build())
 		this.rubberMv |= mv
 	}
-	event(id, fn){ this.pendingEvents.push(id, fn) }
+	event(id, fn){ this.pendingEvents?.push(id, fn) }
+	worldEvent(id, fn){
+		if(!this.sock) return
+		const buf = new DataWriter()
+		buf.flint(15)
+		buf.byte(id)
+		fn?.(buf)
+		buf.byte(0)
+		this.sock.send(buf.build())
+	}
 	static savedata = null
 	static maxHealth = 20
 	static groundDrag = .0000244

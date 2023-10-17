@@ -6,8 +6,9 @@ import { Block, Blocks } from '../block.js'
 class Grass extends Block{
 	static tool = 'shovel'
 	static breaktime = 1.5
-	drops(){
-		return new Items.dirt(1)
+	static dirt = true
+	drops(item){
+		return item?.ench?.has(Enchantments.silk_touch) ? new Items.grass(1) : new Items.dirt(1)
 	}
 	randomtick(){
 		if(peekup().solid)
@@ -22,8 +23,9 @@ Blocks.snowy_grass = class SnowyGrass extends Grass{
 Blocks.dirt = class Dirt extends Block{
 	static tool = 'shovel'
 	static breaktime = 1
-	drops(item){
-		return item.ench?.has(Enchantments.silk_touch) ? new Items.grass(1) : new Items.dirt(1)
+	static dirt = true
+	drops(){
+		return new Items.dirt(1)
 	}
 	randomtick(){
 		if(peekup().solid) return

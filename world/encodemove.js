@@ -15,7 +15,7 @@ export function calculateMv(e){
 			buf.string(e.world.id)
 			buf.float(e.world.gx)
 			buf.float(e.world.gy)
-			buf.double(e.world.tick)
+			buf.write(e.world.constructor.savedata, e.world)
 			e.sock.send(buf.build())
 		}
 		e.moved?.()

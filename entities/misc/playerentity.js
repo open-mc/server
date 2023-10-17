@@ -1,7 +1,7 @@
 import { Blocks } from '../../blocks/block.js'
 import { stat } from '../../world/index.js'
 import { Item } from '../../items/item.js'
-import { blockevent, cancelgridevent, goto, peek, place } from '../../misc/ant.js'
+import { cancelgridevent, goto, gridevent, peek, place } from '../../misc/ant.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { LivingEntity } from './living.js'
@@ -30,8 +30,8 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
 			goto(this.world, this.bx, this.by)
 			const tile = peek()
-			blockevent(2)
-			place(Blocks.air)
+			gridevent(2)
+			place(tile.behind ?? Blocks.air)
 			const drop = tile.drops?.(this.inv[this.selected])
 			if(drop instanceof Item){
 				const itm = new Entities.item()
@@ -41,6 +41,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 				itm.place(this.world, this.bx + 0.5, this.by + 0.375)
 			}else if(drop instanceof Array){
 				for(const d of drop){
+					if(!d) continue
 					const itm = new Entities.item()
 					itm.item = d
 					itm.dx = random() * 6 - 3

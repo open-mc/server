@@ -93,11 +93,8 @@ function playerMovePacket(player, buf){
 		statRecord('player', 'max_dist', Math.sqrt(player.x * player.x + player.y * player.y))
 		const sel = buf.byte()
 		if(player.selected != (player.selected = (sel & 127) % 9)){
-			const res = new DataWriter()
-			res.byte(15)
-			res.uint32(player.netId); res.short(player.netId / 4294967296 | 0)
-			res.byte(player.selected)
-			player.emit(res)
+			const sel = player.selected
+			player.event(13, b => b.byte(sel))
 		}
 		const x = buf.float(), y = buf.float()
 		if(x != x){
@@ -178,7 +175,7 @@ function playerMovePacket(player, buf){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
 					player.blockBreakLeft = round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
-					player.breakGridEvent = gridevent(1, buf => buf.float(player.blockBreakLeft))
+					player.breakGridEvent = gridevent(4, buf => buf.float(player.blockBreakLeft))
 				}
 				return
 			}
@@ -190,10 +187,11 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		let b = peek()
-		if(b.solid | (item.interactFluid&&b.fluidLevel)){
+		a: if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
 			if(item && item.interact){
 				const c = item.count
 				const i2 = item.interact(b, player) ?? item
+				if(i2 === true) break a
 				if(i2 !== item || c !== i2.count){
 					if(!i2 || i2.count === 0) player.inv[sel] = null
 					else player.inv[sel] = i2
@@ -315,10 +313,10 @@ function altInventoryPacket(player, buf){
 		if(slot >= items.length) return
 		const t = items[slot], h = player.items[0]
 		if(t && !h){
-			player.items[0] = t.constructor(t.count - (t.count >>= 1))
+			player.items[0] = new t.constructor(t.count - (t.count >>= 1))
 			if(!t.count)items[slot] = null
 		}else if(h && !t){
-			items[slot] = h.constructor(1)
+			items[slot] = new h.constructor(1)
 			if(!--h.count)player.items[0] = null
 		}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
 			t.count++
@@ -331,10 +329,10 @@ function altInventoryPacket(player, buf){
 	if(slot >= player.inv.length) return
 	const t = player.inv[slot], h = player.items[0]
 	if(t && !h){
-		player.items[0] = t.constructor(t.count - (t.count >>= 1))
+		player.items[0] = new t.constructor(t.count - (t.count >>= 1))
 		if(!t.count)player.inv[slot] = null
 	}else if(h && !t){
-		player.inv[slot] = h.constructor(1)
+		player.inv[slot] = new h.constructor(1)
 		if(!--h.count)player.items[0] = null
 	}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
 		t.count++
@@ -397,4 +395,4 @@ export function onstring(player, text){
 	}
 }
 
-export const PROTOCOL_VERSION = 3
+export const PROTOCOL_VERSION = 4

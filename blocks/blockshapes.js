@@ -14,7 +14,7 @@ BlockShape.ONE_SHORT = [0, 0, 1, 15/16]
 BlockShape.TWO_SHORT = [0, 0, 1, 14/16]
 
 export const slabifyItem = (I, B) => class extends I{
-	place(_, fy){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use() }
+	place(_, fy){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1) }
 }
 const shapeKeys = new Map()
 	.set(BlockShape.SLAB, 'slabShape')
@@ -31,5 +31,5 @@ export const blockShaped = (C, s, d) => {
 }
 
 export const itemify = C => class extends Item{
-	place(){ place(C); super.use() }
+	place(){ place(C); super.use(1) }
 }

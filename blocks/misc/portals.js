@@ -1,5 +1,5 @@
 import { DXDY, X, Y } from '../../entities/entity.js'
-import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, peekdown, peekup, place, right, up } from '../../misc/ant.js'
+import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, load, peek, peekdown, peekup, place, right, save, up } from '../../misc/ant.js'
 import { Dimensions, GAMERULES } from '../../world/index.js'
 import { Block, Blocks } from '../block.js'
 
@@ -9,9 +9,20 @@ Blocks.portal = class extends Block{
 	static breaktime = Infinity
 	static blast = Infinity
 	update(){
-		const d = peekdown(), u = peekup()
-		if((d != Blocks.obsidian & d != Blocks.portal) | (u != Blocks.obsidian & u != Blocks.portal)){
-			this.destroy(true, undefined)
+		const u = peekup(), d = peekdown()
+		if((d == Blocks.obsidian | d == Blocks.portal) & (u == Blocks.obsidian | u == Blocks.portal)) return
+		place(Blocks.air)
+		const s = save()
+		{
+			let d; down()
+			while(d = peek(), d == Blocks.portal)
+				d.destroy(true, undefined), down()
+		}
+		load(s)
+		{
+			let d; up()
+			while(d = peek(), d == Blocks.portal)
+				d.destroy(true, undefined), up()
 		}
 	}
 	unset(){
@@ -49,7 +60,7 @@ Blocks.portal = class extends Block{
 		e.y = targetY + closestDy
 		e.world = dim
 		if(e.sock) e.rubber(X | Y)
-		e.event(50)
+		e.worldEvent(50)
 		if(closestDist < 2e9) return true // Portal exists
 		
 		// Create a portal
@@ -83,7 +94,7 @@ Blocks.end_portal = class extends Block{
 		e.flags |= 1
 		if(e.world != Dimensions.end){
 			if(Dimensions.end.load(1,0).t<0) return void(e.flags&=-2)
-			e.event(50)
+			e.worldEvent(50)
 			e.world = Dimensions.end
 			e.x = 100.5
 			e.y = 1
@@ -98,7 +109,7 @@ Blocks.end_portal = class extends Block{
 					place(Blocks.air), right()
 			}
 		}else{
-			e.event(50)
+			e.worldEvent(50)
 			e.world = Dimensions[GAMERULES.spawnworld] ?? Dimensions.overworld
 			e.x = GAMERULES.spawnx
 			e.y = GAMERULES.spawny

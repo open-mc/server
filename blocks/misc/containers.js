@@ -1,5 +1,5 @@
 import { Block, Blocks } from '../block.js'
-import { Item } from '../../items/item.js'
+import { Item, Items } from '../../items/item.js'
 
 Blocks.chest = class extends Block{
 	items = Array.null(27)
@@ -9,4 +9,5 @@ Blocks.chest = class extends Block{
 		items: [Item, 27],
 		name: String
 	}
+	drops(){ return [new Items.chest(1), ...this.items] }
 }

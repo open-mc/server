@@ -91,3 +91,6 @@ socket:
 
   # Blocks player can stray before being rubberbanded
   movementcheckmercy: 10
+
+  # Maximum queued data on a single socket in MB. 0 = no limit (dangerous). Recommended: 16
+  backpressure: 16

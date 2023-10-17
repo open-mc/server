@@ -16,7 +16,7 @@ import { open, close } from '../misc/sock.js'
 import { players, STATS, DEFAULT_TPS, stat, saveAll, saving } from '../world/index.js'
 import { PROTOCOL_VERSION, codes, onstring } from '../misc/incomingPacket.js'
 import { Dimensions } from '../world/index.js'
-import { setTPS } from '../world/tick.js'
+import { entityMap, setTPS } from '../world/tick.js'
 import { chat, LIGHT_GREY, ITALIC } from '../misc/chat.js'
 import { commands, err, executeCommand } from '../misc/commands.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
@@ -135,7 +135,7 @@ const clients = new Set
 const rand = new Uint8Array(32)
 let patchWs = function(sock){patchWs = null; const p = sock.__proto__; p._send = p.send; p.send = function(a){this._send(a,typeof a!='string')}}
 server.ws('/*', {
-	sendPingsAutomatically: false, maxBackpressure: 67108864,
+	sendPingsAutomatically: false, maxBackpressure: (CONFIG.socket.backpressure)*1048576,
 	maxPayloadLength: 1048576, closeOnBackpressureLimit: true,
 	upgrade(res, req, ctx){
 		const h = req.getHeader('host')

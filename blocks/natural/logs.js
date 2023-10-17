@@ -2,7 +2,7 @@ import { Items } from '../../items/item.js'
 import { Block, Blocks } from '../block.js'
 
 class Log extends Block{
-	static breaktime = 5
+	static breaktime = 4
 	static tool = 'axe'
 }
 

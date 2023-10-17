@@ -11,24 +11,24 @@ export const fluidify = (B, t, renewable = false) => {
 			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			down()
 			const b = peek()
-			if(b.fluidLevel && b.fluidType != t && this.combine) return void this.combine(b)
-			if(b.solid | b.fluidLevel >= 8){
+			if(b.fluidLevel && b.fluidType != t) return void this.combine?.(b)
+			if(!b.nonSolidAndReplacable | b.fluidLevel >= 8){
 				up(); right()
 				let b = peek()
-				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
-				else if(!b.solid && b.fluidLevel < 7){
-					if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.nonSolidAndReplacable && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
+					if(b.fluidType != t) this.combine?.(b)
 					else place(levels[7])
 				}
 				left(); left()
 				b = peek()
-				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
-				else if(!b.solid && b.fluidLevel < 7){
-					if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.nonSolidAndReplacable && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
+					if(b.fluidType != t) this.combine?.(b)
 					else place(levels[7])
 				}
 			}else if(b.fluidLevel){
-				if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.fluidType != t) this.combine?.(b)
 				else place(flowing)
 			}else b.destroy?.(false, undefined, flowing)
 		}
@@ -43,7 +43,7 @@ export const fluidify = (B, t, renewable = false) => {
 		update(v){
 			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			let b = peekup()
-			if(!(b instanceof B)){
+			if(b.fluidType != t){
 				const l = max(peekleft().fluidLevel??0, peekright().fluidLevel??0) - 1 - (B.delay > 10)*2
 				if(l <= 0) place(Blocks.air)
 				else place(levels[l])
@@ -55,39 +55,39 @@ export const fluidify = (B, t, renewable = false) => {
 				else if(renewable && !b.flows){
 					up()
 					b = peekright()
-					if(b.solid){
+					if(!b.nonSolidAndReplacable){
 						b = peekleft()
 						if(b.fluidType != t || b.flows) return
 					}else{
 						if(b.fluidType != t || b.flows) return
 						b = peekleft()
-						if((b.fluidType != t || b.flows) && !b.solid) return
+						if((b.fluidType != t || b.flows) && b.nonSolidAndReplacable) return
 					}
 					place(filled)
 				}
 				return
 			}
-			if(b.solid){
+			if(!b.nonSolidAndReplacable){
 				up(); right()
 				let b = peek()
 				const sourceRight = renewable && b.fluidType == t && !b.flows
-				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
-				else if(!b.solid && b.fluidLevel < 7){
-					if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.nonSolidAndReplacable && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
+					if(b.fluidType != t) this.combine?.(b)
 					else place(levels[7])
 				}
 				left(); left()
 				b = peek()
-				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
-				else if(!b.solid && b.fluidLevel < 7){
-					if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.nonSolidAndReplacable && !b.fluidLevel) b.destroy?.(false, undefined, levels[7])
+				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
+					if(b.fluidType != t) this.combine?.(b)
 					else place(levels[7])
 				}
 				if(sourceRight && b.fluidType == t && !b.flows){
 					right(); place(filled)
 				}
 			}else if(b.fluidLevel){
-				if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.fluidType != t) this.combine?.(b)
 				else place(flowing)
 			}else b.destroy?.(false, undefined, flowing)
 		}
@@ -98,49 +98,56 @@ export const fluidify = (B, t, renewable = false) => {
 		static flows = true
 		update(v){
 			if(v < B.delay && !GAMERULES.fastfluids) return v+1
-			const lvl = max(peekup().fluidLevel??0, peekright().fluidLevel??0, peekleft().fluidLevel??0)
-			if(this.fluidLevel >= lvl) return void place(levels[max(0,this.fluidLevel-2-(B.delay > 10)*2)])
+			const u = peekup(), r = peekright(), l = peekleft()
+			if(u.fluidLevel && u.fluidType != t) u.combine?.(this)
+			if(r.fluidLevel && r.fluidType != t)
+				right(), this.combine?.(r), left()
+			if(l.fluidLevel && l.fluidType != t)
+				left(), this.combine?.(l), right()
+
+			const lvl = max(u.fluidLevel ?? 0, r.fluidLevel ?? 0, l.fluidLevel ?? 0)
+			if(this.fluidLevel >= lvl) return void place(levels[max(0,lvl-1-(B.delay > 10)*2)])
 			down()
 			let b = peek()
 			if(b.fluidLevel >= 8){
-				if(b.fluidType != t) this.combine(b)
+				if(b.fluidType != t) this.combine?.(b)
 				else if(renewable && !b.flows){
 					up()
 					b = peekright()
-					if(b.solid){
+					if(!b.nonSolidAndReplacable){
 						b = peekleft()
 						if(b.fluidType != t || b.flows) return
 					}else{
 						if(b.fluidType != t || b.flows) return
 						b = peekleft()
-						if((b.fluidType != t || b.flows) && !b.solid) return
+						if((b.fluidType != t || b.flows) && b.nonSolidAndReplacable) return
 					}
 					place(filled)
 				}
 				return
 			}
-			if(b.solid){
+			if(!b.nonSolidAndReplacable){
 				const L = this.fluidLevel - 1 - (B.delay > 10)*2
 				up(); right()
 				let b = peek()
 				const sourceRight = renewable && b.fluidType == t && !b.flows
-				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
-				else if(!b.solid && b.fluidLevel < L){
-					if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.nonSolidAndReplacable && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
+				else if(b.nonSolidAndReplacable && b.fluidLevel < L){
+					if(b.fluidType != t) this.combine?.(b)
 					else place(levels[L])
 				}
 				left(); left()
 				b = peek()
-				if(!b.solid && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
-				else if(!b.solid && b.fluidLevel < L){
-					if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.nonSolidAndReplacable && !b.fluidLevel) b.destroy?.(false, undefined, levels[L])
+				else if(b.nonSolidAndReplacable && b.fluidLevel < L){
+					if(b.fluidType != t) this.combine?.(b)
 					else place(levels[L])
 				}
 				if(sourceRight && b.fluidType == t && !b.flows){
 					right(); place(filled)
 				}
 			}else if(b.fluidLevel){
-				if(b.fluidType != t && this.combine) this.combine(b)
+				if(b.fluidType != t) this.combine?.(b)
 				else place(flowing)
 			}else b.destroy?.(false, undefined, flowing)
 		}

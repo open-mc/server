@@ -1,8 +1,8 @@
-import { stat } from './index.js'
+import { players, stat } from './index.js'
 import { Chunk } from './chunk.js'
 import { generator } from './gendelegator.js'
 import { DataWriter } from '../modules/dataproto.js'
-import { entityMap } from './tick.js'
+import { currentTPS, entityMap } from './tick.js'
 import { Dimensions } from './index.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { _invalidateCache, antWorld } from '../misc/ant.js'
@@ -10,7 +10,7 @@ import { _invalidateCache, antWorld } from '../misc/ant.js'
 const dimLevel = DB.sublevel('dimensions')
 
 export class World extends Map{
-	constructor(id){
+	constructor(id, u = null){
 		super()
 		this.id = id
 		this.gx = 0
@@ -20,8 +20,9 @@ export class World extends Map{
 		const [a, b] = (CONFIG.generators[this.id]??'default').split('/', 2)
 		if(!b) this.gend = this.id, this.genn = a
 		else this.gend = a, this.genn = b
+		this.update = u
 	}
-	static new(id){ return Dimensions[id] ??= new World(id) }
+	static new(id, u){ return Dimensions[id] ??= new this(id, u) }
 	_loaded(ch){
 		const {x: cx, y: cy} = ch
 		ch.loadedAround |= 0x100
@@ -171,10 +172,36 @@ export class World extends Map{
 	static savedatahistory = []
 	toString(){return this.id}
 
-	static savedata = {tick: Double}
+	static savedata = {tick: Double, weather: Uint32}
+
+	weather = 0
+
+	event(ev, fn){
+		const buf = new DataWriter()
+		buf.flint(15)
+		buf.byte(ev)
+		fn(buf)
+		buf.byte(0)
+		const b = buf.build()
+		for(const p of players.values()){
+			if(p.world !== this) continue
+			p.sock.send(b)
+		}
+	}
 }
 
-World.new('overworld')
+World.new('overworld', function(){
+	// Runs every tick
+	if(this.weather&0x0FFFFFFF) this.weather--
+	else this.weather = 0
+	if(!this.weather && random() < .000005){
+		this.weather = min(0x0FFFFFFF, (600 + floor(random() * 600)) * currentTPS)
+		this.event(10, buf => buf.uint32(this.weather))
+	}else if(this.weather && this.weather < 0x10000000 && random() < .00001){
+		this.weather = 0x10000000 + min(0x0FFFFFFF, this.weather + 600*currentTPS)
+		this.event(10, buf => buf.uint32(this.weather))
+	}
+})
 World.new('nether')
 World.new('end')
 World.new('void')

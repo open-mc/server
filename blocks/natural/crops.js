@@ -1,5 +1,5 @@
 import { Items } from '../../items/item.js'
-import { load, peek, peekdown, place, save, up, down } from '../../misc/ant.js'
+import { load, peek, peekdown, place, save, up, down, peekleft, peekright } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
 import './grass.js'
 
@@ -21,7 +21,12 @@ Blocks.sugar_cane = class extends Block{
 		}
 	}
 	update(){
-		if(!peekdown().solid && peekdown() !== Blocks.sugar_cane) this.destroy() // drops item
+		down()
+		const b = peek(), l = peekleft(), r = peekright()
+		up()
+		if(b === Blocks.sugar_cane) return
+		if(!b.solid | ((l.flows !== false | l.fluidType != 'water') & (r.flows !== false | r.fluidType != 'water')))
+			this.destroy()
 	}
 	drops(){ return new Items.sugar_cane(1) }
 }

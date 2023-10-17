@@ -40,16 +40,16 @@ for(const name in Blocks){
 	// This will also copy .prototype, which we want
 	let proto = B
 	while(proto.prototype && !Object.hasOwn(proto.prototype, 'prototype')){
-		const desc = Object.getOwnPropertyDescriptors(proto)
-		delete desc.length; delete desc.name
+		const desc = Object.getOwnPropertyDescriptors(proto), desc2 = Object.getOwnPropertyDescriptors(proto.prototype)
+		delete desc.length; delete desc.name; delete desc2.constructor
 		Object.defineProperties(proto.prototype, desc)
+		Object.defineProperties(proto, desc2)
 		proto = Object.getPrototypeOf(proto)
 	}
 	if(!B.savedata){
 		Object.defineProperties(B, Object.getOwnPropertyDescriptors(new B))
 	}
 }
-for(const b in Blocks) Object.setPrototypeOf(Blocks[b], Blocks[b].prototype)
 if(modified){
 	await DB.put('blockindex', blockindex = BlockIDs.map(B => B.prototype.className + B.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (B.prototype.savedata ? ' ' + typeToJson(B.prototype.savedata) : '')).join('\n'))
 }

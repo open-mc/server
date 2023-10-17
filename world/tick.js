@@ -16,6 +16,7 @@ export function tick(){
 			if(!(ch instanceof Chunk))continue
 			w.check(ch)
 		}
+		Dimensions[n].update?.()
 	}
 	for(const e of entityMap.values()){
 		if(!e.sock && e.shouldSimulate())

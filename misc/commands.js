@@ -384,6 +384,26 @@ export const commands = {
 		}
 		return log(this, 'Set the '+d.id+' time to '+d.tick)
 	},
+	weather(type, duration, w = this.world.id){
+		const world = Dimensions[w] ?? this.world
+		if(world != Dimensions.overworld) throw 'This command is not available for this dimension'
+		if(!type){
+			const {weather} = world
+			return 'The current weather is '+(!weather?'clear':
+				weather > 0x20000000 ? 'downpour for '+round((weather-0x20000000)/currentTPS)+'s'
+				: weather > 0x10000000 ? 'thunder for '+round((weather-0x10000000)/currentTPS)+'s'
+				: 'rain for '+round(weather/currentTPS)+'s'
+			)
+		}
+		duration = min(0x0FFFFFFF, duration || (600 + floor(random() * 600))*currentTPS)
+		if(type == 'clear') world.weather = 0
+		else if(type == 'rain') world.weather = duration
+		else if(type == 'thunder') world.weather = 0x10000000 + duration
+		else if(type == 'downpour') world.weather = 0x20000000 + duration
+		else throw 'Allowed weather types: clear, rain, thunder, downpour'
+		world.event(10, buf => buf.uint32(world.weather))
+		return 'Set the weather to '+type+(world.weather?' for '+round(duration/currentTPS)+'s':'')
+	},
 	gamerule(a, b){
 		if(!a){
 			return 'List of gamerules:\n' + Object.entries(GAMERULES).map(([k, v]) => k + ': ' + JSON.stringify(v)).join('\n')
@@ -493,6 +513,11 @@ export const commands = {
 		for(const e of selector(t, this))
 			executeCommand(c, a, e, 4)
 	},
+	repeat(k, c, ...a){
+		k = min(k>>>0, 1e6)
+		while(k--)
+			executeCommand(c, a, this, 4)
+	}
 }
 Object.setPrototypeOf(commands, null)
 const PERMS = {
@@ -537,7 +562,8 @@ export const anyone_help = {
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
-	as: '[target] [...command] -- Execute a command as a target'
+	as: '[target] [...command] -- Execute a command as a target',
+	repeat: '[count] [...command] -- Execute a command multiple times'
 }
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)

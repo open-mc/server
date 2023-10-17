@@ -1,5 +1,6 @@
 import { Blocks } from '../../blocks/block.js'
-import { blockevent, place } from '../../misc/ant.js'
+import { antWorld, blockevent, peek, place } from '../../misc/ant.js'
+import { Dimensions } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
 Items.bucket = class extends Item{
@@ -16,7 +17,7 @@ Items.bucket = class extends Item{
 					i = new Items.bucket_of_lava()
 					break
 			}
-			if(this.count > 1) super.use(false), i && e.giveAndDrop(i)
+			if(this.count > 1) super.use(), i && e.giveAndDrop(i)
 			else return i
 		}
 	}
@@ -26,7 +27,13 @@ Items.bucket = class extends Item{
 
 Items.bucket_of_water = class extends Item{
 	place(){
-		place(Blocks.water); blockevent(33); return new Items.bucket()
+		if(antWorld == Dimensions.nether){
+			const b = peek()
+			place(Blocks.water)
+			blockevent(32)
+			place(b)
+		}else place(Blocks.water), blockevent(33)
+		return new Items.bucket()
 	}
 	static maxStack = 1
 }

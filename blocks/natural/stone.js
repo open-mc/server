@@ -8,8 +8,8 @@ Blocks.stone = class extends Block{
 	static blast = 30
 	static tool = 'pick'
 	drops(item){
-		return item.tool != 'pick' ? null :
-			item.ench?.has(Enchantments.silk_touch) ? new Items.stone(1) : new Items.cobblestone(1)
+		return item && item.tool != 'pick' ? null :
+			item?.ench?.has(Enchantments.silk_touch) ? new Items.stone(1) : new Items.cobblestone(1)
 	}
 }
 Blocks.cobblestone = class extends Blocks.stone{

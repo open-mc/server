@@ -1,3 +1,4 @@
+import { damageTypes } from '../../entities/deathmessages.js'
 import { antWorld, blockevent, place } from '../../misc/ant.js'
 import { Dimensions } from '../../world/index.js'
 import { Block, Blocks } from '../block.js'
@@ -27,6 +28,9 @@ class Lava extends Water{
 	static combine(fluid){
 		if(fluid.fluidType == 'water')
 			blockevent(32), place(fluid.flows ? Blocks.cobblestone : Blocks.stone)
+	}
+	touched(e){
+		e.damage?.(4, damageTypes.fire)
 	}
 }
 void({

@@ -1,17 +1,17 @@
 import { Blocks } from '../../blocks/block.js'
 import { antChunk, jump, peek, place, right } from '../../misc/ant.js'
-import { players, GAMERULES } from '../../world/index.js'
+import { GAMERULES } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
 Items.end_portal_frame = class extends Item{
-	place(){ place(Blocks.end_portal_frame); super.use() }
+	place(){ place(Blocks.end_portal_frame); super.use(1) }
 }
 
 Items.eye_of_ender = class extends Item{
 	interact(b){
 		if(b != Blocks.end_portal_frame) return
 		place(Blocks.filled_end_portal_frame)
-		super.use()
+		super.use(1)
 		check: {
 			jump(4,0)
 			if(peek() == Blocks.filled_end_portal_frame) {jump(-3,0); break check}
@@ -24,9 +24,9 @@ Items.eye_of_ender = class extends Item{
 		right(); place(Blocks.end_portal)
 		// Global Sound Event
 		if(GAMERULES.globalevents){
-			for(const pl of players.values()) pl.event(52)
+			sock.entity.world.event(52)
 		}else for(const sock of antChunk.sockets){
-			sock.entity.event(52)
+			sock.entity.worldEvent(52)
 		}
 	}
 }

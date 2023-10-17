@@ -34,13 +34,16 @@ export function goto(w, x=0, y=0){
 	chunk = world.get(cx+cy*0x4000000)
 }
 export const peekpos = (c,p) => {const b=(world=c.world,cx=c.x,cy=c.y,chunk=c)[pos=p];return b===65535?chunk.tileData.get(p):BlockIDs[b]}
+export const gotopos = (c,p) => {world=c.world,cx=c.x,cy=c.y,chunk=c;pos=p}
 
-export function place(bl){
+export function place(bl, safe = false){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
 	bl = bl === bl.constructor && bl.savedata ? new bl : bl
 	if(!_chunk) return bl
-	if(_chunk[_pos].unset){
-		_chunk[_pos].unset()
+	const _b = _chunk[_pos] === 65535 ? _chunk.tileData.get(_pos) : BlockIDs[_chunk[_pos]]
+	if(safe && !_b.replacable) return
+	if(_b.unset){
+		_b.unset()
 		world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
 	}
 	if(bl.savedata){
