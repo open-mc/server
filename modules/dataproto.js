@@ -119,7 +119,7 @@ export class DataWriter extends Array{
 		switch(type){
 			case Uint8: if(this.i == this.cur.byteLength) this.allocnew(); buf.setUint8(this.i++, v); return
 			case Int8: if(this.i == this.cur.byteLength) this.allocnew(); buf.setInt8(this.i++, v); return
-			case Uint16: if(this.i > this.cur.byteLength - 2) this.allocnew(); buf.setUin26((this.i += 2) - 2, v); return
+			case Uint16: if(this.i > this.cur.byteLength - 2) this.allocnew(); buf.setUint16((this.i += 2) - 2, v); return
 			case Int16: if(this.i > this.cur.byteLength - 2) this.allocnew(); buf.setInt16((this.i += 2) - 2, v); return
 			case Uint32: if(this.i > this.cur.byteLength - 4) this.allocnew(); buf.setUint32((this.i += 4) - 4, v); return
 			case Int32: if(this.i > this.cur.byteLength - 4) this.allocnew(); buf.setInt32((this.i += 4) - 4, v); return
