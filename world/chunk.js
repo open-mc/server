@@ -104,79 +104,82 @@ export class Chunk extends Uint16Array{
 			}else if(palette.length != 255) PM[id] = 0x0101, paletteFull.push(id)
 			else{ palette.length = 0; break }
 		}
-		if(packet){
-			buf.byte(16)
-			buf.int(this.x)
-			buf.int(this.y)
-		}
-		buf.flint(Chunk.savedatahistory.length)
-		if(packet) buf.short(0)
-		else{
-			buf.short(this.blockupdates.size)
-			for(const t of this.blockupdates.keys()) buf.short(t)
-		}
-		buf.byte(palette.length ? palette.length - (palette.length == paletteFull.length) : 255)
+		try{
+			if(packet){
+				buf.byte(16)
+				buf.int(this.x)
+				buf.int(this.y)
+			}
+			buf.flint(Chunk.savedatahistory.length)
+			if(packet) buf.short(0)
+			else{
+				buf.short(this.blockupdates.size)
+				for(const t of this.blockupdates.keys()) buf.short(t)
+			}
+			buf.byte(palette.length ? palette.length - (palette.length == paletteFull.length) : 255)
 
-		for(const e of this.entities){
-			if(e.sock && !packet)continue
-			buf.short(e.id)
-			buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
-			buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
-			buf.int(e.netId | 0)
-			buf.short(e.netId / 4294967296 | 0)
-			buf.string(e.name)
-			buf.short(e.state)
-			buf.float(e.dx)
-			buf.float(e.dy)
-			buf.float(e.f)
-			buf.double(e.age)
-			if(e.savedata) buf.flint(e.savedatahistory.length), buf.write(e.savedata, e)
-		}
-		buf.short(65535)
-		for(const b of this.biomes) buf.byte(b)
+			for(const e of this.entities){
+				if(e.sock && !packet)continue
+				buf.short(e.id)
+				buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
+				buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
+				buf.int(e.netId | 0)
+				buf.short(e.netId / 4294967296 | 0)
+				buf.string(e.name)
+				buf.short(e.state)
+				buf.float(e.dx)
+				buf.float(e.dy)
+				buf.float(e.f)
+				buf.double(e.age)
+				if(e.savedata) buf.flint(e.savedatahistory.length), buf.write(e.savedata, e)
+			}
+			buf.short(65535)
+			for(const b of this.biomes) buf.byte(b)
 
-		//encode palette
-		if(palette.length){
-			let encode65535 = false
-			for(const p of paletteFull)
-				if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
-			if(encode65535) palette.push(65535)
-			for(const p of palette) buf.short(p)
-		}
+			//encode palette
+			if(palette.length){
+				let encode65535 = false
+				for(const p of paletteFull)
+					if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
+				if(encode65535) palette.push(65535)
+				for(const p of palette) buf.short(p)
+			}
 
-		//encode blocks
-		if(palette.length == 0) buf.uint8array(new Uint8Array(this.buffer, this.byteOffset, this.byteLength), 8192)
-		else if(palette.length == 1);
-		else if(palette.length == 2){
-			for(let i = 0; i < 4096; i+=8)
-				buf.byte((PM[IDs[i]] << 0)
-				| (PM[IDs[i+1]] << 1)
-				| (PM[IDs[i+2]] << 2)
-				| (PM[IDs[i+3]] << 3)
-				| (PM[IDs[i+4]] << 4)
-				| (PM[IDs[i+5]] << 5)
-				| (PM[IDs[i+6]] << 6)
-				| (PM[IDs[i+7]] << 7))
-		}else if(palette.length <= 4){
-			for(let i = 0; i < 4096; i+=4)
-				buf.byte(PM[IDs[i]]
-				| (PM[IDs[i+1]] << 2)
-				| (PM[IDs[i+2]] << 4)
-				| (PM[IDs[i+3]] << 6))
-		}else if(palette.length <= 16){
-			for(let i = 0; i < 4096; i+=2)
-				buf.byte(PM[IDs[i]] | (PM[IDs[i+1]] << 4))
-		}else for(let i = 0; i < 4096; i++) buf.byte(PM[IDs[i]])
+			//encode blocks
+			if(palette.length == 0) buf.uint8array(new Uint8Array(this.buffer, this.byteOffset, this.byteLength), 8192)
+			else if(palette.length == 1);
+			else if(palette.length == 2){
+				for(let i = 0; i < 4096; i+=8)
+					buf.byte((PM[IDs[i]] << 0)
+					| (PM[IDs[i+1]] << 1)
+					| (PM[IDs[i+2]] << 2)
+					| (PM[IDs[i+3]] << 3)
+					| (PM[IDs[i+4]] << 4)
+					| (PM[IDs[i+5]] << 5)
+					| (PM[IDs[i+6]] << 6)
+					| (PM[IDs[i+7]] << 7))
+			}else if(palette.length <= 4){
+				for(let i = 0; i < 4096; i+=4)
+					buf.byte(PM[IDs[i]]
+					| (PM[IDs[i+1]] << 2)
+					| (PM[IDs[i+2]] << 4)
+					| (PM[IDs[i+3]] << 6))
+			}else if(palette.length <= 16){
+				for(let i = 0; i < 4096; i+=2)
+					buf.byte(PM[IDs[i]] | (PM[IDs[i+1]] << 4))
+			}else for(let i = 0; i < 4096; i++) buf.byte(PM[IDs[i]])
 
-		//save block entities
-		for(let i = 0; i < 4096; i++){
-			if(PM[IDs[i]] == palette.length-1) buf.short(IDs[i])
-			if(this[i] != 65535)continue
-			const tile = this.tileData.get(i)
-			buf.flint(tile.savedatahistory.length)
-			buf.write(tile.savedata, tile)
+			//save block entities
+			for(let i = 0; i < 4096; i++){
+				if(PM[IDs[i]] == palette.length-1) buf.short(IDs[i])
+				if(this[i] != 65535)continue
+				const tile = this.tileData.get(i)
+				buf.flint(tile.savedatahistory.length)
+				buf.write(tile.savedata, tile)
+			}
+		}finally{
+			for(const p of paletteFull) PM[p] = 0x0100
 		}
-		for(const p of paletteFull) PM[p] = 0x0100
 		buf.write(Chunk.savedata, this)
 		return buf
 	}
