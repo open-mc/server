@@ -3,7 +3,7 @@ import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
 import { Entities, Entity } from '../entities/entity.js'
 import '../node/internals.js'
-import { Item, Items } from '../items/item.js'
+import { Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, entityMap } from '../world/tick.js'
@@ -201,7 +201,7 @@ export const commands = {
 	tp(a, _x, _y, d = this.world || 'overworld'){
 		if(!_y)_y=_x,_x=a,a='@s'
 		const targets = selector(a, this)
-    	const {x, y, w} = parseCoords(_x, _y, d, this)
+		const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
 			e.x = x, e.y = y, e.world = w, e.sock && e.rubber(X | Y)
 		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to (${x.toFixed(3)}, ${y.toFixed(3)}) in the ${w.id}`)
@@ -272,8 +272,9 @@ export const commands = {
 		let n = performance.now()
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
-		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0; goto(w, x, y)
+		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0
 		if(x2 < 0 || y2 < 0){x=x+x2|0;y=y+y2|0;x2=abs(x2)|0;y2=abs(y2)|0}
+		goto(w, x, y)
 		let b
 		if(type == (type & 65535)){
 			type = type & 65535
@@ -439,6 +440,10 @@ export const commands = {
 		return log(this, 'Set the TPS to '+currentTPS)
 	},
 	kill(t = '@s', cause = 'void'){
+		if(this.sock.permissions < MOD){
+			if(!CONFIG.permissions.suicide) throw 'This server does not permit suicide'
+			if(t != '@s'/* || cause != 'void'*/) throw 'You do not have permission to use /kill against other players'
+		}
 		const c = damageTypes[cause] || 0
 		let i = 0
 		for(const e of selector(t, this)){
@@ -523,7 +528,7 @@ Object.setPrototypeOf(commands, null)
 const PERMS = {
 	0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 	deny: 0, spectator: 1, visitor: 1,
-	normal: 2, player: 2, get default(){return PERMISSIONS['']},
+	normal: 2, player: 2, get default(){return CONFIG.permissions.default},
 	mod: 3, moderator: 3, staff: 3,
 	op: 4, operator: 4, admin: 4
 }
@@ -537,7 +542,8 @@ export const anyone_help = {
 	help: '<cmd> -- Help for a command',
 	list: '-- List online players',
 	info: '-- Info about the server and yourself',
-	i: ' (alias for /info)'
+	i: ' (alias for /info)',
+	kill: '-- Suicide'
 }, mod_help = {
 	...anyone_help,
 	give: '[player] [item] (count) ',
@@ -564,7 +570,7 @@ export const anyone_help = {
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',
 	repeat: '[count] [...command] -- Execute a command multiple times'
-}
+}, cheats = ['give', 'summon', 'setblock', 'fill']
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
@@ -575,6 +581,7 @@ export function executeCommand(name, params, player, perms = 0){
 	if(perms < MOD){
 		if(!anyone_help[name]) throw 'You do not have permission to use /'+name
 	}else if(perms == MOD && !mod_help[name]) throw 'You do not have permission to use /'+name
+	else if(perms == MOD && !CONFIG.permissions.mod_cheat && cheats.includes(name)) throw 'Server owner does not allow moderators to use /'+name
 	stat('misc', 'commands_used')
 	return commands[name].apply(player, params)
 }

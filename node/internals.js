@@ -151,13 +151,13 @@ Object.defineProperty(perf,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	return s.join('\n\n')
 },enumerable:false})
 
-if(!parentPort) fs.rm(PATH + '.logs').catch(e=>null)
+if(!parentPort) fs.rm(PATH + 'node/.logs').catch(e=>null)
 
 function uncaughtErr(e){
 	console.error(e)
 	e = e && (e.stack || e.message || e)
 	if(!e) return
-	if(!parentPort) fs.appendFile(PATH + '.logs', e+'\n').catch(e=>console.log(e))
+	if(!parentPort) fs.appendFile(PATH + 'node/.logs', e+'\n').catch(e=>console.log(e))
 	else parentPort.postMessage(e+'')
 	// https://discord.gg/NUUwFNUHkf
 }

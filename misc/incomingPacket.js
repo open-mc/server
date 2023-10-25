@@ -1,5 +1,5 @@
 import { chat, prefix } from './chat.js'
-import { anyone_help, commands, err, executeCommand, log, mod_help } from './commands.js'
+import { err, executeCommand } from './commands.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
@@ -100,13 +100,14 @@ function playerMovePacket(player, buf){
 		if(x != x){
 			player.f = y || 0
 			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
-			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
+			if(this.permissions >= 2 && e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
 				//hit e
 				const itm = player.inv[player.selected]
 				e.damage?.(itm?.damage?.(e) ?? 1, player)
 			}
 			break top
 		}
+		if(this.permissions < 2) break top
 		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
 		goto(player.world, bx, by)
 		const reach = min(sqrt(x * x + y * y), 10)
@@ -387,7 +388,7 @@ export function onstring(player, text){
 				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e), 9))
 				else player.chat(res)
 		}catch(e){player.chat(err(e), 9)}
-	}else{
+	}else if(CONFIG.permissions.chat){
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
 		if(text.includes('pineapple') && text.includes('pizza')) stat('misc', 'controversial')

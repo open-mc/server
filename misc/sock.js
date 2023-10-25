@@ -50,7 +50,7 @@ export async function open(){
 		this.state = 1
 	}
 	playersConnecting.add(this.username)
-	let permissions = PERMISSIONS[this.username] ?? PERMISSIONS['']
+	let permissions = PERMISSIONS[this.username] ?? CONFIG.permissions.default
 	if(permissions*1000 > Date.now()){
 		this.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
 			+ Date.formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
@@ -65,9 +65,12 @@ export async function open(){
 	let other = players.get(this.username)
 	if(other){
 		other.sock.send('-119You are logged in from another session')
+		dim = other.world; x = other.x; y = other.y
+		other.remove()
 		other.sock.entity = null
-		other.sock.close()
+		other.sock.end()
 		other.sock = null
+		other._world = null
 		player = other
 		playersConnecting.delete(this.username)
 	}else try{
@@ -81,7 +84,6 @@ export async function open(){
 		player._dx = player.dx = buf.float(); player.dy = player.dy = buf.float()
 		player.f = player.f = buf.float(); player.age = buf.double()
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
-		other = null
 	}catch(e){
 		player = new Entities.player()
 		x = GAMERULES.spawnx; y = GAMERULES.spawny
@@ -101,7 +103,7 @@ export async function open(){
 		playersConnecting.delete(this.username)
 	}
 	const now = Date.now()
-	player.skin = this.skin
+	if(Object.hasOwn(player, 'skin')) player.skin = this.skin
 	player._avatar = null
 	player.sock = this
 	player.name = this.username
@@ -132,6 +134,7 @@ export async function close(){
 	this.state = 0
 	const {entity} = this
 	if(!entity) return
+	if(entity.sock && entity.sock != this) return
 	players.delete(this.username)
 	playersConnecting.add(this.username)
 	const buf = new DataWriter()

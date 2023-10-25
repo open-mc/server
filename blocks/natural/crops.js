@@ -58,7 +58,7 @@ Blocks.pumpkin_leaf3 = class extends PumpkinLeaf{
 
 		random() < .5 ? left() : right()
 		if(peek() == Blocks.air)
-	      place(Blocks.pumpkin)
+		place(Blocks.pumpkin)
 	}
 }
 

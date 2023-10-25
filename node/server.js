@@ -159,8 +159,8 @@ server.ws('/*', {
 			entity: null,
 		},
 			req.getHeader('sec-websocket-key'),
-   		req.getHeader('sec-websocket-protocol'),
-      	req.getHeader('sec-websocket-extensions'),
+			req.getHeader('sec-websocket-protocol'),
+			req.getHeader('sec-websocket-extensions'),
 			ctx
 		)
 	},

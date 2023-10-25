@@ -47,7 +47,25 @@ generators:
   # It doesnt have any of its own generators, so it must borrow from another dimension
   void: void
 
-# Related to network configuration
+permissions:
+  # Allow anyone to use /kill to kill themselves
+  suicide: true
+
+  # Allow anyone to chat (disabling will only allow moderators and above to use chat)
+  chat: true
+
+  # Allow moderators to use /give, /setblock, etc...
+  mod_cheat: true
+
+  # Default permission level when joining for the first time
+  # 4 = op (NOT RECOMMENDED)
+  # 3 = mod
+  # 2 = normal
+  # 1 = spectate (allowed to walk around but not place/break blocks or summon/damage entities)
+  # 0 = not allowed to join (whitelist)
+  # Individual player permissions can be changed with /perm <username> <level>
+  default: 2
+
 
 port: 27277
 # Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
@@ -55,16 +73,14 @@ port: 27277
 key: ""
 cert: ""
 
-showhealth: true # Show everyone's health on the TAB menu and server page
-
+# Show everyone's health on the TAB menu and server page
+showhealth: true
 # Webhook url for discord chat integration (optional)
 webhook:
 # Display a different discord avatar and username for each player when chatting
 webhook_profiles: true
-
-magic_word: hi # Home page will count how often this word is said in chat
-
-# Related to server list and disconnect screen
+# Home page will count how often this word is said in chat
+magic_word: hi
 
 icon: https://i.imgur.com/jLnrxWt.png
 motd:

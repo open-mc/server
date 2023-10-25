@@ -1,8 +1,8 @@
 import { filler } from '../util/perlin.js'
 import { imxs32_2 } from '../util/random.js'
-import { Blocks, air, chunk } from '../vars.js'
+import { Blocks, air, chunk, Biomes } from '../vars.js'
 
-const generation = (filler) => (cx, cy) => {
+const generation = filler => (cx, cy) => {
 	filler(cx,cy)
 	const qx = (cx-4)&0xfffffff8, qy = (cy-4)&0xfffffff8
 	// x,y,x,y,x,y,x,y
@@ -30,26 +30,7 @@ export const flat = generation(superflat)
 const endPerlin = new Array(5).fill({ surface: null, offset: 0, height: 64, deepsurface: null })
 export const perlin = generation(filler(Blocks.endstone, Blocks.air, Blocks.air, -33554432, () => endPerlin, 1))
 
-const end = [null,null,null,null,null]
-for(let i = 0; i < 5; i++) end[i] = { surface: null, offset: 0, height: 64, deepsurface: null }
-const defaultFiller = filler(Blocks.endstone, Blocks.air, Blocks.air, -33554432, (cx, cy) => {
-	if(cy >= 0){
-		for(let i = 0; i < 5; i++){
-			end[i].offset = (1.5-abs(cx+i/4))*8
-			end[i].height = 2
-		}
-	}else{
-		for(let i = 0; i < 5; i++){
-			end[i].offset = (1.5-abs(cx+i/4))*-32
-			end[i].height = -16
-		}
-	}
-	return end
-})
+const defaultFiller = filler(Blocks.endstone, Blocks.air, Blocks.air, -33554432, Biomes.end)
 export default generation(function(cx,cy){
-	if(cy > 1 || cy < -2){
-		air()
-		return
-	}
 	defaultFiller(cx,cy)
 }, 3, -2)

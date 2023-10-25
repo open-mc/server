@@ -1,5 +1,6 @@
 import { Blocks, chunk } from '../vars.js'
 import { imxs32, imxs32_2 } from './random.js'
+import { constantBiome } from './biomes.js'
 
 const low = new Float64Array(4160)
 const high = new Float64Array(4160)
@@ -58,7 +59,7 @@ const heights = new Float64Array(64)
 const L = new Float64Array(16)
 
 export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface = Blocks.waterTop, level = 0, biomer, flags = 0) => (cx, cy) => {
-	const biomes = biomer(cx, cy)
+	const biomes = typeof biomer == 'function' ? biomer(cx, cy) : constantBiome(biomer)
 	let g = L[0] = imxs32_2(cx, cy); makeVector(0, g)
 	for(let i = 1; i < 16; i++) makeVector(i, L[i]=g=imxs32(g,-150702732))
 	for(let j = 0; j < 16; j++){
@@ -113,17 +114,27 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface
 
 		low[i] = l; high[i] = h; sel[i] = s * 12.5 + .5
 	}
+	const biomeData = [0,0,0,0,0,0,0,0,0,0]
+	let k = 0
+	for(let i = 0; i < 5; i++){
+		const {offset, height} = biomes[i]
+		const o = biomeData[i] = typeof offset == 'function' ? offset(cx+i/4, cy) : offset
+		const h = biomeData[i+5] = typeof height == 'function' ? height(cx+i/4, cy) : height
+		if(o - abs(h) > (cy << 6)+96) k -= Math.sign(h)||Math.sign(1/h)
+		else if(o + abs(h) < (cy<<6)-16) k += Math.sign(h)||Math.sign(1/h)
+	}
+	if(k >= 5){ chunk.fill(Blocks.air); return }
+	if(k <= -5){ chunk.fill(fill); return }
+	const lvl = typeof level == 'function' ? level(cx, cy) : level-cy
 	for(let i = 0; i < 4160;){
 		if(i < 64){
 			if(flags&1){
 				heights[i] = Infinity
 				facs[i] = 0
 			}else{
-				let {offset, height} = biomes[i >> 4 & 3]
-				const {offset: o2, height: h2} = biomes[(i >> 4 & 3) + 1]
 				const lerp = lerpLookup[i & 15]
-				offset = (1 - lerp) * offset + lerp * o2
-				height = (1 - lerp) * height + lerp * h2
+				const offset = (1 - lerp) * biomeData[i>>4] + lerp * biomeData[(i>>4)+1]
+				const height = (1 - lerp) * biomeData[(i>>4)+5] + lerp * biomeData[(i>>4)+6]
 				facs[i] = ((cy << 6) - offset) / height
 				heights[i] = height
 			}
@@ -140,7 +151,7 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface
 			: s > -5/height && deepsurface ?
 				deepsurface
 			: fill
-		: cy < level ? i >= 4032 ? liquidSurface : liquid : Blocks.air
+		: lvl>0 ? lvl==1 && i >= 4032 ? liquidSurface : liquid : Blocks.air
 		i += 65
 	}
 }

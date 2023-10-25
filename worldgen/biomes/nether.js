@@ -2,19 +2,18 @@ import { Biomes, Blocks } from '../vars.js'
 
 Biomes.nether = {
 	surface: null,
-	offset: -640,
-	height: 800,
-	deepsurface: null
+	deepsurface: null,
+	offset(_,cy){
+		const icy = cy - (cy = (cy+16&31)-16) << 6
+		return (cy>=0)*960 - 640 + icy
+	},
+	height(_,cy){
+		cy = (cy+16&31)-16
+		return (cy<0?cy<-10?80:800:-400)
+	}
 }
-
-Biomes.netherinverted = {
-	...Biomes.nether,
-	offset: 320,
-	height: -400
-}
-
-Biomes.netherfloor = {
+Biomes.netheropensky = {
 	...Biomes.nether,
 	offset: -640,
-	height: 80
+	height(_,cy){return cy<-10?80:800}
 }

@@ -10,6 +10,7 @@ import '../biomes/rocky.js'
 import '../biomes/rocky.js'
 import '../biomes/snowy.js'
 import '../biomes/void.js'
+import '../biomes/end.js'
 
 const biomemap = []
 biomemap.buffer = new DataView((await PNG.read(await loadFile(import.meta, './biomes.png'))).buffer)

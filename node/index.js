@@ -6,6 +6,7 @@ const Level = lvl.ClassicLevel
 globalThis.CONFIG = null
 globalThis.httpHost = ''
 if(!argv.length) argv[0] = PATH + '../properties.yaml'
+Array.prototype.push.call(argv, PATH + 'node/.default_properties.yaml')
 function argvConfig(){
 	const o = {}
 	for(let i in argv){
