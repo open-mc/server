@@ -1,6 +1,6 @@
 import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world/index.js'
 import { Dimensions, GAMERULES, stat } from '../world/index.js'
-import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
+import { chat, LIGHT_GREY, ITALIC, prefix, GOLD, BOLD } from './chat.js'
 import { Entities, Entity } from '../entities/entity.js'
 import '../node/internals.js'
 import { Items } from '../items/item.js'
@@ -175,6 +175,7 @@ const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
 const ITEMCOMMONDATA = {count: Uint8}
 
 export const commands = {
+	__proto__: null,
 	list(){
 		let a = "Online players"
 		for(let pl of players.values())a += '\n' + pl.name + ' ('+pl.health+')'
@@ -235,8 +236,8 @@ export const commands = {
 		}
 		return log(this, 'Gave '+(typeof count=='number'?count+' players':count)+' '+item+'*'+c)
 	},
-	summon(type, _x = '~', _y = '~', data = '{}', d = this.world || 'overworld'){
-		const {x, y, w} = parseCoords(_x, _y, d, this)
+	summon(type, _x = '~', _y = '~', _d = '~', data = '{}'){
+		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		if(!(type in Entities)) throw 'No such entity: ' + type
 		const e = new Entities[type]()
 		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
@@ -252,8 +253,8 @@ export const commands = {
 		}
 		return log(this, 'Successfully mutated '+i+' entities')
 	},
-	setblock(_x = '~', _y = '~', type, data = '{}', d = this.world || 'overworld'){
-		const {x, y, w} = parseCoords(_x, _y, d, this)
+	setblock(_x = '~', _y = '~', type, _d = '~', data = '{}'){
+		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		let b
 		if(type == (type & 65535)){
 			type = type & 65535
@@ -305,9 +306,9 @@ export const commands = {
 			return 'Block '+type+' has ID '+Blocks[type].id
 		}
 	},
-	clear(sel = '@s', _item, _max = '2147483647'){
-		if(_item && !Object.hasOwn(Items, _item)) throw 'No such item: '+_item
-		const Con = _item && Items[_item] || null
+	clear(sel = '@s', _item='none', _max = '2147483647'){
+		const Con = _item!='none' ? Items[_item] : null
+		if(Con === undefined) throw 'No such item: '+_item
 		let cleared = 0, count = ''
 		_max = +_max
 		for(const e of selector(sel, this)){
@@ -522,9 +523,15 @@ export const commands = {
 		k = min(k>>>0, 1e6)
 		while(k--)
 			executeCommand(c, a, this, 4)
+	},
+	restart(delay = 0){
+		if(!globalThis.process) throw '/restart is only available for multiplayer servers'
+		delay *= 1000
+		if(!(delay >= 0)) throw 'Invalid delay'
+		setTimeout(process.emit.bind(process, 'SIGINT', 1), delay)
+		if(delay) chat('[SERVER] Server restarting in '+Date.formatTime(delay), GOLD | BOLD | ITALIC, null)
 	}
 }
-Object.setPrototypeOf(commands, null)
 const PERMS = {
 	0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 	deny: 0, spectator: 1, visitor: 1,
@@ -534,6 +541,7 @@ const PERMS = {
 }
 
 //Aliases
+commands.stop = commands.restart
 commands.i = commands.info
 commands.op = function(u){return commands.perm.call(this,u,OP)}
 commands.deop = function(u){return commands.perm.call(this,u,NORMAL)}
@@ -546,30 +554,31 @@ export const anyone_help = {
 	kill: '-- Suicide'
 }, mod_help = {
 	...anyone_help,
-	give: '[player] [item] (count) ',
+	give: '[player] [item] (count=~) ',
 	kick: '[player] -- Kick a player',
 	say: '[style] [...msg] -- Send a message in chat',
-	tp: '[targets] [x] [y] (dimension) -- teleport someone to a dimension',
+	tp: '[targets] [x] [y] (dimension=~) -- teleport someone to a dimension',
 	tpe: '[targets] [destEntity]',
 	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
-	summon: '[entity_type] (x) (y) (snbt_data) (dimension) -- Summon an entity',
-	setblock: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Place a block somewhere',
-	clear: '[player] (filter_item) (max_amount) -- Remove items from a player',
-	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension) -- Fill an area with a certain block',
-	regen: '(x) (y) -- Re-generate this chunk with fresh terrain',
-	kill: '[target] (cause) -- Kill a player or entity',
+	summon: '[entity_type] (x) (y) (dimension=~) (snbt_data={}) -- Summon an entity',
+	setblock: '[x] [y] [block_type] (dimension=~) (snbt_data={}) -- Place a block somewhere',
+	clear: '[player] (filter_item=none) (max_amount=Infinity) -- Remove items from a player',
+	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension=~) -- Fill an area with a certain block',
+	regen: '(x=~) (y=~) -- Re-generate this chunk with fresh terrain',
+	kill: '[target] (cause=void) -- Kill a player or entity',
 }, help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
 	tps: '[tps] -- Set server-side tps',
-	spawnpoint: ['(x) (y) (dimension) -- Set the spawn point', 'tp (who) -- Teleport entities to spawn'],
+	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
 	perm: '[target] <int>|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',
-	repeat: '[count] [...command] -- Execute a command multiple times'
+	repeat: '[count] [...command] -- Execute a command multiple times',
+	restart: '(delay=0) -- Restart the server after delay'
 }, cheats = ['give', 'summon', 'setblock', 'fill']
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)

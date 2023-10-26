@@ -27,7 +27,7 @@ A=
 
 while true; do
 $runtime $FLAGS "$@" && break
+echo "\012\033[31mServer stopped (exit code $?). \033[mRestarting..."
 FLAGS=
-echo "\012\033[31mServer crashed (exit code $?)"
-sleep 2
+sleep 1
 done

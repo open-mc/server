@@ -101,17 +101,17 @@ if(secure && cert){
 	wsHost = 'wss://' + host; httpHost = 'https://' + host
 	sock.destroy()
 }else if(secure){
-	host = 'localhost:' + PORT
-	wsHost = 'wss://' + host; httpHost = 'https://' + host
+	wsHost = host = 'localhost:' + PORT
+	httpHost = 'https://' + host
 } // Else it's inferred from the first connection to the server (not safe, but then neither is http)
 
 server.any('/*', (res, req) => {
 	res.onAborted(() => res.aborted = true)
 	if(!wsHost){
 		// Insecure / development only
-		wsHost = 'ws://' + req.getHeader('host')
-		httpHost = wsHost.replace('ws', 'http')
 		host = req.getHeader('host')
+		wsHost = 'ws://' + host
+		httpHost = 'http://' + host
 	}
 	const [, endpoint, i] = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){
@@ -142,7 +142,7 @@ server.ws('/*', {
 		if(!wsHost){
 			// Insecure / development only
 			wsHost = 'ws://' + h
-			httpHost = wsHost.replace('ws', 'http')
+			httpHost = 'http://' + h
 			host = h
 		}
 		if(exiting) return
@@ -220,7 +220,7 @@ setInterval(() => {
 }, 10e3)
 
 let listenSocket = null
-process.on('SIGINT', _ => {
+process.on('SIGINT', code => {
 	//Save stuff here
 	if(exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')
@@ -228,10 +228,16 @@ process.on('SIGINT', _ => {
 	exiting = true
 	saving.then(() => {
 		const pr = []
-		for(const sock of clients) pr.push(close.call(sock))
+		for(const sock of clients){
+			if(code && !argv.manual){
+				const d = sock.pingTime + 1500 + round(started-performance.timeOrigin)
+				sock.send('-3' + d + ';0fReconnecting in '+Date.formatTime(d))
+			}
+			pr.push(close.call(sock))
+		}
 		clients.clear()
 		pr.push(saveAll())
-		Promise.all(pr).then(() => DB.close(() => process.exit(0)))
+		Promise.all(pr).then(() => DB.close(() => process.exit(code)))
 	})
 })
 void function timeout(){if(exiting) return; setTimeout(() => saveAll().then(timeout), 300e3)}()
