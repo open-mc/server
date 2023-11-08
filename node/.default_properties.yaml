@@ -82,7 +82,7 @@ webhook_profiles: true
 # Home page will count how often this word is said in chat
 magic_word: hi
 
-icon: https://i.imgur.com/jLnrxWt.png
+icon: /img/beacon.png
 motd:
   - One of the servers of all time
   - Potassium-free!

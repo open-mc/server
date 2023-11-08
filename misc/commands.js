@@ -103,8 +103,8 @@ function snbt(s, i, t, T1, T2){
 	}
 }
 
-function parseCoords(x = '~', y = '~', d, t){
-	let w = typeof d == 'string' ? Dimensions[d] : d || t.world || Dimensions.overworld
+function parseCoords(x = '~', y = '~', d = '~', t){
+	let w = d == '~' ? t.world || Dimensions.overworld : Dimensions[d]
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
 		x = (+x.slice(1))/180*PI - t.f
