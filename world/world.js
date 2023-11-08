@@ -141,33 +141,7 @@ export class World extends Map{
 		const b = ch.toBuf(new DataWriter()).build()
 		this.level.put(''+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
 	}
-	peek(x, y, sock = null){
-		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
-		if(!ch || ch instanceof Promise) return Blocks.air
-		if(sock && !ch.sockets.includes(sock)) return Blocks.air
-		const i = (x & 63) + ((y & 63) << 6)
-		return ch[i] == 65535 ? ch.tileData.get(i) : BlockIDs[ch[i]]
-	}
 	chunk(x, y){ return super.get((x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000) }
-	put(x, y, b){
-		let ch = super.get((x>>>6)+(y>>>6)*0x4000000)
-		if(!ch) return
-		const i = (x & 63) + ((y & 63) << 6)
-		if(b.savedata){
-			ch.tileData.set(i, b)
-			ch[i] = 65535
-		}else{
-			ch.tileData.delete(i)
-			ch[i] = b
-		}
-		let buf = new DataWriter()
-		buf.byte(8)
-		buf.int(x)
-		buf.int(y)
-		buf.short(b.id)
-		for(const sock of ch.sockets)
-			sock.send(buf.build())
-	}
 	[Symbol.for('nodejs.util.inspect.custom')](){return 'Dimensions.'+this.id+' { tick: \x1b[33m'+this.tick+'\x1b[m, chunks: '+(this.size?'(\x1b[33m'+this.size+'\x1b[m) [ ... ]':'[]')+' }'}
 	static savedatahistory = []
 	toString(){return this.id}

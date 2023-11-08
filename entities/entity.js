@@ -3,6 +3,7 @@ import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
 import { GAMERULES } from '../world/index.js'
+import { BlockIDs, Blocks } from '../blocks/block.js'
 
 export const chatImport = {chat: null}
 
@@ -82,17 +83,22 @@ export class Entity{
 				this.inv[i] = null
 				changed.push(i)
 			}
-			if(this.items) for(let i = 0; i < this.items.length; i++){
-				if(!this.items[i]) continue
-				const itm = new Entities.item()
-				itm.item = this.items[i]
-				itm.dx = random() * 30 - 15
-				itm.dy = random() * 4 + 4
-				itm.place(this.world, this.x, this.y + this.height / 2)
-				this.items[i] = null
-				changed.push(i | 128)
-			}
-			this.itemschanged(changed)
+			const L = this.interfaceList
+			if(L) for(const i of L){
+				const items = this.interface(i)
+				for(let i = 0; i < items.length; i++){
+					if(!items[i]) continue
+					const itm = new Entities.item()
+					itm.item = items[i]
+					itm.dx = random() * 30 - 15
+					itm.dy = random() * 4 + 4
+					itm.place(this.world, this.x, this.y + this.height / 2)
+					items[i] = null
+					changed.push(i | 128)
+				}
+				this.itemschanged(changed, this, i, items)
+				changed.length = 0
+			}else this.itemschanged(changed)
 		}
 	}
 	give(stack){
@@ -127,13 +133,21 @@ export class Entity{
 			if(e.item == stack) break
 		}
 	}
-	itemschanged(slots){
+	itemschanged(slots, target = null, interfaceId = 0, items = target?target.interface(interfaceId):null){
 		const buf = new DataWriter()
-		buf.byte(32)
-		buf.uint32(this.netId); buf.short(this.netId / 4294967296)
-		for(const c of slots) 
-			if(c > 127) buf.byte(c), Item.encode(buf, this.items[c&127])
-			else buf.byte(c), Item.encode(buf, this.inv[c])
+		if(target){
+			buf.byte(33)
+			buf.uint32(this.netId); buf.short(this.netId / 4294967296)
+			buf.uint32(target.netId); buf.short(target.netId / 4294967296)
+			buf.byte(interfaceId)
+		}else{
+			buf.byte(32)
+			buf.uint32(this.netId); buf.short(this.netId / 4294967296)
+		}
+		for(const c of slots){
+			buf.byte(c)
+			Item.encode(buf, c > 127 ? items[c&127] : this.inv[c])
+		}
 		if(this.chunk)
 			for(const sock of this.chunk.sockets) sock.send(buf.build())
 		else if(this.sock) this.sock.send(buf.build())
@@ -188,6 +202,12 @@ export class Entity{
 	flags = 0
 	update(){
 		this.flags = (this.flags&-4) | (this.flags&1)<<1
+	}
+	peek(x, y){
+		let ch = this.world.get((x>>>6)+(y>>>6)*0x4000000)
+		if(!ch || (this.sock && !ch.sockets.includes(this.sock))) return Blocks.air
+		const i = (x & 63) + ((y & 63) << 6)
+		return ch[i] == 65535 ? ch.tileData.get(i) : BlockIDs[ch[i]]
 	}
 }
 

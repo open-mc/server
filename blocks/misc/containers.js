@@ -5,6 +5,7 @@ Blocks.chest = class extends Block{
 	static blockShape = [1/16, 0, 15/16, 7/8]
 	items = Array.null(27)
 	name = ''
+	state = 0
 	static tool = 'axe'
 	static blast = 30
 	static savedata = {
@@ -13,4 +14,7 @@ Blocks.chest = class extends Block{
 		state: Uint8
 	}
 	drops(){ return [new Items.chest(1), ...this.items] }
+	interact(){
+		
+	}
 }

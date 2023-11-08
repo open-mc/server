@@ -36,6 +36,8 @@ export function goto(w, x=0, y=0){
 export const peekpos = (c,p) => {const b=(world=c.world,cx=c.x,cy=c.y,chunk=c)[pos=p];return b===65535?chunk.tileData.get(p):BlockIDs[b]}
 export const gotopos = (c,p) => {world=c.world,cx=c.x,cy=c.y,chunk=c;pos=p}
 
+export const visibleTo = ({sock}) => chunk ? chunk.sockets.includes(sock) : false
+
 export function place(bl, safe = false){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
 	bl = bl === bl.constructor && bl.savedata ? new bl : bl

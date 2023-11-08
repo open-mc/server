@@ -11,8 +11,10 @@ const defaultSkin = new Uint8Array(1008)
 for(let i = 0; i < 1008; i+=2)defaultSkin[i]=STEVE.charCodeAt(i>>1),defaultSkin[i+1]=STEVE.charCodeAt(i>>1)>>8
 
 Entities.player = class Player extends ChunkLoader(LivingEntity){
-	inv = Array.null(36)
-	items = [null, null, null, null, null, null]
+	inv = Array.null(37)
+	items = [null, null, null, null, null]
+	static interfaceList = [0]
+	interface(id){return id == 0 ? this.items : undefined}
 	selected = 0
 	skin = defaultSkin
 	breakGridEvent = 0
@@ -56,8 +58,8 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	}
 	static savedata = {
 		health: Byte,
-		inv: [Item, 36],
-		items: [Item, 6],
+		inv: [Item, 37],
+		items: [Item, 5],
 		selected: Byte,
 		skin: Uint8Array
 	}

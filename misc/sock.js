@@ -116,6 +116,7 @@ export async function open(){
 	this.ry = CONFIG.socket.movementcheckmercy
 	this.entity = player
 	this.packets = []
+	this.interface = null; this.interfaceId = 0
 	if(dim) player.place(dim, x, y)
 	players.set(this.username, player)
 	player.rubber()
