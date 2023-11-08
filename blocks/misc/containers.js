@@ -6,6 +6,7 @@ Blocks.chest = class extends Block{
 	items = Array.null(27)
 	name = ''
 	static tool = 'axe'
+	static blast = 30
 	static savedata = {
 		items: [Item, 27],
 		name: String,

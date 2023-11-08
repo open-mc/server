@@ -1,4 +1,5 @@
 import { Blocks } from "../../blocks/block.js"
+import { Entities } from "../../entities/entity.js"
 import { gridevent, place, summon } from "../../misc/ant.js"
 import { Item, Items } from "../item.js"
 

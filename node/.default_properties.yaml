@@ -54,8 +54,14 @@ permissions:
   # Allow anyone to chat (disabling will only allow moderators and above to use chat)
   chat: true
 
+  # Allow green text in chat by prefixing your messages with >
+  greentext: true
+
   # Allow moderators to use /give, /setblock, etc...
   mod_cheat: true
+
+  # Maximum blocks you can /fill at once
+  max_fill: 16777216
 
   # Default permission level when joining for the first time
   # 4 = op (NOT RECOMMENDED)

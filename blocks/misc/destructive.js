@@ -6,7 +6,7 @@ import { Block, Blocks } from '../block.js'
 
 Blocks.tnt = class extends Block{
 	static breaktime = 0
-	drops(){ return new Items.tnt(4) }
+	drops(){ return new Items.tnt() }
 	destroy(){
 		super.destroy(false, null)
 		const tnt = summon(Entities.tnt)
@@ -20,6 +20,7 @@ Blocks.fire = class extends Block{
 	static replacable = true
 	static mustBreak = true
 	static breaktime = 0
+	static blast = 10
 	update(){
 		const b = peekdown()
 		if(b == Blocks.obsidian){

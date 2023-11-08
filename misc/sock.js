@@ -77,6 +77,7 @@ export async function open(){
 		const buf = new DataReader(await playersLevel.get(this.username))
 		playersConnecting.delete(this.username)
 		if(!this.state) return
+		other = null
 		player = new EntityIDs[buf.short()]()
 		x = buf.double(); y = buf.double()
 		dim = Dimensions[buf.string()]

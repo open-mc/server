@@ -221,6 +221,7 @@ setInterval(() => {
 
 let listenSocket = null
 process.on('SIGINT', code => {
+	if(typeof code != 'number') code = undefined
 	//Save stuff here
 	if(exiting) return console.log('\x1b[33mTo force shut down the server, evaluate \x1b[30mprocess.exit(0)\x1b[33m in the repl\x1b[m')
 	console.log('\x1b[33mShutting down gracefully...\x1b[m')

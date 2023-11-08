@@ -26,13 +26,21 @@ function fallback(o, f){
 	}
 	return o
 }
+const resolve = (f, p) => !p || p[0] == '/' || p[0] == '~' ? p : f + p
 async function loadConfigs(i){
 	if(i)console.info("Reloading config...")
 	const p = CONFIG && CONFIG.path
 	const promises = []
 	for(let i = 0; i < argv.length; i++){
-		const p = argv[i][0] == '/' || argv[i][0] == '~' ? argv[i] : PATH + '../' + argv[i]
-		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/.default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => parse(a.toString())))
+		const p = argv[i]// = resolve(PATH, argv[i])
+		const f = p.slice(0, p.lastIndexOf('/')+1)
+		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/.default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => {
+			const v = parse(a.toString())
+			if('path' in v) v.path = resolve(f, v.path)
+			if('key' in v) v.key = resolve(f, v.key)
+			if('cert' in v) v.cert = resolve(f, v.cert)
+			return v
+		}))
 	}
 	const C = (await Promise.all(promises)).reduce(fallback, argvConfig())
 	if(!C.port | !C.world) throw 'Invalid config file(s)'
@@ -68,7 +76,7 @@ class VolatileLevel extends Map{
 void([globalThis.version] = await Promise.all([
 	fs.readFile(PATH + 'package.json').then(a=>JSON.parse(a+'').version),
 	loadConfigs(false).then(() => {
-		globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path[0] == '/' || CONFIG.path[0] == '~' ? CONFIG.path : PATH + '../' + CONFIG.path) : new VolatileLevel()
+		globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()
 		if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
 		return DB.open()
 	})

@@ -1,4 +1,4 @@
-import { chat, prefix } from './chat.js'
+import { GREEN, WHITE, chat, prefix } from './chat.js'
 import { err, executeCommand } from './commands.js'
 import { Entities } from '../entities/entity.js'
 import { DataWriter } from '../modules/dataproto.js'
@@ -392,7 +392,7 @@ export function onstring(player, text){
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
 		if(text.includes('pineapple') && text.includes('pizza')) stat('misc', 'controversial')
-		chat(prefix(player)+text, undefined, player)
+		chat(prefix(player)+text, text[0]=='>'&&CONFIG.permissions.greentext?GREEN:WHITE, player)
 	}
 }
 

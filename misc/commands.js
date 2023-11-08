@@ -1,9 +1,9 @@
 import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world/index.js'
 import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat, LIGHT_GREY, ITALIC, prefix, GOLD, BOLD } from './chat.js'
-import { Entities, Entity } from '../entities/entity.js'
+import { Entities, Entity, EntityIDs } from '../entities/entity.js'
 import '../node/internals.js'
-import { Items } from '../items/item.js'
+import { ItemIDs, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, entityMap } from '../world/tick.js'
@@ -104,16 +104,20 @@ function snbt(s, i, t, T1, T2){
 }
 
 function parseCoords(x = '~', y = '~', d = '~', t){
-	let w = d == '~' ? t.world || Dimensions.overworld : Dimensions[d]
+	const m = marks.get(t)
+	if(!m&&(x[0]=='!'||y[0]=='!'||d=='!')) throw 'No marker set'
+	let w = d == '~' ? t.world || Dimensions.overworld : d == '!' ? m.world : Dimensions[d]
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
 		x = (+x.slice(1))/180*PI - t.f
 		y = +y.slice(1);
 		[x, y] = [t.x - sin(x) * y, t.y + cos(x) * y]
 	}else{
-		if(x[0] == "~")x = t.x + +x.slice(1)
+		if(x[0] == "~") x = t.x + +x.slice(1)
+		else if(x[0]=='!') x = m.x + +x.slice(1)
 		else x -= 0
-		if(y[0] == "~")y = t.y + +y.slice(1)
+		if(y[0] == "~") y = t.y + +y.slice(1)
+		else if(y[0]=='!') y = m.y + +y.slice(1)
 		else y -= 0
 	}
 	if(x != x || y != y) throw 'Invalid coordinates'
@@ -126,8 +130,36 @@ export function log(who, msg){
 	chat(prefix(who, 1) + msg, LIGHT_GREY + ITALIC, who)
 }
 
+function serializeTypePretty(type){
+	if(Array.isArray(type)) return serializeTypePretty(type[0]) + '[' + (type[1]||'') + ']'
+	if(type == Uint8) return 'integer [0 - 255]'
+	else if(type == Int8) return 'integer [-128 - 127]'
+	else if(type == Uint16) return 'integer [0 - 65535]'
+	else if(type == Int16) return 'integer [-32768 - 32767]'
+	else if(type == Uint32) return 'integer [0 - 4294967296]'
+	else if(type == Int32) return 'integer'
+	else if(type == Float || type == Double) return 'number'
+	else if(type == String) return 'string'
+	else if(type == Bool) return 'bool'
+	else if(type == Uint8Array) return 'data'
+	if(typeof type == 'function') return type.name
+	let res = '{ '
+	if(typeof type != 'object') throw 'what'
+	for(const k in type){
+		if(res.length != 2) res += ', '
+		res += k + ': '
+		res += serializeTypePretty(type[k])
+	}
+	return res += ' }'
+}
+
 function selector(a, who){
-	if(!a) throw 'Selector missing!'
+	if(!a) throw 'Selector missing'
+	if(a == '!'){
+		const m = marks.get(who)
+		if(!m) throw 'No marker set'
+		return [m.entity]
+	}
 	const id = +a
 	if(id === id){
 		const e = entityMap.get(id)
@@ -173,6 +205,8 @@ export function err(e){
 
 const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
 const ITEMCOMMONDATA = {count: Uint8}
+
+const marks = new WeakMap
 
 export const commands = {
 	__proto__: null,
@@ -274,7 +308,8 @@ export const commands = {
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
 		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0
-		if(x2 < 0 || y2 < 0){x=x+x2|0;y=y+y2|0;x2=abs(x2)|0;y2=abs(y2)|0}
+		if(x2 < 0) x=x+x2|0, x2=abs(x2)|0
+		if(y2 < 0) y=y+y2|0, y2=abs(y2)|0
 		goto(w, x, y)
 		let b
 		if(type == (type & 65535)){
@@ -285,26 +320,41 @@ export const commands = {
 			if(!(type in Blocks)) throw 'No such block: ' + type
 			b = Blocks[type]
 		}
+		let count = x2*y2+x2+y2+1
+		if(count > CONFIG.permissions.max_fill) throw 'Cannot /fill more than '+CONFIG.permissions.max_fill+' blocks'
 		for(y = 0; y != y2+1; y=(y+1)|0){
 			for(x = 0; x != x2+1; x=(x+1)|0){
+				if(peek()==b)count--
 				place(b)
 				right()
 			}
 			jump(-x2-1,1)
 		}
 		n = performance.now() - n
-		const count = x2*y2+x2+y2+1
 		return log(this, 'Filled '+count+' blocks with ' + type + (count > 10000 ? ' in '+n.toFixed(1)+' ms' : ''))
 	},
-	id(type){
+	id(cat, type){
+		cat = cat.toLowerCase()
+		let dict, list, name, data = cat.endsWith('data')
+		switch(data ? cat.slice(0, -4) : cat){
+			case 'block': dict = Blocks, list = BlockIDs, name = 'Block'; break
+			case 'item': dict = Items, list = ItemIDs, name = 'Item'; break
+			case 'entity': dict = Entities, list = EntityIDs, name = 'Entity'; break
+			default: throw 'Allowed categories: block, item, entity, blockdata, itemdata, entitydata'
+		}
+		let res, obj
 		if(type == (type & 65535)){
 			type = type & 65535
-			if(type >= BlockIDs.length) throw 'No such block ID: ' + type
-			return 'Block ID '+type+' is '+BlockIDs[type].className
+			if(type >= list.length) throw 'No such '+name.toLowerCase()+' ID: ' + type
+			res = name+' ID '+type+' is '+(obj=list[type]).className
 		}else{
-			if(!(type in Blocks)) throw 'No such block: ' + type
-			return 'Block '+type+' has ID '+Blocks[type].id
+			if(!(type in dict)) throw 'No such '+name.toLowerCase()+': ' + type
+			res = name+' '+type+' has ID '+(obj=dict[type]).id
 		}
+		if(data && obj.savedata){
+			res += ' and has data attributes:\n' + serializeTypePretty(obj.savedata)
+		}else if(data) res += ' and has no data attributes'
+		return res
 	},
 	clear(sel = '@s', _item='none', _max = '2147483647'){
 		const Con = _item!='none' ? Items[_item] : null
@@ -524,6 +574,13 @@ export const commands = {
 		while(k--)
 			executeCommand(c, a, this, 4)
 	},
+	mark(e='@s',xo='0',yo='0'){
+		const [ent, ex] = selector(e, this)
+		if(ex) throw '/mark only accepts one entity'
+		const m = {x: ifloat(ent.x + (+xo||0)), y: ifloat(ent.y + (+yo||0)), world: ent.world, entity: ent}
+		marks.set(this, m)
+		return `Mark set at (${m.x.toFixed(3)}, ${m.y.toFixed(3)}) in the ${m.world.id}`
+	},
 	restart(delay = 0){
 		if(!globalThis.process) throw '/restart is only available for multiplayer servers'
 		delay *= 1000
@@ -566,6 +623,8 @@ export const anyone_help = {
 	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension=~) -- Fill an area with a certain block',
 	regen: '(x=~) (y=~) -- Re-generate this chunk with fresh terrain',
 	kill: '[target] (cause=void) -- Kill a player or entity',
+	mark: '[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position and entity selectors with !',
+	id: '[block|item|entity|blockdata|itemdata|entitydata] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID'
 }, help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
