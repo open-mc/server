@@ -2,9 +2,9 @@ import { gridevent } from '../misc/ant.js'
 import { registerTypes } from '../modules/dataproto.js'
 
 export class Item{
-	constructor(count = 0){
+	constructor(count = 0, name = ''){
 		this.count = count || 1
-		this.name = ''
+		this.name = name
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](){ return 'Items.'+this.className+'(\x1b[33m'+this.count+'\x1b[m)' }
 	static savedata = null

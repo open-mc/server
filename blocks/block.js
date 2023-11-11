@@ -1,6 +1,6 @@
 import { Entities } from '../entities/entity.js'
 import { Item } from '../items/item.js'
-import { getX, getY, place, antWorld, gridevent } from '../misc/ant.js'
+import { getX, getY, place, antWorld, gridevent, antChunk } from '../misc/ant.js'
 
 export class Block{
 	[Symbol.for('nodejs.util.inspect.custom')](){ return `Blocks.${this.className}${this.savedata ? ' {...}' : ''}` }
@@ -30,6 +30,20 @@ export class Block{
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
 				itm.place(antWorld, getX(), getY())
+			}
+		}
+	}
+	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId)){
+		if(!antChunk) return
+		for(const sock of antChunk.sockets){
+			if(!sock.ibuf) sock.ibuf = new DataWriter(), sock.ibuf.byte(32)
+			const {ibuf} = sock
+			ibuf.byte(129)
+			ibuf.int(getX()); ibuf.int(getY())
+			ibuf.byte(interfaceId)
+			for(const c of slots){
+				ibuf.byte(c)
+				Item.encode(ibuf, items[c])
 			}
 		}
 	}

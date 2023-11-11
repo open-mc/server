@@ -13,8 +13,8 @@ for(let i = 0; i < 1008; i+=2)defaultSkin[i]=STEVE.charCodeAt(i>>1),defaultSkin[
 Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(37)
 	items = [null, null, null, null, null]
-	static interfaceList = [0]
-	interface(id){return id == 0 ? this.items : undefined}
+	static interfaceList = [0, 1]
+	interface(id){return id == 0 ? this.inv : id == 1 ? this.items : undefined}
 	selected = 0
 	skin = defaultSkin
 	breakGridEvent = 0

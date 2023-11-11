@@ -26,7 +26,7 @@ export function tick(){
 		mirrorEntity(e)
 	}
 	for(const pl of players.values()){
-		const {packets, ebuf, tbuf} = pl.sock
+		const {packets, ebuf, tbuf, ibuf} = pl.sock
 		if(tbuf.length || tbuf.i > 1){
 			pl.sock.send(tbuf.build())
 			void (pl.sock.tbuf = new DataWriter()).byte(8)
@@ -35,6 +35,11 @@ export function tick(){
 			pl.sock.send(ebuf.build())
 			void (pl.sock.ebuf = new DataWriter()).byte(20)
 		}
+		if(ibuf){
+			pl.sock.send(ibuf.build())
+			pl.sock.ibuf = null
+		}
+		pl.checkInterface()
 		for(let i = 0; i < packets.length; i++)
 			pl.sock.send(packets[i])
 		packets.length = 0

@@ -117,6 +117,7 @@ export async function open(){
 	this.entity = player
 	this.packets = []
 	this.interface = null; this.interfaceId = 0
+	this.interfaceD = null
 	if(dim) player.place(dim, x, y)
 	players.set(this.username, player)
 	player.rubber()
@@ -126,6 +127,7 @@ export async function open(){
 	}
 	this.tbuf = new DataWriter()
 	this.ebuf = new DataWriter()
+	this.ibuf = null
 	this.ebuf.byte(20)
 	this.tbuf.byte(8)
 	sendTabMenu(true)
@@ -136,6 +138,7 @@ export async function close(){
 	this.state = 0
 	const {entity} = this
 	if(!entity) return
+	entity.closeInterface()
 	if(entity.sock && entity.sock != this) return
 	players.delete(this.username)
 	playersConnecting.add(this.username)

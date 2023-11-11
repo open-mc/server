@@ -1,24 +1,13 @@
 import { GREEN, WHITE, chat, prefix } from './chat.js'
 import { err, executeCommand } from './commands.js'
-import { Entities } from '../entities/entity.js'
+import { Entities, Entity } from '../entities/entity.js'
 import { DataWriter } from '../modules/dataproto.js'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, save, load } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, GAMERULES, stat, statRecord } from '../world/index.js'
 
 const REACH = 10
-
-/*function withinD(incoming, old, target){
-	const ratio = incoming / old
-	if(ratio > 0 && ratio < 1) return true
-	const ratio2 = incoming / target
-	return ratio2 > 0 && ratio2 < 1
-}
-function withinDa(incoming, target){
-	const ratio2 = incoming / target
-	return ratio2 > 0 && ratio2 < 1.25
-}*/
 
 function validateMove(sock, player, buf){
 	// where the player wants to be
@@ -183,20 +172,31 @@ function playerMovePacket(player, buf){
 			if(item && item.interact2){
 				item.interact2(player)
 				if(!item.count) player.inv[sel&127] = null
-				player.itemschanged([sel&127])
+				player.itemschanged([sel&127], 0, player.inv)
 			}
 			break top
 		}
 		let b = peek()
-		a: if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
-			if(item && item.interact){
+		if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
+			b: if(item && item.interact){
 				const c = item.count
 				const i2 = item.interact(b, player) ?? item
-				if(i2 === true) break a
+				if(i2 === true) break b
 				if(i2 !== item || c !== i2.count){
 					if(!i2 || i2.count === 0) player.inv[sel] = null
 					else player.inv[sel] = i2
-					player.itemschanged([sel])
+					player.itemschanged([sel], 0, player.inv)
+				}
+				return
+			}
+			b: if(!(player.state&2) && b.interact){
+				const c = item?.count??0
+				const i2 = b.interact(item, player) ?? item
+				if(i2 === true) break b
+				if(i2 !== item || c !== (i2?.count??0)){
+					if(!i2 || i2.count === 0) player.inv[sel] = null
+					else player.inv[sel] = i2
+					player.itemschanged([sel], 0, player.inv)
 				}
 				return
 			}
@@ -218,13 +218,13 @@ function playerMovePacket(player, buf){
 		}
 		if(item.place){
 			const c = item.count
-			const i2 = item.place(px, py, player)
-			if(i2 !== undefined && i2 !== item)
+			const i2 = item.place(px, py, player) ?? item
+			if(i2.count != c || i2 !== item)
 				if(!i2 || i2.count === 0) player.inv[sel&127] = null
 				else player.inv[sel&127] = i2
 			stat('player', 'blocks_placed')
 		}else if(!item.count) player.inv[sel&127] = null
-		player.itemschanged([sel&127])
+		player.itemschanged([sel&127], 0, player.inv)
 	}
 	if(player.breakGridEvent){
 		cancelgridevent(player.breakGridEvent)
@@ -246,13 +246,7 @@ function respawnPacket(player, _){
 }
 
 function openInventoryPacket(player, buf){
-	if(this.interface) return
-	this.interface = player
-	const res = new DataWriter()
-	res.byte(13)
-	res.uint32(player.netId); res.short(player.netId / 4294967296 | 0)
-	res.byte(this.interfaceId = 0)
-	this.send(res.build())
+	player.openInterface(player, 1)
 }
 function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory
@@ -261,6 +255,7 @@ function inventoryPacket(player, buf){
 	let changed = 0
 	if(slot > 127){
 		slot &= 127
+		if(player.checkInterface()) return
 		const items = this.interface.interface?.(this.interfaceId)
 		if(!items || slot >= items.length) return
 		const t = items[slot], h = player.inv[36]
@@ -273,8 +268,10 @@ function inventoryPacket(player, buf){
 			t.count += add
 			changed |= 2
 		}else items[slot] = h, player.inv[36] = t, changed |= 3
-		if(changed)
-			player.itemschanged(changed & 1 ? changed & 2 ? [slot | 128, 36] : [36] : [slot | 128], this.interface, this.interfaceId)
+		if(changed & 1)
+			player.itemschanged([36], 0, player.inv)
+		if(changed & 2)
+			this.interface.itemschanged([slot], this.interfaceId, items)
 		return
 	}
 	if(slot >= 36) return
@@ -298,6 +295,7 @@ function altInventoryPacket(player, buf){
 	let slot = buf.byte()
 	if(slot > 127){
 		slot &= 127
+		if(player.checkInterface()) return
 		const items = this.interface.interface?.(this.interfaceId)
 		if(!items || slot >= items.length) return
 		const t = items[slot], h = player.inv[36]
@@ -311,7 +309,9 @@ function altInventoryPacket(player, buf){
 			t.count++
 			if(!--h.count)player.inv[36] = null
 		}else items[slot] = h, player.inv[36] = t
-		player.itemschanged([36, slot | 128], this.interface, this.interfaceId)
+		
+		player.itemschanged([36], 0, player.inv)
+		this.interface.itemschanged(slot, this.interfaceId, items)
 		return
 	}
 	if(slot >= 36) return
@@ -326,7 +326,7 @@ function altInventoryPacket(player, buf){
 		t.count++
 		if(!--h.count)player.inv[36] = null
 	}else player.inv[slot] = h, player.inv[36] = t
-	player.itemschanged([36, slot])
+	player.itemschanged([36, slot], 0, player.inv)
 }
 
 function dropItemPacket(player, buf){
@@ -336,18 +336,18 @@ function dropItemPacket(player, buf){
 	e.dx = player.dx + player.f > 0 ? 7 : -7
 	e.place(player.world, player.x, player.y + player.head - 0.5)
 	player.inv[player.selected] = null
-	player.itemschanged([player.selected])
+	player.itemschanged([player.selected], 0, player.inv)
 }
 
 function closeInterfacePacket(player, _){
-	this.interface = null
+	player.closeInterface()
 	if(player.inv[36]){
 		const e = new Entities.item()
 		e.item = player.inv[36]
 		e.dx = player.dx + player.f > 0 ? 7 : -7
 		e.place(player.world, player.x, player.y + player.head - 0.5)
 		player.inv[36] = null
-		player.itemschanged([36])
+		player.itemschanged([36], 0, player.inv)
 	}
 }
 
@@ -382,4 +382,4 @@ export function onstring(player, text){
 	}
 }
 
-export const PROTOCOL_VERSION = 4
+export const PROTOCOL_VERSION = 5

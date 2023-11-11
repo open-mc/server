@@ -3,7 +3,8 @@ import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
 import { GAMERULES } from '../world/index.js'
-import { BlockIDs, Blocks } from '../blocks/block.js'
+import { Block, BlockIDs, Blocks } from '../blocks/block.js'
+import { getX, getY, load, peek, save } from '../misc/ant.js'
 
 export const chatImport = {chat: null}
 
@@ -72,20 +73,10 @@ export class Entity{
 	}
 	died(){
 		if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
-			const changed = []
-			if(this.inv) for(let i = 0; i < this.inv.length; i++){
-				if(!this.inv[i]) continue
-				const itm = new Entities.item()
-				itm.item = this.inv[i]
-				itm.dx = random() * 30 - 15
-				itm.dy = random() * 4 + 4
-				itm.place(this.world, this.x, this.y + this.height / 2)
-				this.inv[i] = null
-				changed.push(i)
-			}
 			const L = this.interfaceList
 			if(L) for(const i of L){
 				const items = this.interface(i)
+				const changed = []
 				for(let i = 0; i < items.length; i++){
 					if(!items[i]) continue
 					const itm = new Entities.item()
@@ -94,32 +85,32 @@ export class Entity{
 					itm.dy = random() * 4 + 4
 					itm.place(this.world, this.x, this.y + this.height / 2)
 					items[i] = null
-					changed.push(i | 128)
+					changed.push(i)
 				}
-				this.itemschanged(changed, this, i, items)
-				changed.length = 0
-			}else this.itemschanged(changed)
+				this.itemschanged(changed, i, items)
+			}
 		}
 	}
-	give(stack){
-		if(!this.inv) return false
+	give(stack, i = 0){
+		const items = this.interface(i)
+		if(!items) return false
 		const changed = []
-		for(let i = 0; i < this.inv.length; i++){
+		for(let i = 0; i < items.length; i++){
 			const amount = min(stack.count, stack.maxStack)
-			if(!this.inv[i]){
-				this.inv[i] = new stack.constructor(amount)
+			if(!items[i]){
+				items[i] = new stack.constructor(amount)
 				stack.count -= amount
-			}else if(this.inv[i].constructor == stack.constructor && !stack.savedata){
-				const amount2 = min(amount, this.inv[i].maxStack - this.inv[i].count)
+			}else if(items[i].constructor == stack.constructor && !stack.savedata){
+				const amount2 = min(amount, items[i].maxStack - items[i].count)
 				if(!amount2) continue
-				this.inv[i].count += amount2
+				items[i].count += amount2
 				stack.count -= amount2
 			}else continue
 			changed.push(i)
 			if(!stack.count) break
 		}
 		if(!changed.length) return false
-		this.itemschanged(changed)
+		this.itemschanged(changed, 0)
 		return true
 	}
 	giveAndDrop(stack){
@@ -133,24 +124,56 @@ export class Entity{
 			if(e.item == stack) break
 		}
 	}
-	itemschanged(slots, target = null, interfaceId = 0, items = target?target.interface(interfaceId):null){
-		const buf = new DataWriter()
-		if(target){
-			buf.byte(33)
-			buf.uint32(this.netId); buf.short(this.netId / 4294967296)
-			buf.uint32(target.netId); buf.short(target.netId / 4294967296)
-			buf.byte(interfaceId)
+	openInterface(e, id = 0){
+		if(!this.sock || this.sock.interface) return false
+		const res = new DataWriter()
+		if(e instanceof Block){
+			res.byte(14)
+			res.int(getX())
+			res.int(getY())
+		}else if(e instanceof Entity){
+			res.byte(13)
+			res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
+		}else throw '.openInterface(<here>, _): Block or entity expected'
+		res.byte(this.sock.interfaceId = id&255)
+		this.sock.interface = e
+		this.sock.interfaceD = e instanceof Block ? save() : e
+		this.sock.send(res.build())
+		e.interfaceOpened?.()
+		return true
+	}
+	closeInterface(){
+		if(!this.sock || !this.sock.interface) return false
+		if(!(this.sock.interfaceD instanceof Entity))
+			load(this.sock.interfaceD)
+		this.sock.interface.interfaceClosed?.()
+		this.sock.interface = null
+		this.sock.send(Uint8Array.of(15))
+		return true
+	}
+	checkInterface(){
+		if(!this.sock.interface) return
+		if(this.sock.interfaceD instanceof Entity){
+			if(!this.sock.interfaceD.world || (this.sock.interfaceD&0x8000)) return this.closeInterface(), true
 		}else{
-			buf.byte(32)
-			buf.uint32(this.netId); buf.short(this.netId / 4294967296)
+			load(this.sock.interfaceD)
+			if(peek() != this.sock.interface) return this.closeInterface(), true
 		}
-		for(const c of slots){
-			buf.byte(c)
-			Item.encode(buf, c > 127 ? items[c&127] : this.inv[c])
+		return false
+	}
+	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId)){
+		if(!items||(!this.chunk&&!this.sock)) return
+		for(const sock of (this.chunk ? this.chunk.sockets : [this.sock])){
+			if(!sock.ibuf) sock.ibuf = new DataWriter(), sock.ibuf.byte(32)
+			const {ibuf} = sock
+			ibuf.byte(128)
+			ibuf.uint32(this.netId); ibuf.short(this.netId/4294967296|0)
+			ibuf.byte(interfaceId)
+			for(const c of slots){
+				ibuf.byte(c)
+				Item.encode(ibuf, items[c])
+			}
 		}
-		if(this.chunk)
-			for(const sock of this.chunk.sockets) sock.send(buf.build())
-		else if(this.sock) this.sock.send(buf.build())
 	}
 	emit(buf){
 		if(this.chunk){

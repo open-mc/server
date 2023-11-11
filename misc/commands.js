@@ -366,17 +366,10 @@ export const commands = {
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			let max = _max
-			const changed = []
-			if(e.inv) for(let i = 0; max && i < e.inv.length; i++){
-				const item = e.inv[i]
-				if(!item || (Con && item.constructor != Con)) continue
-				changed.push(i)
-				if(item.count <= max)max -= item.count, e.inv[i] = null
-				else item.count -= max, max = 0
-			}
 			const L = e.interfaceList
 			if(L) for(const i of L){
 				const items = e.interface(i)
+				const changed = []
 				for(let i = 0; max && i < items.length; i++){
 					const item = items[i]
 					if(!item || (Con && item.constructor != Con)) continue
@@ -384,9 +377,8 @@ export const commands = {
 					if(item.count <= max)max -= item.count, items[i] = null
 					else item.count -= max, max = 0
 				}
-				e.itemschanged(changed, e, i, items)
-				changed.length = 0
-			}else e.itemschanged(changed)
+				e.itemschanged(changed, i, items)
+			}
 			cleared += _max - max
 		}
 		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)
