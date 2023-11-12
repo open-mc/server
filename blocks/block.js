@@ -33,9 +33,9 @@ export class Block{
 			}
 		}
 	}
-	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId)){
+	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId), priv = null){
 		if(!antChunk) return
-		for(const sock of antChunk.sockets){
+		for(const sock of priv ? [priv] : antChunk.sockets){
 			if(!sock.ibuf) sock.ibuf = new DataWriter(), sock.ibuf.byte(32)
 			const {ibuf} = sock
 			ibuf.byte(129)

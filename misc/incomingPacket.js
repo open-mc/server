@@ -256,7 +256,7 @@ function inventoryPacket(player, buf){
 	if(slot > 127){
 		slot &= 127
 		if(player.checkInterface()) return
-		const items = this.interface.interface?.(this.interfaceId)
+		const items = this.interface.interface?.(this.interfaceId&255)
 		if(!items || slot >= items.length) return
 		const t = items[slot], h = player.inv[36]
 		if(!t && !h) return
@@ -271,7 +271,7 @@ function inventoryPacket(player, buf){
 		if(changed & 1)
 			player.itemschanged([36], 0, player.inv)
 		if(changed & 2)
-			this.interface.itemschanged([slot], this.interfaceId, items)
+			this.interface.itemschanged([slot], this.interfaceId, items, this.interfaceId&256?this:null)
 		return
 	}
 	if(slot >= 36) return
@@ -286,7 +286,7 @@ function inventoryPacket(player, buf){
 		changed |= 2
 	}else player.inv[slot] = h, player.inv[36] = t, changed |= 3
 	if(!changed) return
-	player.itemschanged(changed & 1 ? changed & 2 ? [36, slot] : [36] : [slot])
+	player.itemschanged(changed & 1 ? changed & 2 ? [36, slot] : [36] : [slot], 0, player.inv)
 }
 
 function altInventoryPacket(player, buf){
@@ -296,7 +296,7 @@ function altInventoryPacket(player, buf){
 	if(slot > 127){
 		slot &= 127
 		if(player.checkInterface()) return
-		const items = this.interface.interface?.(this.interfaceId)
+		const items = this.interface.interface?.(this.interfaceId&255)
 		if(!items || slot >= items.length) return
 		const t = items[slot], h = player.inv[36]
 		if(t && !h){
@@ -311,7 +311,7 @@ function altInventoryPacket(player, buf){
 		}else items[slot] = h, player.inv[36] = t
 		
 		player.itemschanged([36], 0, player.inv)
-		this.interface.itemschanged(slot, this.interfaceId, items)
+		this.interface.itemschanged(slot, this.interfaceId, items, this.interfaceId&256?this:null)
 		return
 	}
 	if(slot >= 36) return

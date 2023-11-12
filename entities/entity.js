@@ -124,7 +124,7 @@ export class Entity{
 			if(e.item == stack) break
 		}
 	}
-	openInterface(e, id = 0){
+	openInterface(e, id = 0, priv = false){
 		if(!this.sock || this.sock.interface) return false
 		const res = new DataWriter()
 		if(e instanceof Block){
@@ -135,7 +135,7 @@ export class Entity{
 			res.byte(13)
 			res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
 		}else throw '.openInterface(<here>, _): Block or entity expected'
-		res.byte(this.sock.interfaceId = id&255)
+		res.byte(this.sock.interfaceId = id&255|(priv<<8))
 		this.sock.interface = e
 		this.sock.interfaceD = e instanceof Block ? save() : e
 		this.sock.send(res.build())
@@ -161,9 +161,9 @@ export class Entity{
 		}
 		return false
 	}
-	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId)){
+	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId), priv = null){
 		if(!items||(!this.chunk&&!this.sock)) return
-		for(const sock of (this.chunk ? this.chunk.sockets : [this.sock])){
+		for(const sock of priv ? [priv] : this.chunk ? this.chunk.sockets : [this.sock]){
 			if(!sock.ibuf) sock.ibuf = new DataWriter(), sock.ibuf.byte(32)
 			const {ibuf} = sock
 			ibuf.byte(128)
