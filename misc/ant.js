@@ -14,8 +14,8 @@ export function _invalidateCache(cx, cy){if(cachex==cx&&cachey==cy)cachec=undefi
 export const getX = () => cx<<6|(pos&0b000000111111)
 export const getY = () => cy<<6|pos>>6
 
-export const save = () => ({cx,cy,pos,chunk,world})
-export const load = o => void ({cx,cy,pos,chunk,world} = o)
+export const save = data => ({cx,cy,pos,chunk,world,data})
+export const load = o => ({cx,cy,pos,chunk,world} = o, o.data)
 
 export function gotozero(w){
 	cx = cy = pos = 0

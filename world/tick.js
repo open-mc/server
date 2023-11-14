@@ -38,6 +38,7 @@ export function tick(){
 		if(ibuf){
 			pl.sock.send(ibuf.build())
 			pl.sock.ibuf = null
+			pl.sock.ibufLastB = NaN
 		}
 		pl.checkInterface()
 		for(let i = 0; i < packets.length; i++)

@@ -56,6 +56,17 @@ Array.null = len => {
 	return a
 }
 
+Array.range = (...a) => {
+	const res = []
+	let step = 1
+	if(a.length%2) step = a.pop()
+	for(let i = 0; i < a.length; i+=2){
+		const end = a[i+1]
+		for(let j = a[i]; j < end; j+=step) res.push(j)
+	}
+	return res
+}
+
 Date.formatTime = function(t){
 	t /= 1000
 	if(t < 3600){

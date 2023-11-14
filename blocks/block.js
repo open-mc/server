@@ -33,20 +33,24 @@ export class Block{
 			}
 		}
 	}
-	itemschanged(slots, interfaceId = 0, items = this.interface(interfaceId), priv = null){
+	itemChanged(id = 0, slot, item = this.getItem(id, slot)){
 		if(!antChunk) return
-		for(const sock of priv ? [priv] : antChunk.sockets){
-			if(!sock.ibuf) sock.ibuf = new DataWriter(), sock.ibuf.byte(32)
-			const {ibuf} = sock
-			ibuf.byte(129)
-			ibuf.int(getX()); ibuf.int(getY())
-			ibuf.byte(interfaceId)
-			for(const c of slots){
-				ibuf.byte(c)
-				Item.encode(ibuf, items[c])
-			}
+		for(const sock of antChunk.sockets){
+			let {ibuf, ibufLastB, ibufLastA} = sock
+			if(!sock.ibuf) (sock.ibuf = ibuf = new DataWriter()).byte(32)
+			const x = getX(), y = getY() - (id+1)*4294967296
+			if(ibufLastA != x || ibufLastB != y){
+				ibuf.byte(129)
+				ibuf.int(x); ibuf.int(y|0)
+				ibuf.byte(id)
+				sock.ibufLastA = x
+				sock.ibufLastB = y
+			}			
+			ibuf.byte(slot)
+			Item.encode(ibuf, item)
 		}
 	}
+	static isBlock = true
 }
 Object.setPrototypeOf(Block.prototype, null)
 export const Blocks = Object.create(null)

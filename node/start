@@ -2,9 +2,10 @@
 # Script to install modules and continue running server forever
 
 # Move to folder if not already
+OLDPWD=$PWD
 cd "$(dirname $0)"
 
-runtime="node --allow-natives-syntax ."
+runtime="node --allow-natives-syntax"
 update="npm i"
 # command -v deno && runtime="deno run --reload -A index.js"
 # command -v bun && runtime="bun ."
@@ -24,9 +25,9 @@ git pull
 node -e "console.log('Server has been updated to '+require('../package.json').version+'\\n\\n')"
 fi; FLAGS=" -manual"; fi
 A=
-
+cd $OLDPWD
 while true; do
-$runtime $FLAGS "$@" && break
+$runtime "$(dirname $0)/index.js" $FLAGS "$@" && break
 echo "\012\033[31mServer stopped (exit code $?). \033[mRestarting..."
 FLAGS=
 sleep 1

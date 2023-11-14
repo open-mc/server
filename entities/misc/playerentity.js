@@ -13,8 +13,23 @@ for(let i = 0; i < 1008; i+=2)defaultSkin[i]=STEVE.charCodeAt(i>>1),defaultSkin[
 Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(37)
 	items = [null, null, null, null, null]
+	craftingSlots = [null, null, null, null, null]
 	static interfaceList = [0, 1]
-	interface(id){return id == 0 ? this.inv : id == 1 ? this.items : undefined}
+	getItem(id, slot){return id == 0 && slot < 37 ? this.inv[slot] : id == 1 && slot < 5 ? this.items[slot] : undefined}
+	setItem(id, slot, item, force = false){
+		if(id == 0 && slot < 36+force) this.inv[slot] = item
+		else if(id == 1 && slot < 5) this.items[slot] = item
+		else return true
+		this.itemChanged(id, slot, item)
+	}
+	allItems(id, cb){
+		if(id == 0){
+			for(let i = 0; i < 36; i++) if(cb(i, this.inv[i])) return
+		}else if(id == 1){
+			for(let i = 0; i < 5; i++) if(cb(i, this.items[i])) return
+		}
+	}
+	static allInterfaces = [0, 1]
 	selected = 0
 	skin = defaultSkin
 	breakGridEvent = 0

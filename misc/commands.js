@@ -366,19 +366,11 @@ export const commands = {
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			let max = _max
-			const L = e.interfaceList
-			if(L) for(const i of L){
-				const items = e.interface(i)
-				const changed = []
-				for(let i = 0; max && i < items.length; i++){
-					const item = items[i]
-					if(!item || (Con && item.constructor != Con)) continue
-					changed.push(i | 128)
-					if(item.count <= max)max -= item.count, items[i] = null
-					else item.count -= max, max = 0
-				}
-				e.itemschanged(changed, i, items)
-			}
+			for(const id of e.allInterfaces??[]) e.allItems?.(id, (i, item) => {
+				if(!item || (Con && item.constructor != Con)) return
+				if(item.count <= max) e.setItem(id, i, null, true), max -= item.count
+				else item.count -= max, max = 0, e.itemChanged(id, i, item)
+			})
 			cleared += _max - max
 		}
 		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)

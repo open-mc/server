@@ -37,7 +37,6 @@ const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
 const playersConnecting = new Set
 
 export async function open(){
-	this.state = 1
 	if(playersConnecting.has(this.username)){
 		this.send('-119You are still logging in/out from another session')
 		this.close()
@@ -127,15 +126,16 @@ export async function open(){
 	}
 	this.tbuf = new DataWriter()
 	this.ebuf = new DataWriter()
-	this.ibuf = null
+	this.ibuf = null; this.ibufLastA = 0; this.ibufLastB = NaN
 	this.ebuf.byte(20)
 	this.tbuf.byte(8)
 	sendTabMenu(true)
+	this.bigintOffsetX = 0n
+	this.bigintOffsetY = 0n
 }
 
-export async function close(){
-	if(this.state == 2) return playerLeftQueue()
-	this.state = 0
+export async function close(state){
+	if(state == 2) return playerLeftQueue()
 	const {entity} = this
 	if(!entity) return
 	entity.closeInterface()

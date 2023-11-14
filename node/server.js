@@ -133,7 +133,7 @@ server.any('/*', (res, req) => {
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + (CONFIG.components||['/vanilla/index.js']).map(a=>'\0'+a).join(''))))
 const clients = new Set
 const rand = new Uint8Array(32)
-let patchWs = function(sock){patchWs = null; const p = sock.__proto__; p._send = p.send; p.send = function(a){this._send(a,typeof a!='string')}}
+let patchWs = function(sock){patchWs = null; const p = Object.getPrototypeOf(sock); p._send = p.send; p.send = function(a){if(this.state) this._send(a,typeof a!='string')}}
 server.ws('/*', {
 	sendPingsAutomatically: false, maxBackpressure: (CONFIG.socket.backpressure)*1048576,
 	maxPayloadLength: 1048576, closeOnBackpressureLimit: true,
@@ -166,6 +166,7 @@ server.ws('/*', {
 	},
 	open(sock){
 		patchWs?.(sock)
+		sock.state = 1
 		clients.add(sock)
 		const data = sock.getUserData()
 		const buf = new DataWriter()
@@ -208,7 +209,7 @@ server.ws('/*', {
 			codes[code].call(sock, sock.entity, buf)
 		}catch(e){ if(argv.log) throw decoder.decode(sock.getRemoteAddressAsText()) + ' made a malicious packet: ' + (e?.stack??e?.message??e) }
 	},
-	close(sock){ close.call(sock); clients.delete(sock) }
+	close(sock){ const os = sock.state; sock.state = 0; close.call(sock, os); clients.delete(sock) }
 })
 setInterval(() => {
 	for(const u of clients){

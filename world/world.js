@@ -152,7 +152,7 @@ export class World extends Map{
 
 	event(ev, fn){
 		const buf = new DataWriter()
-		buf.flint(15)
+		buf.byte(19)
 		buf.byte(ev)
 		fn(buf)
 		buf.byte(0)

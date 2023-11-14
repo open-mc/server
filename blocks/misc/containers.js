@@ -16,7 +16,16 @@ Blocks.chest = class extends Block{
 		state: Uint8
 	}
 	drops(){ return [new Items.chest(1, this.name), ...this.items] }
-	static interfaceList = [0]
+	getItem(id, slot){ return id == 0 && slot < 27 ? this.items[slot] : null}
+	setItem(id, slot, item){
+		if(id == 0 && slot < 27){
+			this.items[slot] = item
+			super.itemChanged(id, slot, item)
+		}else return true
+	}
+	allItems(id, cb){
+		if(id == 0) for(let i = 0; i < 27; i++) if(cb(i, this.items[i])) break
+	}
 	interact(_, player){
 		player.openInterface(this, 0)
 	}
@@ -32,5 +41,4 @@ Blocks.chest = class extends Block{
 			blockevent(1, buf => buf.byte(this.state))
 		}
 	}
-	interface(id){ return id == 0 ? this.items : undefined }
 }
