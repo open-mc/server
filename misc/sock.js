@@ -117,6 +117,7 @@ export async function open(){
 	this.packets = []
 	this.interface = null; this.interfaceId = 0
 	this.interfaceD = null
+	this.send(configPacket())
 	if(dim) player.place(dim, x, y)
 	players.set(this.username, player)
 	player.rubber()
@@ -160,3 +161,14 @@ export async function close(state){
 	sendTabMenu()
 	playerLeft()
 }
+
+function configPacket(d = new DataWriter()){
+	d.byte(5)
+	d.float(CONFIG.proximitychat)
+	return d.build()
+}
+
+configLoaded(() => {
+	const p = configPacket()
+	for(const s of players.values()) s.sock.send(p)
+})

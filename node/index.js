@@ -4,6 +4,8 @@ import { parse } from 'yaml'
 import lvl, { ClassicLevel } from 'classic-level'
 const Level = lvl.ClassicLevel
 globalThis.CONFIG = null
+globalThis.configLoaded = fn => configLoaded.listeners.push(fn)
+configLoaded.listeners = []
 globalThis.httpHost = ''
 if(!argv.length) argv[0] = PATH + '../properties.yaml'
 Array.prototype.push.call(argv, PATH + 'node/.default_properties.yaml')
@@ -46,6 +48,7 @@ async function loadConfigs(i){
 	if(!C.port | !C.world) throw 'Invalid config file(s)'
 	CONFIG = C
 	if(p && CONFIG.path != p) console.warn('To change world save path, reload the server')
+	for(const f of configLoaded.listeners) try{f(CONFIG)}catch(e){console.error(e)}
 }
 for(let i = 0; i < argv.length; i++){
 	const w2 = fs.watch(argv[i])[Symbol.asyncIterator]()

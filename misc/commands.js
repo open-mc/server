@@ -554,14 +554,30 @@ export const commands = {
 		savePermissions()
 		return log(this, 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString()))
 	},
-	as(t, c, ...a){
+	async as(t, c, ...a){
+		let k = 0
+		const end = []
 		for(const e of selector(t, this))
-			executeCommand(c, a, e, 4)
+			end.push(executeCommand(c, a, e, this.sock?.permissions??4), k++)
+		await Promise.all(end)
+		return 'Executed '+k+' commands successfully'
 	},
-	repeat(k, c, ...a){
+	ping(){ return 'Pong! '+this.sock.pingTime+'ms' },
+	async repeat(k, c='ping', ...a){
 		k = min(k>>>0, 1e6)
-		while(k--)
-			executeCommand(c, a, this, 4)
+		for(let i = 0; i < k; i++)
+			await executeCommand(c, a, this, this.sock?.permissions??4)
+		return 'Executed '+k+' commands successfully'
+	},
+	async try(c='ping', ...a){
+		try{ return await executeCommand(c, a, this, this.sock?.permissions??4) }
+		catch(e){ return 'Command did not succeed: '+e }
+	},
+	delay(k, c='ping', ...a){
+		k = max(-1e6, min(k, 1e6))||5
+		if(k <= 0){
+			setTimeout(() => executeCommand(c, a, this, this.sock?.permissions??4), k*-1000)
+		}else return new Promise(r => setTimeout(r, k*1000)).then(() => executeCommand(c, a, this, this.sock?.permissions??4))
 	},
 	mark(e='@s',xo='0',yo='0'){
 		const [ent, ex] = selector(e, this)
@@ -626,6 +642,7 @@ export const anyone_help = {
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',
 	repeat: '[count] [...command] -- Execute a command multiple times',
+	delay: '[time_seconds] [...command] -- Execute a command after a delay',
 	restart: '(delay=0) -- Restart the server after delay'
 }, cheats = ['give', 'summon', 'setblock', 'fill']
 Object.setPrototypeOf(anyone_help, null)
@@ -635,10 +652,20 @@ Function.optimizeImmediately(parseCoords, snbt, ...Object.values(commands))
 
 export function executeCommand(name, params, player, perms = 0){
 	if(!(name in commands)) throw 'No such command: /'+name
+	const j = params.findIndex(a=>a[0]=='/')
 	if(perms < MOD){
 		if(!anyone_help[name]) throw 'You do not have permission to use /'+name
 	}else if(perms == MOD && !mod_help[name]) throw 'You do not have permission to use /'+name
 	else if(perms == MOD && !CONFIG.permissions.mod_cheat && cheats.includes(name)) throw 'Server owner does not allow moderators to use /'+name
 	stat('misc', 'commands_used')
-	return commands[name].apply(player, params)
+	if(j > -1 && perms > NORMAL){
+		const res = commands[name].apply(player, params.slice(0, j))
+		if(res instanceof Promise) return res.then(res => {
+			const res2 = executeCommand(params[j].slice(1), params.slice(j+1), player, perms)
+			if(res2 instanceof Promise) return res2.then(res2 => res?(res2?res+'\n'+res2:res):res2)
+			return res?(res2?res+'\n'+res2:res):res2
+		})
+		const res2 = executeCommand(params[j].slice(1), params.slice(j+1), player, perms)
+		return res?(res2?res+'\n'+res2:res):res2
+	}else return commands[name].apply(player, params)
 }

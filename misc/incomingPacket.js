@@ -335,6 +335,31 @@ function closeInterfacePacket(player, _){
 	}
 }
 
+export function voiceChat(player, buf){
+	if(buf.left < 2) return
+	const r = CONFIG.proximitychat
+	const packet = new DataView(new ArrayBuffer(buf.left + 7))
+	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
+	packet.setUint8(0, 96); packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
+	if(!r || (player.state&0x8000)) return
+	const cx0 = ifloor(player.x-r)>>>6, cx1 = ifloor(player.x+r)+64>>>6
+	const cy0 = ifloor(player.y-r)>>>6, cy1 = ifloor(player.y+r)+64>>>6
+	const t = new Set
+	for(let x = cx0; x != cx1; x=x+1&0x3ffffff){
+		for(let y = cy0; y != cy1; y=y+1&0x3ffffff){
+			const ch = player.world.get(x+y*0x4000000)
+			if(!ch) continue
+			for(const s of ch.sockets){
+				if(!s.entity || s.entity === player) continue
+				const dx = s.entity.x - player.x, dy = s.entity.y - player.y
+				if(dx*dx+dy*dy > r*r) continue
+				t.add(s)
+			}
+		}
+	}
+	for(const s of t) s.send(packet.buffer)
+}
+
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	5: respawnPacket,
@@ -342,7 +367,8 @@ export const codes = Object.assign(new Array(256), {
 	15: closeInterfacePacket,
 	32: inventoryPacket,
 	33: altInventoryPacket,
-	34: dropItemPacket
+	34: dropItemPacket,
+	96: voiceChat,
 })
 export function onstring(player, text){
 	if(!(text = text.trimEnd())) return
