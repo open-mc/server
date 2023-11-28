@@ -181,14 +181,14 @@ function playerMovePacket(player, buf){
 			b: if(item && item.interact){
 				const i2 = item.interact(b, player)
 				if(i2 === true) break b
-				else if(i2 === undefined) item.count!==0 || player.setItem(0, sel, null, true)
+				else if(i2 === undefined) item.count!==0 ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
 				else player.setItem(0, sel, i2, true)
 				return
 			}
 			b: if(!(player.state&2) && b.interact){
 				const i2 = b.interact(item, player)
 				if(i2 === true) break b
-				else if(i2 === undefined) item?.count!==0 || player.setItem(0, sel, null, true)
+				else if(i2 === undefined) item?.count!==0 ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
 				else player.setItem(0, sel, i2, true)
 				return
 			}
@@ -210,7 +210,7 @@ function playerMovePacket(player, buf){
 		}
 		if(item.place){
 			const i2 = item.place(px, py, player)
-			if(i2 === undefined) item.count || player.setItem(0, sel, null, true)
+			if(i2 === undefined) item.count ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
 			else player.setItem(0, sel, i2, true)
 			stat('player', 'blocks_placed')
 		}else if(!item.count) player.setItem(0, sel, null, true)
