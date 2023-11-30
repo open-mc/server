@@ -13,18 +13,23 @@ BlockShape.HORIZONTAL_THIN = [0, 0.25, 1, 0.75]
 BlockShape.ONE_SHORT = [0, 0, 1, 15/16]
 BlockShape.TWO_SHORT = [0, 0, 1, 14/16]
 
-export const slabifyItem = (I, B) => class extends I{
-	place(_, fy){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1) }
+export const slabifyItem = (I, B) => {
+	const o = class extends I{
+		place(_, fy){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1) }
+	}
+	B.slabShape?.itemForm = o
+	B.upperSlabShape?.itemForm = o
+	return o
 }
 const shapeKeys = new Map()
 	.set(BlockShape.SLAB, 'slabShape')
 	.set(BlockShape.UPPER_SLAB, 'upperSlabShape')
 
-export const blockShaped = (C, s, d) => { 
+export const blockShaped = (C, s) => { 
 	const o = class extends C{
 		static blockShape = s
-		static itemVariant = null
-		drops(){return new d(1)}
+		static itemForm = null
+		drops(){return new o.itemForm(1)}
 	}
 	const k = shapeKeys.get(s); if(k) C[k] = o
 	return o
