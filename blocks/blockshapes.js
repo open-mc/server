@@ -17,8 +17,8 @@ export const slabifyItem = (I, B) => {
 	const o = class extends I{
 		place(_, fy){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1) }
 	}
-	B.slabShape?.itemForm = o
-	B.upperSlabShape?.itemForm = o
+	if(B.slabShape) B.slabShape.itemForm = o
+	if(B.upperSlabShape) B.upperSlabShape.itemForm = o
 	return o
 }
 const shapeKeys = new Map()
