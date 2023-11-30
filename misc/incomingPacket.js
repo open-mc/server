@@ -5,7 +5,7 @@ import { DataWriter } from '../modules/dataproto.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, save, load } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
-import { Dimensions, GAMERULES, stat, statRecord } from '../world/index.js'
+import { Dimensions, GAMERULES, players, stat, statRecord } from '../world/index.js'
 
 const REACH = 10
 
@@ -337,25 +337,35 @@ function closeInterfacePacket(player, _){
 
 export function voiceChat(player, buf){
 	if(buf.left < 2) return
-	const r = CONFIG.proximitychat
+	const r = CONFIG.proximitychat || 0
+	if(!r || (player.state&0x8000)) return
 	const packet = new DataView(new ArrayBuffer(buf.left + 7))
 	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
-	packet.setUint8(0, 96); packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
-	if(!r || (player.state&0x8000)) return
-	const cx0 = ifloor(player.x-r)>>>6, cx1 = ifloor(player.x+r)+64>>>6
-	const cy0 = ifloor(player.y-r)>>>6, cy1 = ifloor(player.y+r)+64>>>6
+	packet.setUint8(0, 96)
 	const t = new Set
-	for(let x = cx0; x != cx1; x=x+1&0x3ffffff){
-		for(let y = cy0; y != cy1; y=y+1&0x3ffffff){
-			const ch = player.world.get(x+y*0x4000000)
-			if(!ch) continue
-			for(const s of ch.sockets){
-				if(!s.entity || s.entity === player) continue
-				const dx = s.entity.x - player.x, dy = s.entity.y - player.y
-				if(dx*dx+dy*dy > r*r) continue
-				t.add(s)
+	if(typeof r == 'number'){
+		packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
+		const cx0 = ifloor(player.x-r)>>>6, cx1 = ifloor(player.x+r)+64>>>6
+		const cy0 = ifloor(player.y-r)>>>6, cy1 = ifloor(player.y+r)+64>>>6
+		for(let x = cx0; x != cx1; x=x+1&0x3ffffff){
+			for(let y = cy0; y != cy1; y=y+1&0x3ffffff){
+				const ch = player.world.get(x+y*0x4000000)
+				if(!ch) continue
+				for(const s of ch.sockets){
+					if(!s.entity || s.entity === player) continue
+					const dx = s.entity.x - player.x, dy = s.entity.y - player.y
+					if(dx*dx+dy*dy > r*r) continue
+					t.add(s)
+				}
 			}
 		}
+	}else if(r == 'world'){
+		for(const p of players.values())
+			if(p.world == player.world && p != player)
+				t.add(p.sock)
+	}else if(r == 'server'){
+		for(const p of players.values())
+			if(p != player) t.add(p.sock)
 	}
 	for(const s of t) s.send(packet.buffer)
 }

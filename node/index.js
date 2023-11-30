@@ -8,7 +8,7 @@ globalThis.configLoaded = fn => configLoaded.listeners.push(fn)
 configLoaded.listeners = []
 globalThis.httpHost = ''
 if(!argv.length) argv[0] = PATH + '../properties.yaml'
-Array.prototype.push.call(argv, PATH + 'node/.default_properties.yaml')
+Array.prototype.push.call(argv, PATH + 'node/default_properties.yaml')
 function argvConfig(){
 	const o = {}
 	for(let i in argv){
@@ -36,7 +36,7 @@ async function loadConfigs(i){
 	for(let i = 0; i < argv.length; i++){
 		const p = argv[i]// = resolve(PATH, argv[i])
 		const f = p.slice(0, p.lastIndexOf('/')+1)
-		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/.default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => {
+		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => {
 			const v = parse(a.toString())
 			if('path' in v) v.path = resolve(f, v.path)
 			if('key' in v) v.key = resolve(f, v.key)

@@ -164,7 +164,7 @@ export async function close(state){
 
 function configPacket(d = new DataWriter()){
 	d.byte(5)
-	d.float(CONFIG.proximitychat)
+	d.float(typeof CONFIG.proximitychat != 'number' ? Infinity : CONFIG.proximitychat)
 	return d.build()
 }
 

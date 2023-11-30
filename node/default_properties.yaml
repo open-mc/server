@@ -81,7 +81,11 @@ cert: ""
 
 # Voice chat to players up to this many blocks away in-game
 # 0 to disable
-# Chat using the Enter ↵ key
+# Chat using the Enter ↵ key (Toggle using P)
+# Do not set to a large value
+# Instead if you want dimension-wide chat use "world"
+# Or if you want server-wide use "server"
+# Nonsensical values like 9999 will degrade server performance
 proximitychat: 32
 # Show everyone's health on the TAB menu and server page
 showhealth: true
