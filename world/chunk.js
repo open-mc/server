@@ -76,7 +76,7 @@ export class Chunk extends Uint16Array{
 				this[j  ] = palette[byte&15]
 				this[j+1] = palette[(byte>>4)]
 			}
-		}else for(;j<4096;j++){
+		}else{
 			const u8 = buf.uint8array(4096)
 			for(;j<4096;j++) this[j] = palette[u8[j]]
 		}
@@ -172,8 +172,8 @@ export class Chunk extends Uint16Array{
 				for(let i = 0; i < 4096; i+=2)
 					u8[i>>1] = PM[IDs[i]] | (PM[IDs[i+1]] << 4)
 				buf.uint8array(u8, 2048)
-			}else for(let i = 0; i < 4096; i++){
-				const u8 = new Uint8Array(2048)
+			}else{
+				const u8 = new Uint8Array(4096)
 				for(let i = 0; i < 4096; i++) u8[i] = PM[IDs[i]]
 				buf.uint8array(u8, 4096)
 			}

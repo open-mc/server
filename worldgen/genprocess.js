@@ -123,6 +123,7 @@ function buildBuffer(){
 				buf[i] = PM[IDs[i]]
 			}
 		}else for(let i = 0; i < 4096; i++){
+			buffers.push(buf = new Uint8Array(8192))
 			buf[i<<1] = IDs[i]>>8
 			buf[i<<1|1] = IDs[i]
 		}
