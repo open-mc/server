@@ -48,8 +48,9 @@ export class Chunk extends Uint16Array{
 		let j = 0
 		if(palettelen == 1) for(;j<4096;j++)this[j] = palette[0]
 		else if(palettelen == 2){
+			const u8 = buf.uint8array(512)
 			for(;j<4096;j+=8){
-				const byte = buf.byte()
+				const byte = u8[j>>3]
 				this[j  ] = palette[byte&1]
 				this[j+1] = palette[(byte>>1)&1]
 				this[j+2] = palette[(byte>>2)&1]
@@ -60,20 +61,25 @@ export class Chunk extends Uint16Array{
 				this[j+7] = palette[byte>>7]
 			}
 		}else if(palettelen <= 4){
+			const u8 = buf.uint8array(1024)
 			for(;j<4096;j+=4){
-				const byte = buf.byte()
+				const byte = u8[j>>2]
 				this[j  ] = palette[byte&3]
 				this[j+1] = palette[(byte>>2)&3]
 				this[j+2] = palette[(byte>>4)&3]
 				this[j+3] = palette[byte>>6]
 			}
 		}else if(palettelen <= 16){
+			const u8 = buf.uint8array(2048)
 			for(;j<4096;j+=2){
-				const byte = buf.byte()
+				const byte = u8[j>>1]
 				this[j  ] = palette[byte&15]
 				this[j+1] = palette[(byte>>4)]
 			}
-		}else for(;j<4096;j++) this[j] = palette[buf.byte()]
+		}else for(;j<4096;j++){
+			const u8 = buf.uint8array(4096)
+			for(;j<4096;j++) this[j] = palette[u8[j]]
+		}
 		//parse block entities
 		for(j=0;j<4096;j++){
 			if(this[j] == 65535) this[j] = buf.short()
@@ -142,25 +148,35 @@ export class Chunk extends Uint16Array{
 			//encode blocks
 			if(palette.length == 1);
 			else if(palette.length == 2){
+				const u8 = new Uint8Array(512)
 				for(let i = 0; i < 4096; i+=8)
-					buf.byte((PM[IDs[i]] << 0)
+					u8[i>>3] = (PM[IDs[i]] << 0)
 					| (PM[IDs[i+1]] << 1)
 					| (PM[IDs[i+2]] << 2)
 					| (PM[IDs[i+3]] << 3)
 					| (PM[IDs[i+4]] << 4)
 					| (PM[IDs[i+5]] << 5)
 					| (PM[IDs[i+6]] << 6)
-					| (PM[IDs[i+7]] << 7))
+					| (PM[IDs[i+7]] << 7)
+				buf.uint8array(u8, 512)
 			}else if(palette.length <= 4){
+				const u8 = new Uint8Array(1024)
 				for(let i = 0; i < 4096; i+=4)
-					buf.byte(PM[IDs[i]]
+					u8[i>>2] = PM[IDs[i]]
 					| (PM[IDs[i+1]] << 2)
 					| (PM[IDs[i+2]] << 4)
-					| (PM[IDs[i+3]] << 6))
+					| (PM[IDs[i+3]] << 6)
+				buf.uint8array(u8, 1024)
 			}else if(palette.length <= 16){
+				const u8 = new Uint8Array(2048)
 				for(let i = 0; i < 4096; i+=2)
-					buf.byte(PM[IDs[i]] | (PM[IDs[i+1]] << 4))
-			}else for(let i = 0; i < 4096; i++) buf.byte(PM[IDs[i]])
+					u8[i>>1] = PM[IDs[i]] | (PM[IDs[i+1]] << 4)
+				buf.uint8array(u8, 2048)
+			}else for(let i = 0; i < 4096; i++){
+				const u8 = new Uint8Array(2048)
+				for(let i = 0; i < 4096; i++) u8[i] = PM[IDs[i]]
+				buf.uint8array(u8, 4096)
+			}
 
 			//save block entities
 			for(let i = 0; i < 4096; i++){
