@@ -62,77 +62,84 @@ const GENERATORS = await import('./dimensions/index.js')
 empty.fill(Blocks.air)
 air()
 parentPort?.postMessage({key:-1})
-const PM = new Uint16Array(blockCount).fill(65535)
+const PM = new Uint16Array(blockCount).fill(0x0100)
+const IDs = new Uint16Array(4096)
 function buildBuffer(){
-	const palette = []
+	const palette = [], paletteFull = []
 	for(let i = 0; i < 4096; i++){
-		const id = chunk[i].id
-		if(PM[id] === 65535){
-			PM[id] = palette.length
-			palette.push(id)
-		}
-		if(palette.length == 256){
-			for(let i of palette) PM[i] = 65535
-			palette.length = 0
-			break
-		}
+		const id = IDs[i] = chunk[i].id, a = PM[id]
+		if(a < 0x0100) continue
+		if(a > 0x0100){
+			if(a < 0x010A){ PM[id] = a+1; continue }
+			PM[id] = palette.push(id)-1
+			if(palette.length+(palette.length!=paletteFull.length) == 256){ palette.length = 0; break }
+		}else if(palette.length != 255) PM[id] = 0x0101, paletteFull.push(id)
+		else{ palette.length = 0; break }
 	}
-	let buf = new Uint8Array(16 + palette.length * 2)
-	let buffers = [buf]
-	buf[3] = palette.length-1
-	buf[4] = buf[5] = 255
-	buf.set(chunkBiomes, 6)
-	if(palette.length)
-		for(let i = 0; i < palette.length; i++) buf[16 + (i << 1)] = palette[i] >> 8, buf[17 + (i << 1)] = palette[i] 
-	//encode data
-	if(palette.length < 2);
-	else if(palette.length == 2){
-		buffers.push(buf = new Uint8Array(512))
-		for(let i = 0; i < 4096; i+=8){
-			buf[i>>3] = ((chunk[i].id == palette[1]) << 0)
-			| ((chunk[i + 1].id == palette[1]) << 1)
-			| ((chunk[i + 2].id == palette[1]) << 2)
-			| ((chunk[i + 3].id == palette[1]) << 3)
-			| ((chunk[i + 4].id == palette[1]) << 4)
-			| ((chunk[i + 5].id == palette[1]) << 5)
-			| ((chunk[i + 6].id == palette[1]) << 6)
-			| ((chunk[i + 7].id == palette[1]) << 7)
+	const buffers = []
+	try{
+		let encode65535 = false
+		for(const p of paletteFull)
+			if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
+		if(encode65535) palette.push(65535)
+		let buf = new Uint8Array(16 + palette.length * 2)
+		buffers.push(buf)
+		buf[3] = palette.length - 1
+		buf[4] = buf[5] = 255
+		buf.set(chunkBiomes, 6)
+		//encode palette
+		for(let i = 0; i < palette.length; i++) buf[16 + (i << 1)] = palette[i] >> 8, buf[17 + (i << 1)] = palette[i]
+		//encode data
+		if(palette.length < 2);
+		else if(palette.length == 2){
+			buffers.push(buf = new Uint8Array(512))
+			for(let i = 0; i < 4096; i+=8){
+				buf[i>>3] = ((chunk[i].id == palette[1]) << 0)
+				| ((IDs[i+1] == palette[1]) << 1)
+				| ((IDs[i+2] == palette[1]) << 2)
+				| ((IDs[i+3] == palette[1]) << 3)
+				| ((IDs[i+4] == palette[1]) << 4)
+				| ((IDs[i+5] == palette[1]) << 5)
+				| ((IDs[i+6] == palette[1]) << 6)
+				| ((IDs[i+7] == palette[1]) << 7)
+			}
+		}else if(palette.length <= 4){
+			buffers.push(buf = new Uint8Array(1024))
+			for(let i = 0; i < 4096; i+=4){
+				buf[i>>2] = PM[IDs[i]]
+				| (PM[IDs[i + 1]] << 2)
+				| (PM[IDs[i + 2]] << 4)
+				| (PM[IDs[i + 3]] << 6)
+			}
+		}else if(palette.length <= 16){
+			buffers.push(buf = new Uint8Array(2048))
+			for(let i = 0; i < 4096; i+=2){
+				buf[i>>1] = PM[IDs[i]]
+				| (PM[IDs[i + 1]] << 4)
+			}
+		}else if(palette.length < 256){
+			buffers.push(buf = new Uint8Array(4096))
+			for(let i = 0; i < 4096; i++){
+				buf[i] = PM[IDs[i]]
+			}
+		}else for(let i = 0; i < 4096; i++){
+			buf[i<<1] = IDs[i]>>8
+			buf[i<<1|1] = IDs[i]
 		}
-	}else if(palette.length <= 4){
-		buffers.push(buf = new Uint8Array(1024))
-		for(let i = 0; i < 4096; i+=4){
-			buf[i>>2] = PM[chunk[i].id]
-			| (PM[chunk[i + 1].id] << 2)
-			| (PM[chunk[i + 2].id] << 4)
-			| (PM[chunk[i + 3].id] << 6)
-		}
-	}else if(palette.length <= 16){
-		buffers.push(buf = new Uint8Array(2048))
-		for(let i = 0; i < 4096; i+=2){
-			buf[i>>1] = PM[chunk[i].id]
-			| (PM[chunk[i + 1].id] << 4)
-		}
-	}else if(palette.length < 256){
-		buffers.push(buf = new Uint8Array(4096))
+		const bdata = new DataWriter()
+		//save block entities
 		for(let i = 0; i < 4096; i++){
-			buf[i] = PM[chunk[i].id]
+			if(PM[IDs[i]] === palette.length-1) bdata.short(IDs[i])
+			const b = chunk[i]
+			if(!b.savedata)continue
+			bdata.flint(b.savedatahistory.length)
+			bdata.write(b.savedata, b)
 		}
-	}else for(let i = 0; i < 4096; i++){
-		buf[i<<1] = chunk[i].id>>8
-		buf[i<<1|1] = chunk[i].id
+		buffers.push(bdata.build())
+	}finally{
+		for(const p of paletteFull) PM[p] = 0x0100
 	}
-	const bdata = new DataWriter()
-	//save block entities
-	for(let i = 0; i < 4096; i++){
-		let b = chunk[i]
-		if(!b.savedata)continue
-		bdata.flint(b.savedatahistory.length)
-		bdata.write(b.savedata, b)
-	}
-	buffers.push(bdata.build())
-	for(let i of palette) PM[i] = 65535
-
-	let final = new Uint8Array(buffers.reduce((a, b) => a + b.byteLength, 0)), i = 0
+	const final = new Uint8Array(buffers.reduce((a, b) => a + b.byteLength, 0)); let i = 0
 	for(const b of buffers){
 		final.set(b, i)
 		i += b.byteLength

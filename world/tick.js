@@ -64,8 +64,7 @@ export function setTPS(a){
 }
 globalThis.exiting = false
 let lastTick = performance.now()
-setTimeout(function s(){
-	setImmediate(s)
+setInterval(function s(){
 	const mspt = 1000 / currentTPS
 	const now = performance.now()
 	if(exiting || lastTick + mspt >= now) return

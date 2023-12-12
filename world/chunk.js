@@ -3,8 +3,6 @@ import { GAMERULES, players } from './index.js'
 import { Entities, EntityIDs } from '../entities/entity.js'
 import { _newChunk, antWorld, down, gotopos, peek, peekpos, summon, up } from '../misc/ant.js'
 
-const IDs = new Uint8Array(4096)
-
 export class Chunk extends Uint16Array{
 	static PM
 	constructor(x, y, world){
@@ -23,7 +21,7 @@ export class Chunk extends Uint16Array{
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
 		let updates = buf.short()
 		while(updates--) this.blockupdates.set(buf.short(), 0)
-		let palettelen = buf.byte() + 1 & 0xFF
+		let palettelen = buf.byte() + 1
 		let id
 		while((id = buf.short()) != 65535){
 			const e = new EntityIDs[id]()
@@ -46,12 +44,9 @@ export class Chunk extends Uint16Array{
 		this.biomes[6] = buf.byte(); this.biomes[7] = buf.byte()
 		this.biomes[8] = buf.byte(); this.biomes[9] = buf.byte()
 		let palette = []
-		if(palettelen) for(let i=0;i<palettelen;i++) palette.push(buf.short())
+		for(let i=0;i<palettelen;i++) palette.push(buf.short())
 		let j = 0
-		if(palettelen == 0){
-			const arr = buf.uint8array(8192)
-			this.set(new Uint16Array(arr.buffer, arr.byteOffset, arr.byteLength))
-		}else if(palettelen == 1) for(;j<4096;j++)this[j] = palette[0]
+		if(palettelen == 1) for(;j<4096;j++)this[j] = palette[0]
 		else if(palettelen == 2){
 			for(;j<4096;j+=8){
 				const byte = buf.byte()
@@ -92,10 +87,11 @@ export class Chunk extends Uint16Array{
 	toBuf(buf, packet = false){
 		let palette = [], paletteFull = []
 		const PM = Chunk.PM
+		const IDs = this.slice(0)
 		for(let i = 0; i < 4096; i++){
 			let id = this[i]
-			if(id == 65535) id = this.tileData.get(i).id
-			const a = PM[IDs[i] = id]
+			if(id === 65535) IDs[i] = id = this.tileData.get(i).id
+			const a = PM[id]
 			if(a < 0x0100) continue
 			if(a > 0x0100){
 				if(a < 0x010A){ PM[id] = a+1; continue }
@@ -104,6 +100,10 @@ export class Chunk extends Uint16Array{
 			}else if(palette.length != 255) PM[id] = 0x0101, paletteFull.push(id)
 			else{ palette.length = 0; break }
 		}
+		let encode65535 = false
+		for(const p of paletteFull)
+			if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
+		if(encode65535) palette.push(65535)
 		try{
 			if(packet){
 				buf.byte(16)
@@ -116,7 +116,7 @@ export class Chunk extends Uint16Array{
 				buf.short(this.blockupdates.size)
 				for(const t of this.blockupdates.keys()) buf.short(t)
 			}
-			buf.byte(palette.length ? palette.length - (palette.length == paletteFull.length) : 255)
+			buf.byte(palette.length - 1)
 
 			for(const e of this.entities){
 				if(e.sock && !packet)continue
@@ -137,17 +137,10 @@ export class Chunk extends Uint16Array{
 			for(const b of this.biomes) buf.byte(b)
 
 			//encode palette
-			if(palette.length){
-				let encode65535 = false
-				for(const p of paletteFull)
-					if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
-				if(encode65535) palette.push(65535)
-				for(const p of palette) buf.short(p)
-			}
+			for(const p of palette) buf.short(p)
 
 			//encode blocks
-			if(palette.length == 0) buf.uint8array(new Uint8Array(this.buffer, this.byteOffset, this.byteLength), 8192)
-			else if(palette.length == 1);
+			if(palette.length == 1);
 			else if(palette.length == 2){
 				for(let i = 0; i < 4096; i+=8)
 					buf.byte((PM[IDs[i]] << 0)
@@ -171,7 +164,7 @@ export class Chunk extends Uint16Array{
 
 			//save block entities
 			for(let i = 0; i < 4096; i++){
-				if(PM[IDs[i]] == palette.length-1) buf.short(IDs[i])
+				if(PM[IDs[i]] === palette.length-1) buf.short(IDs[i])
 				if(this[i] != 65535)continue
 				const tile = this.tileData.get(i)
 				buf.flint(tile.savedatahistory.length)
