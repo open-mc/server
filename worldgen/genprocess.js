@@ -15,7 +15,7 @@ parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'})
 	if(!D) D = GENERATORS[d] = Object.create(null), console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mNo such dimension: "'+d+'"!')
 	let gen = D[name]
 	if(!gen){
-		D[name] = air,
+		D[name] = air
 		air()
 		parentPort.postMessage({key, buf: buildBuffer()})
 		console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mDimension "'+d+'" doesn\'t have a generator named "'+name+'"!')

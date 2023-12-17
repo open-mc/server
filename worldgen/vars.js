@@ -12,4 +12,4 @@ export let seed = 0
 
 export function setSeed(a){ seed = a ^ 0xC0FFEBAD }
 
-export const empty = new Array(4096)
+export const empty = Array.from({length:4096},()=>null)
