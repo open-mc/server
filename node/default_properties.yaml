@@ -96,7 +96,7 @@ webhook_profiles: true
 # Home page will count how often this word is said in chat
 magic_word: hi
 
-icon: /img/beacon.png
+icon: https://openmc.pages.dev/img/beacon.png
 motd:
   - One of the servers of all time
   - Potassium-free!
