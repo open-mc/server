@@ -218,7 +218,7 @@ export class Chunk extends Uint16Array{
 		}
 		aliveQuarters = ~((aliveQuarters&8)<<12|(aliveQuarters&4)<<10|(aliveQuarters&2)<<2|(aliveQuarters&1)
 			| (this.loadedAround<<31>>31&0x6000) | (this.loadedAround<<29>>31&0x0880) | (this.loadedAround<<27>>31&0x0006) | (this.loadedAround<<25>>31&0x0110) | 0x0660)
-		for(const [p, v] of s){
+		for(const {0:p,1:v} of s){
 			if(aliveQuarters>>(p>>4&3|p>>8&12)&1){ this.blockupdates.set(p, v); continue }
 			const b = peekpos(this,p)
 			if(b.update){
@@ -230,7 +230,7 @@ export class Chunk extends Uint16Array{
 
 		if(this.loadedAround != 511) return
 
-		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunkloadingrange-1)*sqrt(this.sockets.length/players.size)){
+		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunk_loading_range-1)*sqrt(this.sockets.length/players.size)){
 			const p = floor(random() * 64) | 4032
 			gotopos(this, p)
 			let highest = 64

@@ -42,8 +42,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
 	}
-	update(){
-		super.update()
+	updateControls(){
 		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
 			goto(this.world, this.bx, this.by)
 			const tile = peek()
@@ -70,6 +69,10 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			cancelgridevent(this.breakGridEvent)
 			this.breakGridEvent = 0
 		}
+	}
+	update(){
+		super.update()
+		this.updateControls()
 	}
 	static savedata = {
 		health: Byte,

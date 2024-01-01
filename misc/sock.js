@@ -6,7 +6,7 @@ import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import { itemindex } from '../items/index.js'
 import { blockindex } from '../blocks/index.js'
 import { index } from './miscdefs.js'*/
-import { Entities, EntityIDs } from '../entities/entity.js'
+import { Entities, EntityIDs, newId } from '../entities/entity.js'
 import { Items } from '../items/item.js'
 import { actualTPS, currentTPS } from '../world/tick.js'
 
@@ -33,38 +33,37 @@ function sendTabMenu(encodePlayers = false){
 
 setInterval(sendTabMenu, 2000)
 
-const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
-const playersConnecting = new Set
+export const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
+export const playersConnecting = new Set
 
 export async function open(){
 	if(playersConnecting.has(this.username)){
 		this.send('-119You are still logging in/out from another session')
-		this.close()
+		this.end()
 		throw 'Connect / disconnect shamble'
 	}
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
 		this.state = 2
-		if(await queue(this)) return this.state && this.close()
+		if(await queue(this)) return this.state && this.end()
 		if(!this.state) return
 		this.state = 1
 	}
-	playersConnecting.add(this.username)
 	let permissions = PERMISSIONS[this.username] ?? CONFIG.permissions.default
 	if(permissions*1000 > Date.now()){
-		this.send(permissions == 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
+		this.send(permissions >= 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
 			+ Date.formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
-		this.close()
+		this.end()
 		return
 	}else if(permissions == 0){
 		this.send('-11fYou are not invited to play on this server')
-		this.close()
+		this.end()
 		return
-	}else if(permissions > 9){ permissions = 2 }
-	let player, dim, x, y
-	let other = players.get(this.username)
+	}else if(permissions > 9){ permissions = CONFIG.permissions.default }
+	playersConnecting.add(this.username)
+	let player, other = players.get(this.username)
+	let link = true
 	if(other){
 		other.sock.send('-119You are logged in from another session')
-		dim = other.world; x = other.x; y = other.y
 		other.remove()
 		other.sock.entity = null
 		other.sock.end()
@@ -77,17 +76,19 @@ export async function open(){
 		playersConnecting.delete(this.username)
 		if(!this.state) return
 		other = null
-		player = new EntityIDs[buf.short()]()
-		x = buf.double(); y = buf.double()
-		dim = Dimensions[buf.string()]
+		let id = buf.short()
+		if(id===65535) id = buf.short(), link = false
+		player = new EntityIDs[id]()
+		player.x = buf.double(); player.y = buf.double()
+		player.world = Dimensions[buf.string()]
 		player._state = player.state = buf.short()
 		player._dx = player.dx = buf.float(); player.dy = player.dy = buf.float()
 		player.f = player.f = buf.float(); player.age = buf.double()
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 	}catch(e){
 		player = new Entities.player()
-		x = GAMERULES.spawnx; y = GAMERULES.spawny
-		dim = Dimensions[GAMERULES.spawnworld]
+		player.x = GAMERULES.spawnx; player.y = GAMERULES.spawny
+		player.world = Dimensions[GAMERULES.spawnworld]
 		player.inv[0] = new Items.stone(20)
 		player.inv[1] = new Items.oak_log(20)
 		player.inv[2] = new Items.oak_planks(20)
@@ -101,6 +102,7 @@ export async function open(){
 		player.inv[10] = new Items.sandstone(10)
 		stat('misc', 'unique_players')
 		playersConnecting.delete(this.username)
+		link = !CONFIG.permissions.join_as_spectator
 	}
 	const now = Date.now()
 	if(Object.hasOwn(player, 'skin')) player.skin = this.skin
@@ -114,13 +116,14 @@ export async function open(){
 	this.rx = CONFIG.socket.movementcheckmercy
 	this.ry = CONFIG.socket.movementcheckmercy
 	this.entity = player
+	this.netId = player.netId
 	this.packets = []
 	this.interface = null; this.interfaceId = 0
 	this.interfaceD = null
 	this.send(configPacket())
-	if(dim) player.place(dim, x, y)
+	if(link) player.link()
+	else this.netId = newId(), player.rubber(127)
 	players.set(this.username, player)
-	player.rubber()
 	if(!other){
 		stat('misc', 'sessions')
 		chat(this.username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
@@ -144,6 +147,7 @@ export async function close(state){
 	players.delete(this.username)
 	playersConnecting.add(this.username)
 	const buf = new DataWriter()
+	if(!entity.linked) buf.short(65535)
 	buf.short(entity.id)
 	buf.double(entity.x)
 	buf.double(entity.y)

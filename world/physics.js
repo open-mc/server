@@ -3,6 +3,7 @@ import { goto, jump, load, peekat, save } from '../misc/ant.js'
 import { currentTPS } from './tick.js'
 
 export function stepEntity(e, dt = 1 / currentTPS){
+	if(!e.world) return
 	if(e.state & 1)e.dy = 0
 	else{
 		e.dy += dt * e.world.gy * e.gy
@@ -52,7 +53,7 @@ function solidCheck(x0, y0, x1, y1){
 export const COSMIC_SPEED_LIMIT = 32
 export function fastCollision(e, dt = 1 / currentTPS){
 	const dx = max(-COSMIC_SPEED_LIMIT, min(e.dx * dt, COSMIC_SPEED_LIMIT)), dy = max(-COSMIC_SPEED_LIMIT, min(e.dy * dt, COSMIC_SPEED_LIMIT))
-	e.state &= 0xFFFF
+	e.state &= 0xffff
 	const CLIMB = e.impactDy < 0 ? e.stepHeight ?? 0.01 : 0.01
 	e.impactDx = e.impactDy = e.impactSoftness = 0
 	let x0 = floor(e.x - e.width + EPSILON)

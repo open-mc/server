@@ -232,7 +232,7 @@ export function select(x0, y0, x1, y1, cb){
 			const ch = (cxa === cx & cya === cy) && chunk || world.get(cxa+cya*0x4000000)
 			if(!ch || !ch.entities) continue
 			for(const e of ch.entities){
-				if((e.state&0x8000 | !e.world) || (e.x < x0 | e.x > x1) || (e.y < y0 | e.y > y1)) continue
+				if(e.netId<0 || (e.x < x0 | e.x > x1) || (e.y < y0 | e.y > y1)) continue
 				cb(e)
 			}
 		}

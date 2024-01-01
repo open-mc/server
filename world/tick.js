@@ -3,10 +3,11 @@ import { DataWriter } from '../modules/dataproto.js'
 import { Chunk } from './chunk.js'
 import { Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
-import { mirrorEntity } from './encodemove.js'
+import { encodeDelete, mirrorEntity, mirrorEntitySelf } from './encodemove.js'
 
 export let currentTPS = 0
 export const entityMap = new Map()
+export const toUnlink = new Map()
 export let actualTPS = currentTPS
 export function tick(){
 	for(const n in Dimensions){
@@ -23,8 +24,12 @@ export function tick(){
 			fastCollision(e)
 		if(!e.sock && e.shouldSimulate())
 			stepEntity(e)
+		if(e.netId < 0) continue
 		mirrorEntity(e)
 	}
+	for(const p of players.values()) if(p.netId<0) mirrorEntitySelf(p)
+	for(const {0:e,1:id} of toUnlink) encodeDelete(e, id)
+	toUnlink.clear()
 	for(const pl of players.values()){
 		const {packets, ebuf, tbuf, ibuf} = pl.sock
 		if(tbuf.length || tbuf.i > 1){

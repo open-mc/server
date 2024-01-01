@@ -17,7 +17,7 @@ export class World extends Map{
 		this.gy = -32
 		this.tick = 0
 		this.level = dimLevel.sublevel(id, {valueEncoding: 'binary'})
-		const [a, b] = (CONFIG.generators[this.id]??'default').split('/', 2)
+		const {0:a,1:b} = (CONFIG.generators[this.id]??'default').split('/', 2)
 		if(!b) this.gend = this.id, this.genn = a
 		else this.gend = a, this.genn = b
 		this.update = u

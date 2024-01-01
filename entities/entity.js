@@ -1,6 +1,6 @@
 import { Item } from '../items/item.js'
 import { DataWriter } from '../modules/dataproto.js'
-import { currentTPS, entityMap } from '../world/tick.js'
+import { currentTPS, entityMap, toUnlink } from '../world/tick.js'
 import { deathMessages } from './deathmessages.js'
 import { GAMERULES } from '../world/index.js'
 import { Block, BlockIDs, Blocks } from '../blocks/block.js'
@@ -9,10 +9,10 @@ import { EphemeralInterface } from '../items/privateinterface.js'
 
 export const chatImport = {chat: null}
 
-let i = -1
-
 export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
+let i = -1
+export const newId = () => ++i
 export class Entity{
 	constructor(name = ''){
 		this._x = this.x = 0
@@ -32,12 +32,36 @@ export class Entity{
 	}
 	place(world, x, y){
 		this.x = this._x = x = ifloat(x); this.y = this._y = y = ifloat(y)
-		if(this.netId < 0){
-			this.netId = ++i
-			entityMap.set(i, this)
-		}
 		this.world = world
+		if(this.netId < 0){
+			if(this.netId == -2) entityMap.set(this.netId = toUnlink.get(this), this), toUnlink.delete(this)
+			else entityMap.set(this.netId = ++i, this)
+		}
+		if(this.sock) this.sock.netId = this.netId, this.rubber()
 	}
+	unlink(){
+		if(this.netId < 0) return
+		entityMap.delete(this.netId)
+		toUnlink.set(this, this.netId)
+		this.netId = -2
+	}
+	link(){
+		if(this.netId >= 0) return
+		if(this.netId == -2)
+			entityMap.set(this.netId = toUnlink.get(this), this), toUnlink.delete(this)
+		else entityMap.set(this.netId = ++i, this)
+		if(this.sock) this.sock.netId = this.netId, this.rubber()
+	}
+	remove(){
+		this.world = null
+		this._x = this._y = this.x = this.y = 0
+		if(this.netId >= 0){
+			entityMap.delete(this.netId)
+			toUnlink.set(this, this.netId)
+			this.netId = -2
+		}
+	}
+	get linked(){ return this.netId >= 0 }
 	/**
 	 * define a new entity definition
 	 * @param {Object} obj Properties of the entity
@@ -48,13 +72,10 @@ export class Entity{
 		return `Entities.${this.className} { x: \x1b[33m${this.x.toFixed(2)}\x1b[m, y: \x1b[33m${this.y.toFixed(2)}\x1b[m, world: \x1b[32m${this.world ? 'Dimensions.' + this.world.id : 'null'}\x1b[m${this.name ? `, name: \x1b[32m${JSON.stringify(this.name)}\x1b[m` : ''} }`
 	}
 	kill(cause){
-		if(this.state&0x8000) return
-		this.state |= 0x8000
-		this.rubber()
 		this.died(cause)
 		if(this.sock)
 			chatImport.chat((deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
-		else this.remove()
+		this.unlink()
 	}
 	shouldSimulate(){
 		if(!this.world) return false
@@ -66,11 +87,6 @@ export class Entity{
 		else
 			if(floor(this.y)>>>5&1) return (chunk.loadedAround&112)==112
 			else return (chunk.loadedAround&193)==193
-	}
-	remove(){
-		// Don't delete it yet, mark it for deletion
-		this.world = null
-		this._x = this._y = NaN
 	}
 	died(){
 		a: if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
@@ -150,14 +166,14 @@ export class Entity{
 	checkInterface(){
 		if(!this.sock.interface) return true
 		if(this.sock.interfaceD instanceof Entity){
-			if(!this.sock.interfaceD.world || (this.sock.interfaceD&0x8000)) return this.closeInterface(), true
+			if(!this.sock.interfaceD.linked) return this.closeInterface(), true
 		}else if(this.sock.interfaceD){
 			if(load(this.sock.interfaceD) != peek()) return this.closeInterface(), true
 		}
 		return false
 	}
 	itemChanged(id = 0, slot, item = this.getItem(id, slot)){
-		if(this.netId<0||(!this.chunk&&!this.sock)) return
+		if(!this.linked || (!this.chunk&&!this.sock)) return
 		for(const sock of this.chunk ? this.chunk.sockets : [this.sock]){
 			let {ibuf, ibufLastB, ibufLastA} = sock
 			if(!sock.ibuf) (sock.ibuf = ibuf = new DataWriter()).byte(32)
@@ -190,8 +206,7 @@ export class Entity{
 		this.sock.r = (this.sock.r + 1) & 0xff
 		let buf = new DataWriter()
 		buf.byte(1)
-		buf.int(this.netId | 0)
-		buf.short(this.netId / 4294967296 | 0)
+		buf.uint32(this.sock.netId | 0), buf.uint16(this.sock.netId / 4294967296 | 0)
 		buf.byte(this.sock.r)
 		buf.float(currentTPS)
 		buf.byte(this.sock.permissions)

@@ -55,13 +55,20 @@ function validateMove(sock, player, buf){
 			}else if(sock.ry > mercy) sock.ry = mercy
 		}
 	}
+	const idx = buf.float(), idy = buf.float()
 	if(!rubber){
-		player.dx = mx * currentTPS
-		player.dy = my * currentTPS
-		fastCollision(player)
-		player.impactDx = buf.float(); player.impactDy = buf.float()
-		if(player.world) stepEntity(player)
-	}else player.rubber(), buf.double()
+		if(player.linked){
+			player.dx = mx * currentTPS
+			player.dy = my * currentTPS
+			fastCollision(player)
+			player.impactDx = idx; player.impactDy = idy
+			stepEntity(player)
+		}else{
+			player.x += mx; player.y += my
+			player.dx = player.dy = 0
+			player.updateControls?.()
+		}
+	}else player.rubber()
 }
 
 const DEFAULT_BLOCKSHAPE = [0, 0, 1, 1]
@@ -71,11 +78,11 @@ function playerMovePacket(player, buf){
 		let t = Date.now() / 1000
 		if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
 		this.movePacketCd = t
-		if(buf.byte() != this.r || !player.chunk) return
-
-		if(player.state&0x8000) break top
+		if(buf.byte() != this.r) return
+		if(player.health <= 0) break top
 
 		validateMove(this, player, buf)
+		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
 		if(!player.world) return
 		
 		statRecord('player', 'max_speed', Math.sqrt(player.dx * player.dx + player.dy * player.dy))
@@ -224,11 +231,9 @@ function playerMovePacket(player, buf){
 }
 
 function respawnPacket(player, _){
-	player.x = GAMERULES.spawnx
-	player.y = GAMERULES.spawny
-	player.world = Dimensions[GAMERULES.spawnworld]
+	if(player.health) return
+	player.place(Dimensions[GAMERULES.spawnworld], GAMERULES.spawnx, GAMERULES.spawny)
 	player.damage(-Infinity, null)
-	player.state &= ~0x8000
 	player.age = 0
 	player.dx = player.dy = 0
 	player.rubber()
@@ -338,7 +343,7 @@ function closeInterfacePacket(player, _){
 export function voiceChat(player, buf){
 	if(buf.left < 2) return
 	const r = CONFIG.proximitychat || 0
-	if(!r || (player.state&0x8000)) return
+	if(!r || !player.linked) return
 	const packet = new DataView(new ArrayBuffer(buf.left + 7))
 	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
 	packet.setUint8(0, 96)
@@ -370,9 +375,21 @@ export function voiceChat(player, buf){
 	for(const s of t) s.send(packet.buffer)
 }
 
+function disappearPacket(player){
+	if(this.permissions<3) return
+	player.unlink()
+}
+function appearPacket(player){
+	if(this.permissions<3) return
+	player.link()
+	if(player.health <= 0) player.damage(-Infinity, null)
+}
+
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	5: respawnPacket,
+	6: disappearPacket,
+	7: appearPacket,
 	13: openInventoryPacket,
 	15: closeInterfacePacket,
 	32: inventoryPacket,

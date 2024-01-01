@@ -10,13 +10,12 @@ globalThis.loadFile = (i, f) => f ? fs.readFile(decodeURI(i.url).replace(/[^\/]*
 globalThis.AsyncFunction = (async()=>{}).constructor
 
 Object.defineProperties(Array.prototype, {
-	winner: {enumerable: false, value(pred){
-		let best = -Infinity
-		let winner = null
+	winner: {enumerable: false, value(pred, best = -Infinity){
+		let winner = undefined
 		const length = this.length
 		for(let i = 0; i < length; i++){
 			const a = this[i], score = pred(a, i, this)
-			if(score > best){
+			if(score >= best){
 				best = score
 				winner = a
 			}

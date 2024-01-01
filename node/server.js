@@ -79,7 +79,7 @@ const endpoints = {
 	}
 }
 Object.setPrototypeOf(endpoints, null)
-const [statsHtml0, statsHtml1] = (await fs.readFile(PATH+'node/index.html')).toString().split('[[SERVER_INSERT]]')
+const {0:statsHtml0, 1:statsHtml1} = (await fs.readFile(PATH+'node/index.html')).toString().split('[[SERVER_INSERT]]')
 const PORT = argv.port || CONFIG.port || 27277
 let wsHost = ''
 const {key, cert} = CONFIG
@@ -113,7 +113,7 @@ server.any('/*', (res, req) => {
 		wsHost = 'ws://' + host
 		httpHost = 'http://' + host
 	}
-	const [, endpoint, i] = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
+	const {1:endpoint,2:i} = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){
 		res.write(statsHtml0)
 		res.write(JSON.stringify(genInfo()))
@@ -146,7 +146,7 @@ server.ws('/*', {
 			host = h
 		}
 		if(exiting) return
-		const [, username, pubKey, authSig] = req.getUrl().split('/').map(decodeURIComponent)
+		const {1:username,2:pubKey,3:authSig} = req.getUrl().split('/').map(decodeURIComponent)
 		if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig||'', 'base64'))){
 			res.end(undefined, true)
 			if(argv.log) throw 'Invalid public key signature'

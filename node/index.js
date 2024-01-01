@@ -38,6 +38,7 @@ async function loadConfigs(i){
 		const f = p.slice(0, p.lastIndexOf('/')+1)
 		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => {
 			const v = parse(a.toString())
+			if(!v) throw 'Failed to parse config'
 			if('path' in v) v.path = resolve(f, v.path)
 			if('key' in v) v.key = resolve(f, v.key)
 			if('cert' in v) v.cert = resolve(f, v.cert)

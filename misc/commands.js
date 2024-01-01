@@ -11,6 +11,7 @@ import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
 import { damageTypes } from '../entities/deathmessages.js'
+import { playersConnecting, playersLevel } from './sock.js'
 
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
@@ -22,7 +23,7 @@ function snbt(s, i, t, T1, T2){
 		if(s[i] == '}') return
 		while(true){
 			ID.lastIndex = i
-			const [k] = s.match(ID)
+			const {0:k} = s.match(ID)
 			if(!k.length) throw 'expected prop name in dict declaration'
 			i = ID.lastIndex - 1
 			while(s[++i] == ' ');
@@ -63,7 +64,7 @@ function snbt(s, i, t, T1, T2){
 	}else if(Array.isArray(t)){
 		if(s[i] != '[') throw 'Expected array literal'
 		while(s[++i] == ' ');
-		let [T, l = NaN] = T1 || T2
+		let {0: T, 1: l = NaN} = T1 || T2
 		if(s[i] == ']' && !l) return void(t.length=0);
 		let j = -1
 		while(true){
@@ -136,7 +137,7 @@ function serializeTypePretty(type){
 	else if(type == Int8) return 'integer [-128 - 127]'
 	else if(type == Uint16) return 'integer [0 - 65535]'
 	else if(type == Int16) return 'integer [-32768 - 32767]'
-	else if(type == Uint32) return 'integer [0 - 4294967296]'
+	else if(type == Uint32) return 'integer [0 - 4294967295]'
 	else if(type == Int32) return 'integer'
 	else if(type == Float || type == Double) return 'number'
 	else if(type == String) return 'string'
@@ -152,7 +153,44 @@ function serializeTypePretty(type){
 	}
 	return res += ' }'
 }
-
+function testSelector(entity, ref, fns){
+	for(const f of fns) if(!f(entity,ref)) return false
+	return true
+}
+const comp = s => {
+	const F = s === '=' ? 2 : s === '!=' ? 5 : s === '>=' ? 6 : s === '<=' ? 3 : s === '>' ? 4 : s === '<' ? 1 : 2
+	return a => (F&(1<<sign(a)+1))!=0
+}
+const compstr = s => {
+	return s === '!=' ? (a,b) => a != b : s === '>=' ? (a,b) => a.startsWith(b) : s === '<=' ? (a,b) => b.startsWith(a) : s === '>' ? (a,b) => a.length>b.length&&a.startsWith(b) : s === '<' ? (a,b) => b.length>a.length&&b.startsWith(a) : (a,b) => a==b
+}
+const specifiers = {
+	__proto__: null,
+	'type=': t => a => a.className === t,
+	'type!=': t => a => a.className !== t,
+	name: (t, s) => {
+		const f = compstr(s)
+		return a => f(a.name, t)
+	},
+	perms(t, s){
+		const p = PERMS[t]
+		if(p === undefined) return		
+		const f = comp(s)
+		return e => f((e.sock?.permissions??0)-p)
+	},
+	x(t, s){
+		const p = ifloat(+t)
+		if(!Number.isFinite(p)) return		
+		const f = comp(s)
+		return e => f(ifloat(e.x-p))
+	},
+	y(t, s){
+		const p = ifloat(+t)
+		if(!Number.isFinite(p)) return		
+		const f = comp(s)
+		return e => f(ifloat(e.y-p))
+	},
+}
 function selector(a, who){
 	if(!a) throw 'Selector missing'
 	if(a == '!'){
@@ -167,27 +205,71 @@ function selector(a, who){
 		return [e]
 	}
 	if(a[0] == '@'){
-		if(a[1] == 's'){if(who instanceof Entity) return [who]; else throw 'Self selector unavailable'}
-		if(a[1] == 'e') return [...entityMap.values()]
-		if(a[1] == 'n'){
-			if(!who || !entityMap.delete(who.netId)) return [...entityMap.values()]
-			const a = [...entityMap.values()]
-			entityMap.set(who.netId, who)
-			return a
-		}
-		const candidates = [...players.values()]
-		if(!candidates.length) throw "No targets matched selector"
-		if(a[1] == 'a') return candidates
-		if(a[1] == 'p'){
-			if(!who || who.clients) throw "No targets matched selector"
-			const closest = candidates.winner(a => {
-				if(a.world != who.world) return -Infinity
+		let arr
+		if(a.length > 2 && (a[2] !== '[' || a[a.length-1] !== ']')) throw 'Unable to parse selector: expected []'
+		const filters = []; let limit = Infinity
+		if(a.slice(3,-1).replace(/\s*(\w+)\s*(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*"))\s*(?:,|;|$)|\s*(\d+)\s*(?:,|;|$)/gy, (_, a, s, b, c='') => {
+			if(c) return void(limit = +c)
+			if(b[0]=='"') try{ b = JSON.parse(b) }catch(e){ throw 'Unable to parse selector: invalid string' }
+			const f = specifiers[a+s]?.(b) ?? specifiers[a]?.(b, s)
+			if(!f) throw 'Invalid/unknown filter: '+a+s+b
+			filters.push(f)
+			return ''
+		}).length > 3) throw 'Unable to parse selector: extra text inside []'
+		if(!limit) throw "No targets matched selector"
+		if(a[1] == 's'){
+			if(!(who instanceof Entity)) throw '@s unavailable'
+			if(testSelector(who, who, filters)) return [who]
+			else throw "No targets matched selector"
+		}else if(a[1] == 'e'){
+			const arr = []
+			for(const e of entityMap.values()){
+				if(testSelector(e, who, filters)) arr.push(e)
+				if(arr.length >= limit) break
+			}
+			if(!arr.length) throw "No targets matched selector"
+			return arr
+		}else if(a[1] == 'n'){
+			const arr = []
+			if(!who || !entityMap.delete(who.netId)){
+				for(const e of entityMap.values()){
+					if(testSelector(e, who, filters)) arr.push(e)
+					if(arr.length >= limit) break
+				}
+			}else{
+				for(const e of entityMap.values()){
+					if(testSelector(e, who, filters)) arr.push(e)
+					if(arr.length >= limit) break
+				}
+				entityMap.set(who.netId, who)
+			}
+			if(!arr.length) throw "No targets matched selector"
+			return arr
+		}else if(!players.size) throw "No targets matched selector"
+		else if(a[1] == 'a'){
+			const arr = []
+			for(const e of players.values()){
+				if(testSelector(e, who, filters)) arr.push(e)
+				if(arr.length >= limit) break
+			}
+			if(!arr.length) throw "No targets matched selector"
+			return arr
+		}else if(a[1] == 'p'){
+			if(!(who instanceof Entity)) throw "@p unavailable"
+			const closest = [...players.values()].winner(a => {
+				if(!testSelector(a, who, filters) || a.world != who.world) return NaN
 				const dx = a.x - who.x, dy = a.y - who.y
 				return -(dx * dx + dy * dy)
 			})
+			if(!closest) throw 'No targets matched selector'
 			return [closest]
+		}else if(a[1] == 'r'){
+			const can = []
+			for(const p of players.values())
+				if(testSelector(p, who, filters)) can.push(p)
+			if(!can.length) throw "No targets matched selector"
+			else return can[floor(random()*can.length)]
 		}
-		if(a[1] == 'r') return [candidates[floor(random() * candidates.length)]]
 	}else{
 		const player = players.get(a)
 		if(!player) throw "No targets matched selector"
@@ -218,7 +300,7 @@ export const commands = {
 	say(s, ...l){
 		if(!l.length) throw 'Command usage: /say <style> <text...>\nExample: /say lime-bold Hello!'
 		let col = 0, txt = s.includes('raw') ? l.join(' ') : prefix(this, 1) + l.join(' ')
-		for(let [m] of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
+		for(let {0:m} of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
 		col += s.match(/()black|()dark[-_]?red|()dark[-_]?green|()(?:gold|dark[-_]?yellow)|()dark[-_]?blue|()dark[-_]?purple|()dark[-_]?(?:aqua|cyan)|()(?:light[-_]?)?gr[ea]y|()dark[-_]?gr[ea]y|()red|()(?:green|lime)|()yellow|()blue|()purple|()(?:aqua|cyan)|$/).slice(1).indexOf('') & 15
 		chat(txt, col)
 	},
@@ -251,7 +333,7 @@ export const commands = {
 		for(const pl of targets){
 			if(!pl.sock) continue
 			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
-			pl.sock.close()
+			pl.sock.end()
 			kicked++
 		}
 		return log(this, `Kicked ${kicked} player(s)`)
@@ -487,14 +569,35 @@ export const commands = {
 		const c = damageTypes[cause] || 0
 		let i = 0
 		for(const e of selector(t, this)){
-			e.kill(c); i++
+			if(e.damage) e.damage(e.health, c)
+			else e.kill(c)
+			i++
 		}
 		return log(this, 'Killed '+i+' entities')
+	},
+	hide(t = '@s'){
+		let i = 0
+		for(const e of selector(t, this)){
+			if(!e.sock) continue
+			e.unlink()
+			i++
+		}
+		return log(this, 'Unlinked '+i+' players')
+	},
+	show(t = '@s'){
+		let i = 0
+		for(const e of selector(t, this)){
+			if(!e.sock) continue
+			e.link()
+			if(e.health <= 0) e.damage(-Infinity, null)
+			i++
+		}
+		return log(this, 'Linked '+i+' players')
 	},
 	async regen(_x, _y, type, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
 		x = floor(x) >>> 6; y = floor(y) >>> 6
-		let [a, b] = type ? type.split('/',2) : [w.gend,w.genn]
+		let {0:a, 1:b} = type ? type.split('/',2) : [w.gend,w.genn]
 		if(!b)b=a,a=w.id
 		const chunk = w.chunk(x, y)
 		if(!chunk) throw 'Chunk not loaded'
@@ -514,6 +617,7 @@ export const commands = {
 		return log(this, `Regenerated chunk located at (${x<<6}, ${y<<6}) in the ${w.id}`)
 	},
 	perm(u = '@s', a='default'){
+		if(!u) throw 'Specify user!'
 		if(!Object.hasOwn(PERMS, a)) throw 'Invalid permission'
 		a = PERMS[a]
 		let count = ''
@@ -533,6 +637,7 @@ export const commands = {
 		return log(this, 'Set the permission of '+(typeof count=='number'?count+' players':count)+' to '+a)
 	},
 	ban(u, a = 1e100){
+		if(!u) throw 'Specify user!'
 		a = round(Date.now()/1000+(+a??1e100))
 		let count = ''
 		if(u[0] != '@'){
@@ -542,17 +647,52 @@ export const commands = {
 			if(f){
 				f.sock.permissions = a
 				f.sock.send('-119You have been banned from this server')
-				f.sock.close()
+				f.sock.end()
 			}
 		}else for(const f of selector(u, this)){
 			if(!f.sock | !f.name) continue
 			if(count) count = typeof count == 'string' ? 2 : count+1
 			else count = f.name
 			PERMISSIONS[f.name] = a
-			pl.sock.send('-119You have been banned from this server'), pl.sock.close()
+			pl.sock.send('-119You have been banned from this server'), pl.sock.end()
 		}
 		savePermissions()
 		return log(this, 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString()))
+	},
+	wipe(u, msg='Your playerdata has been wiped. Reconnecting...'){
+		if(!u) throw 'Specify user!'
+		let count = ''
+		if(u[0] != '@'){
+			const p = players.get(u)
+			count = u
+			if(p){
+				p.sock.send('-31000;1f'+msg)
+				p.sock.entity.remove()
+				p.sock.entity = null
+				players.delete(u)
+				p.sock.end()
+			}
+			playersConnecting.add(u)
+			playersLevel.del(u).then(() => playersConnecting.delete(u))
+		}else for(const p of selector(u, this)){
+			if(!p.sock | !p.name) continue
+			if(count) count = typeof count == 'string' ? 2 : count+1
+			else count = p.name
+			p.sock.send('-31000;1f'+msg)
+			p.sock.entity.remove()
+			p.sock.entity = null
+			players.delete(p.name)
+			p.sock.end()
+			playersConnecting.add(p.name)
+			playersLevel.del(p.name).then(() => playersConnecting.delete(p.name))
+		}
+		return log(this, 'Wiped playerdata for '+(typeof count=='number'?count+' players':count))
+	},
+	unban(u){
+		if(!u) throw 'Specify user!'
+		PERMISSIONS[u] = 100 // Expired ban
+		savePermissions()
+		return log(this, 'Unbanned '+u)
 	},
 	async as(t, c, ...a){
 		let k = 0
@@ -573,10 +713,18 @@ export const commands = {
 		try{ return await executeCommand(c, a, this, this.sock?.permissions??4) }
 		catch(e){ return 'Command did not succeed: '+e }
 	},
+	async fail(c='ping', ...a){
+		let r
+		try{ r=await executeCommand(c, a, this, this.sock?.permissions??4) }
+		catch(e){ return 'Command failed successfully: '+e }
+		throw r?'Command succeeded: '+r:'Command succeeded'
+	},
 	delay(k, c='ping', ...a){
-		k = max(-1e6, min(k, 1e6))||5
+		k = max(-1e6, min(k, 1e6))
+		if(k != k) throw 'Invalid delay'
 		if(k <= 0){
 			setTimeout(() => executeCommand(c, a, this, this.sock?.permissions??4), k*-1000)
+			return 'Command scheduled'
 		}else return new Promise(r => setTimeout(r, k*1000)).then(() => executeCommand(c, a, this, this.sock?.permissions??4))
 	},
 	mark(e='@s',xo='0',yo='0'){
@@ -595,6 +743,7 @@ export const commands = {
 	}
 }
 const PERMS = {
+	__proto__: null,
 	0: 0, 1: 1, 2: 2, 3: 3, 4: 4,
 	deny: 0, spectator: 1, visitor: 1,
 	normal: 2, player: 2, get default(){return CONFIG.permissions.default},
@@ -607,9 +756,11 @@ commands.stop = commands.restart
 commands.i = commands.info
 commands.op = function(u){return commands.perm.call(this,u,OP)}
 commands.deop = function(u){return commands.perm.call(this,u,NORMAL)}
+commands.unlink = commands.hide
+commands.link = commands.show
 
 export const anyone_help = {
-	help: '<cmd> -- Help for a command',
+	help: '[cmd] -- Help for a command',
 	list: '-- List online players',
 	info: '-- Info about the server and yourself',
 	i: ' (alias for /info)',
@@ -629,7 +780,9 @@ export const anyone_help = {
 	regen: '(x=~) (y=~) -- Re-generate this chunk with fresh terrain',
 	kill: '[target] (cause=void) -- Kill a player or entity',
 	mark: '[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position and entity selectors with !',
-	id: '[block|item|entity|blockdata|itemdata|entitydata] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID'
+	id: '[block|item|entity|blockdata|itemdata|entitydata] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID',
+	unlink: '[player] -- Put a player in spectator',
+	link: '[player] -- Put a player out of spectator'
 }, help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
@@ -638,6 +791,7 @@ export const anyone_help = {
 	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
 	perm: '[target] <int>|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
+	unban: '[username] -- Unban a player, they will be able to rejoin with default permissions',
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',

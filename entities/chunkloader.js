@@ -1,14 +1,14 @@
 import { DataWriter } from '../modules/dataproto.js'
 
 export const ChunkLoader = T => class extends T{
-	radius = CONFIG.world.chunkloadingrange
+	radius = CONFIG.world.chunk_loading_range
 	place(a,b,c){
 		super.place(a,b,c)
 		this.load(floor(this.x) >> 6, floor(this.y) >> 6, this.world)
 	}
 	moved(){
 		const {world, _world, radius, sock} = this
-		if(!_world || !sock) return
+		if((!_world && !world) || !sock) return
 		let ocx = floor(this._x) >> 6
 		let ocy = floor(this._y) >> 6
 		let cx = floor(this.x) >> 6
@@ -16,8 +16,8 @@ export const ChunkLoader = T => class extends T{
 		if(ocx == cx && ocy == cy && _world == world) return
 		if(_world != world || max(abs(cx-ocx << 6 >> 6),abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
 			//teleport
-			this.unload(ocx, ocy, _world)
-			this.load(cx, cy, world)
+			if(_world) this.unload(ocx, ocy, _world)
+			if(world) this.load(cx, cy, world)
 			return
 		}
 		if(cx>999999&ocx<-999999)cx-=0x4000000
