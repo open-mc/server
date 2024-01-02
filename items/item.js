@@ -13,7 +13,7 @@ export class Item{
 	breaktime(block){ return block.breaktime }
 	use(b = 0, p){
 		if(b) gridevent(b)
-		if(p.mode < 0) this.count--
+		if(p.mode < 1) this.count--
 	}
 	static decode(buf, target){
 		const count = buf.getUint8(buf.i++)
