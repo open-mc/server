@@ -15,7 +15,7 @@ BlockShape.TWO_SHORT = [0, 0, 1, 14/16]
 
 export const slabifyItem = (I, B) => {
 	const o = class extends I{
-		place(_, fy){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1) }
+		place(fx, fy, p){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1, p) }
 	}
 	if(B.slabShape) B.slabShape.itemForm = o
 	if(B.upperSlabShape) B.upperSlabShape.itemForm = o
@@ -36,5 +36,5 @@ export const blockShaped = (C, s) => {
 }
 
 export const itemify = C => class extends Item{
-	place(){ place(C); super.use(1) }
+	place(fx, fy, p){ place(C); super.use(1, p) }
 }

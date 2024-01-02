@@ -15,6 +15,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	items = [null, null, null, null, null]
 	craftingSlots = [null, null, null, null, null]
 	static interfaceList = [0, 1]
+	mode = 0
 	getItem(id, slot){return id == 0 && slot < 37 ? this.inv[slot] : id == 1 && slot < 5 ? this.items[slot] : undefined}
 	setItem(id, slot, item, force = false){
 		if(id == 0 && slot < 36+force) this.inv[slot] = item
@@ -48,21 +49,23 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			const tile = peek()
 			gridevent(2)
 			place(tile.behind ?? Blocks.air)
-			const drop = tile.drops?.(this.inv[this.selected])
-			if(drop instanceof Item){
-				const itm = new Entities.item()
-				itm.item = drop
-				itm.dx = random() * 6 - 3
-				itm.dy = 6
-				itm.place(this.world, this.bx + 0.5, this.by + 0.375)
-			}else if(drop instanceof Array){
-				for(const d of drop){
-					if(!d) continue
+			if(this.mode < 1){
+				const drop = tile.drops?.(this.inv[this.selected])
+				if(drop instanceof Item){
 					const itm = new Entities.item()
-					itm.item = d
+					itm.item = drop
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
 					itm.place(this.world, this.bx + 0.5, this.by + 0.375)
+				}else if(drop instanceof Array){
+					for(const d of drop){
+						if(!d) continue
+						const itm = new Entities.item()
+						itm.item = d
+						itm.dx = random() * 6 - 3
+						itm.dy = 6
+						itm.place(this.world, this.bx + 0.5, this.by + 0.375)
+					}
 				}
 			}
 			stat('player', 'blocks_broken')
@@ -75,7 +78,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 		this.updateControls()
 	}
 	static savedata = {
-		health: Byte,
+		health: Byte, mode: Byte,
 		inv: [Item, 37],
 		items: [Item, 5],
 		selected: Byte,

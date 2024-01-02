@@ -8,6 +8,7 @@ export class LivingEntity extends Entity{
 	static maxHealth = 20
 	static stepHeight = 0.5
 	damage(amount, dealer){
+		if(this.mode >= 1) amount = min(0, amount)
 		if(dealer == damageTypes.fire || dealer == damageTypes.water || dealer == damageTypes.burning || dealer == damageTypes.suffocation){
 			const now = Date.now()
 			// damageTypes.fire deals every 500ms

@@ -4,7 +4,7 @@ import { Dimensions } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
 Items.bucket = class extends Item{
-	interact(b, e){
+	interact(b, p){
 		if(b.fluidLevel && !b.flows){
 			blockevent(34)
 			place(Blocks.air)
@@ -17,7 +17,7 @@ Items.bucket = class extends Item{
 					i = new Items.bucket_of_lava()
 					break
 			}
-			if(this.count > 1) super.use(), i && e.giveAndDrop(i)
+			if(this.count > 1) super.use(0, p), i && p.giveAndDrop(i)
 			else return i
 		}
 	}

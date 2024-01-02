@@ -4,12 +4,12 @@ import { Item, Items } from "../item.js"
 import "../../blocks/index.js"
 
 const leavesItem = (B, B2) => class extends Item{
-	interact(b){
-		if(b == B2.behind) return place(B2), void super.use(1)
+	interact(b, p){
+		if(b == B2.behind) return place(B2), void super.use(1, p)
 		return true
 	}
-	place(){
-		place(B); super.use(1)
+	place(fx, fy, p){
+		place(B); super.use(1, p)
 	}
 }
 

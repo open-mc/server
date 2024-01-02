@@ -32,12 +32,12 @@ export function encodeMove(e, sock, mv, id = e.netId){
 	const {ebuf} = sock
 	ebuf.byte(mv)
 	ebuf.int(id | 0), ebuf.short(id / 4294967296 | 0)
-	if(mv & 64)ebuf.short(e.id), ebuf.double(e.age), ebuf.write(e.savedata, e)
-	if(mv & 1)ebuf.double(e.x)
-	if(mv & 2)ebuf.double(e.y)
-	if(mv & 4)ebuf.float(e.dx), ebuf.float(e.dy)
-	if(mv & 8)ebuf.float(e.f), ebuf.int(e.state)
-	if(mv & 16)ebuf.string(e.name)
+	if(mv & 64) ebuf.short(e.id), ebuf.double(e.age), ebuf.write(e.savedata, e)
+	if(mv & 1) ebuf.double(e.x)
+	if(mv & 2) ebuf.double(e.y)
+	if(mv & 4) ebuf.float(e.dx), ebuf.float(e.dy)
+	if(mv & 8) ebuf.float(e.f), ebuf.int(e.state)
+	if(mv & 16) ebuf.string(e.name)
 	if(mv & 32){
 		const l = e.pendingEvents.length
 		for(let i = 0; i < l; i+=2){
@@ -106,7 +106,7 @@ export function mirrorEntity(e){
 		return
 	}
 	for(const sock of chunk.sockets){
-		if(e.sock == sock){
+		if(e.sock === sock){
 			if(_chunk && _chunk.sockets.includes(sock)){
 				const emv = e.rubberMv & -33 | mv & 32
 				if(emv) encodeMove(e, sock, emv)

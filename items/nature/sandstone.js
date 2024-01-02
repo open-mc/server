@@ -3,7 +3,7 @@ import { place } from '../../misc/ant.js'
 import { Item, Items } from '../item.js'
 
 class Sandstone extends Item{
-	place(){ place(Blocks.sandstone); super.use(1) }
+	place(fx, fy, p){ place(Blocks.sandstone); super.use(1, p) }
 }
 
 Items.sandstone = Sandstone

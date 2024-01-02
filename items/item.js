@@ -11,9 +11,9 @@ export class Item{
 	static burns = false
 	static maxStack = 64
 	breaktime(block){ return block.breaktime }
-	use(b = 0){
+	use(b = 0, p){
 		if(b) gridevent(b)
-		this.count--
+		if(p.mode < 0) this.count--
 	}
 	static decode(buf, target){
 		const count = buf.getUint8(buf.i++)

@@ -4,14 +4,14 @@ import { GAMERULES } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
 Items.end_portal_frame = class extends Item{
-	place(){ place(Blocks.end_portal_frame); super.use(1) }
+	place(fx, fy, p){ place(Blocks.end_portal_frame); super.use(1, p) }
 }
 
 Items.eye_of_ender = class extends Item{
-	interact(b){
+	interact(b, p){
 		if(b != Blocks.end_portal_frame) return
 		place(Blocks.filled_end_portal_frame)
-		super.use(1)
+		super.use(1, p)
 		check: {
 			jump(4,0)
 			if(peek() == Blocks.filled_end_portal_frame) {jump(-3,0); break check}
@@ -29,4 +29,8 @@ Items.eye_of_ender = class extends Item{
 			sock.entity.worldEvent(52)
 		}
 	}
+}
+
+Items.command_block = class extends Item{
+	place(fx, fy, p){ place(Blocks.command_block); super.use(1, p) }
 }

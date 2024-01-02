@@ -14,7 +14,7 @@ export const ChunkLoader = T => class extends T{
 		let cx = floor(this.x) >> 6
 		let cy = floor(this.y) >> 6
 		if(ocx == cx && ocy == cy && _world == world) return
-		if(_world != world || max(abs(cx-ocx << 6 >> 6),abs(cy-ocy << 6 >> 6)) > 2 * this.radius - 2){
+		if(_world != world || max(abs(cx-ocx << 6 >> 6),abs(cy-ocy << 6 >> 6)) > 2 * radius - 2){
 			//teleport
 			if(_world) this.unload(ocx, ocy, _world)
 			if(world) this.load(cx, cy, world)
@@ -94,7 +94,7 @@ export const ChunkLoader = T => class extends T{
 	remove(){
 		const cx = floor(this.x) >> 6
 		const cy = floor(this.y) >> 6
-		this.unload(cx, cy, this.world, false)
+		if(this.world) this.unload(cx, cy, this.world, false)
 		super.remove()
 	}
 }

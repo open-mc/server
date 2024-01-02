@@ -1,11 +1,13 @@
 import { GREEN, WHITE, chat, prefix } from './chat.js'
-import { err, executeCommand } from './commands.js'
+import { err, executeCommand } from './_commands.js'
 import { Entities, Entity } from '../entities/entity.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, save, load } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, GAMERULES, players, stat, statRecord } from '../world/index.js'
+import './commands.js'
+import { ItemIDs } from '../items/item.js'
 
 const REACH = 10
 
@@ -96,7 +98,7 @@ function playerMovePacket(player, buf){
 		if(x != x){
 			player.f = y || 0
 			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
-			if(this.permissions >= 2 && e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
+			if(this.permissions >= 2 && e && e.chunk && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
 				//hit e
 				const itm = player.inv[player.selected]
 				e.damage?.(itm?.damage?.(e) ?? 1, player)
@@ -171,7 +173,7 @@ function playerMovePacket(player, buf){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
-					player.blockBreakLeft = round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
+					player.blockBreakLeft = player.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
 					player.breakGridEvent = gridevent(4, buf => buf.float(player.blockBreakLeft))
 				}
 				return
@@ -385,6 +387,18 @@ function appearPacket(player){
 	if(player.health <= 0) player.damage(-Infinity, null)
 }
 
+export function creativeItemPacket(player, buf){
+	const id = buf.short()
+	const a = new ItemIDs[id](1)
+	a.count = min(a.maxStack, buf.byte()||1)
+	const b = player.getItem(0, 36)
+	if(b && b.constructor === a.constructor){
+		b.count = min(b.maxStack, b.count + a.count)
+		player.itemChanged(0, 36, b)
+	}else if(b) player.setItem(0, 36, null, true)
+	else player.setItem(0, 36, a, true)
+}
+
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	5: respawnPacket,
@@ -392,6 +406,7 @@ export const codes = Object.assign(new Array(256), {
 	7: appearPacket,
 	13: openInventoryPacket,
 	15: closeInterfacePacket,
+	20: creativeItemPacket,
 	32: inventoryPacket,
 	33: altInventoryPacket,
 	34: dropItemPacket,
@@ -406,6 +421,7 @@ export function onstring(player, text){
 				const a = match[i]
 				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 			}
+			stat('misc', 'commands_used')
 			const res = executeCommand(match[0], match.slice(1), player, this.permissions)
 			if(res)
 				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e), 9))

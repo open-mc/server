@@ -64,7 +64,7 @@ export async function open(){
 	let link = true
 	if(other){
 		other.sock.send('-119You are logged in from another session')
-		other.remove()
+		other.unlink()
 		other.sock.entity = null
 		other.sock.end()
 		other.sock = null
