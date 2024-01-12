@@ -468,6 +468,7 @@ Object.assign(commands, {
 		if(!(this instanceof Entities.player)) throw 'Self is not a player'
 		this.mode = a=='1'||a.toLowerCase()=='true'?1:0
 		this.event(20, buf => buf.byte(this.mode))
+		return 'Set to '+(this.mode==1?'creative':'survival')
 	}
 })
 

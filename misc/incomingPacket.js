@@ -5,7 +5,7 @@ import { DataWriter } from '../modules/dataproto.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, save, load } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
-import { Dimensions, GAMERULES, players, stat, statRecord } from '../world/index.js'
+import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
 import './commands.js'
 import { ItemIDs } from '../items/item.js'
 
@@ -87,8 +87,8 @@ function playerMovePacket(player, buf){
 		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
 		if(!player.world) return
 		
-		statRecord('player', 'max_speed', Math.sqrt(player.dx * player.dx + player.dy * player.dy))
-		statRecord('player', 'max_dist', Math.sqrt(player.x * player.x + player.y * player.y))
+		statRecord('player', 'max_speed', sqrt(player.dx * player.dx + player.dy * player.dy))
+		statRecord('player', 'max_dist', sqrt(player.x * player.x + player.y * player.y))
 		const sel = buf.byte()
 		if(player.selected != (player.selected = (sel & 127) % 9)){
 			const sel = player.selected
@@ -217,7 +217,7 @@ function playerMovePacket(player, buf){
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
-		if(item.place){
+		if(item.place && !(item.forbidden&&this.permissions<MOD)){
 			const i2 = item.place(px, py, player)
 			if(i2 === undefined) item.count ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
 			else player.setItem(0, sel, i2, true)

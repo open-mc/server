@@ -4,6 +4,7 @@ import { GAMERULES } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
 Items.end_portal_frame = class extends Item{
+	static forbidden = true
 	place(fx, fy, p){ place(Blocks.end_portal_frame); super.use(1, p) }
 }
 
@@ -32,5 +33,6 @@ Items.eye_of_ender = class extends Item{
 }
 
 Items.command_block = class extends Item{
+	static forbidden = true
 	place(fx, fy, p){ place(Blocks.command_block); super.use(1, p) }
 }

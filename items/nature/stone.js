@@ -20,6 +20,7 @@ Items.glowing_obsidian = class extends Items.obsidian{
 	place(fx, fy, p){ place(Blocks.glowing_obsidian); super.use(1, p) }
 }
 Items.bedrock = class extends Item{
+	static forbidden = true
 	place(fx, fy, p){ place(Blocks.bedrock); super.use(1, p) }
 }
 
