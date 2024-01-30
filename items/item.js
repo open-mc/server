@@ -11,12 +11,8 @@ export class Item{
 	static burns = false
 	static maxStack = 64
 	breaktime(block){ return block.breaktime }
-	use(b = 0, p){
-		if(b) gridevent(b)
-		if(p.mode < 1) this.count--
-	}
 	static decode(buf, target){
-		const count = buf.getUint8(buf.i++)
+		const count = buf.flint2()
 		if(!count) return null
 		const item = ItemIDs[buf.getUint16(buf.i)]
 		buf.i += 2
@@ -30,7 +26,7 @@ export class Item{
 	static encode(buf, v){
 		if(buf.i > buf.cur.byteLength - 3) buf.allocnew()
 		if(!v || !v.count){buf.cur.setUint8(buf.i++, 0); return}
-		buf.cur.setUint8(buf.i++, v.count)
+		buf.flint2(v.count)
 		buf.cur.setUint16(buf.i, v.id); buf.i += 2
 		buf.string(v.name)
 		if(v.savedata)buf.flint(v.savedatahistory.length), buf.write(v.savedata, v)

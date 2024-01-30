@@ -19,15 +19,15 @@ Blocks.chest = class extends Block{
 	getItem(id, slot){ return id == 0 && slot < 27 ? this.items[slot] : null}
 	setItem(id, slot, item){
 		if(id == 0 && slot < 27){
+			const i = this.items[slot]
 			this.items[slot] = item
 			super.itemChanged(id, slot, item)
-		}else return true
-	}
-	allItems(id, cb){
-		if(id == 0) for(let i = 0; i < 27; i++) if(cb(i, this.items[i])) break
+			return i
+		}
 	}
 	interact(_, player){
 		player.openInterface(this, 0)
+		return 0
 	}
 	interfaceOpened(){
 		if(!this.playersWatching++){

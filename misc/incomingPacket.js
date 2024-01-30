@@ -180,8 +180,8 @@ function playerMovePacket(player, buf){
 			}
 			if(item && item.interact2){
 				const i2 = item.interact2(player)
-				if(i2 === undefined) item.count || player.setItem(0, sel&127, null, true)
-				else player.setItem(0, sel&127, i2, true)
+				if(typeof i2 == 'object') player.swapItems(0, sel&127, i2)
+				else if(i2 && player.mode!=1) player.takeItems(0, sel&127, +i2)
 			}
 			break top
 		}
@@ -189,16 +189,16 @@ function playerMovePacket(player, buf){
 		if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
 			b: if(item && item.interact){
 				const i2 = item.interact(b, player)
-				if(i2 === true) break b
-				else if(i2 === undefined) item.count!==0 ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
-				else player.setItem(0, sel, i2, true)
+				if(i2 === undefined) break b
+				if(typeof i2 == 'object') player.swapItems(0, sel&127, i2)
+				else if(i2 && player.mode!=1) player.takeItems(0, sel&127, +i2)
 				return
 			}
 			b: if(!(player.state&2) && b.interact){
 				const i2 = b.interact(item, player)
-				if(i2 === true) break b
-				else if(i2 === undefined) item?.count!==0 ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
-				else player.setItem(0, sel, i2, true)
+				if(i2 === undefined) break b
+				if(typeof i2 == 'object') player.swapItems(0, sel&127, i2)
+				else if(i2 && player.mode!=1) player.takeItems(0, sel&127, +i2)
 				return
 			}
 			if(!l) break top
@@ -219,10 +219,10 @@ function playerMovePacket(player, buf){
 		}
 		if(item.place && !(item.forbidden&&this.permissions<MOD)){
 			const i2 = item.place(px, py, player)
-			if(i2 === undefined) item.count ? player.itemChanged(0, sel, item) : player.setItem(0, sel, null, true)
-			else player.setItem(0, sel, i2, true)
+			if(typeof i2 == 'object') player.swapItems(0, sel&127, i2)
+			else if(i2 && player.mode!=1) player.takeItems(0, sel&127, +i2)
 			stat('player', 'blocks_placed')
-		}else if(!item.count) player.setItem(0, sel, null, true)
+		}
 	}
 	if(player.breakGridEvent){
 		cancelgridevent(player.breakGridEvent)
@@ -248,34 +248,30 @@ function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory
 	if(player.checkInterface()) return
 	let slot = buf.byte()
+	let excess = null
 	if(slot > 127){
 		slot &= 127
 		const int = this.interface, id = this.interfaceId
-		const t = int.getItem(id, slot), h = player.getItem(0, 36)
+		const t = int.getItem(id, slot), h = player.getItem(2, 0)
 		if(!t && !h) return
-		if(t && !h) int.setItem(id, slot, null) || player.setItem(0, 36, t, true)
-		else if(h && !t) int.setItem(id, slot, h) || player.setItem(0, 36, null, true)
-		else if(h && t && h.constructor == t.constructor && !h.savedata){
-			const add = min(h.count, t.maxStack - t.count)
-			if(!(h.count -= add)) player.setItem(0, 36, null, true)
-			else player.itemChanged(0, 36, h)
-			t.count += add
-			int.itemChanged(id, slot, t)
-		}else int.setItem(id, slot, h) || player.setItem(0, 36, t, true)
+		if(t&&h&&(t.constructor!=h.constructor||t.savedata)){
+			if(int.swapItems(id, slot, h) != h) player.setItem(2, 0, t), player.itemChanged(2, 0, t)
+			return
+		}
+		const itm = t && !h ? int.takeItems(id, slot) : int.putItems(id, slot, h)
+		player.setItem(2, 0, itm)
+		player.itemChanged(2, 0, itm)
 		return
 	}
 	if(slot >= 36) return
-	const t = player.getItem(0, slot), h = player.getItem(0, 36)
-	if(!t && !h) return
-	if(t && !h) player.setItem(0, slot, null) || player.setItem(0, 36, t, true)
-	else if(h && !t) player.setItem(0, slot, h) || player.setItem(0, 36, null, true)
-	else if(h && t && h.constructor == t.constructor && !h.savedata){
-		const add = min(h.count, t.maxStack - t.count)
-		if(!(h.count -= add))player.setItem(0, 36, null, true)
-		else player.itemChanged(0, 36, h)
-		t.count += add
-		player.itemChanged(0, slot, t)
-	}else player.setItem(0, slot, h) || player.setItem(0, 36, t, true)
+	const t = player.getItem(0, slot), h = player.getItem(2, 0)
+	if(t&&h&&(t.constructor!=h.constructor||t.savedata)){
+		if(player.swapItems(0, slot, h) != h) player.setItem(2, 0, t), player.itemChanged(2, 0, t)
+		return
+	}
+	const itm = t && !h ? player.takeItems(0, slot) : player.putItems(0, slot, h)
+	player.setItem(2, 0, itm)
+	player.itemChanged(2, 0, itm)
 }
 
 function altInventoryPacket(player, buf){
@@ -285,47 +281,46 @@ function altInventoryPacket(player, buf){
 	if(slot > 127){
 		slot &= 127
 		const int = this.interface, id = this.interfaceId
-		const t = int.getItem(id, slot), h = player.getItem(0, 36)
+		const t = int.getItem(id, slot), h = player.getItem(2, 0)
+		if(!t && !h) return
 		if(t && !h){
-			player.setItem(0, 36, new t.constructor(t.count - (t.count >>= 1)), true)
-			if(!t.count) int.setItem(id, slot, null, true)
-			else int.itemChanged(id, slot, t)
-		}else if(h && !t){
-			if(!int.setItem(id, slot, new h.constructor(1))){
-				if(!--h.count) player.setItem(0, 36, null, true)
-				else player.itemChanged(0, 36, h)
-			}
-		}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
-			t.count++
-			int.itemChanged(id, slot, t)
-			if(!--h.count) player.setItem(0, 36, null, true)
-			else player.itemChanged(0, 36, h)
-		}else int.setItem(id, slot, h) || player.setItem(0, 36, t, true)
+			const itm = int.takeItems(id, slot, t.count>>1)
+			player.setItem(2, 0, itm)
+			player.itemChanged(2, 0, itm)
+			return
+		}
+		const s = new h.constructor(1)
+		int.putItems(id, slot, s)
+		if(t&&h&&(t.constructor!=h.constructor||t.savedata)){
+			if(int.swapItems(id, slot, h) != h) player.setItem(2, 0, t), player.itemChanged(2, 0, t)
+			return
+		}
+		if(!--h.count) player.setItem(2, 0, null)
+		player.itemChanged(2, 0, h.count?h:null)
 		return
 	}
 	if(slot >= 36) return
-	const t = player.getItem(0, slot), h = player.getItem(0, 36)
+	const t = player.getItem(0, slot), h = player.getItem(2, 0)
+	if(!t && !h) return
 	if(t && !h){
-		player.setItem(0, 36, new t.constructor(t.count - (t.count >>= 1)), true)
-		if(!t.count) player.setItem(0, slot, null, true)
-		else player.itemChanged(0, slot, t)
-	}else if(h && !t){
-		if(!player.setItem(0, slot, new h.constructor(1))){
-			if(!--h.count) player.setItem(0, 36, null, true)
-			else player.itemChanged(0, 36, h)
-		}
-	}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
-		t.count++
-		player.itemChanged(0, slot, t)
-		if(!--h.count) player.setItem(0, 36, null, true)
-		else player.itemChanged(0, 36, h)
-	}else player.setItem(0, slot, h) || player.setItem(0, 36, t, true)
+		const itm = player.takeItems(0, slot, t.count+1>>1)
+		player.setItem(2, 0, itm)
+		player.itemChanged(2, 0, itm)
+		return
+	}
+	const s = new h.constructor(1)
+	player.putItems(0, slot, s)
+	if(t&&h&&(t.constructor!=h.constructor||t.savedata)){
+		if(player.swapItems(0, slot, h) != h) player.setItem(2, 0, t), player.itemChanged(2, 0, t)
+		return
+	}
+	if(!--h.count) player.setItem(2, 0, null)
+	player.itemChanged(2, 0, h.count?h:null)
 }
 
 function dropItemPacket(player, buf){
-	const item = player.getItem(0, player.selected)
-	if(!item) return
-	if(!player.setItem(0, player.selected, null)){
+	const item = player.takeItems(0, player.selected)
+	if(item){
 		const e = new Entities.item()
 		e.item = item
 		e.dx = player.dx + player.f > 0 ? 7 : -7
@@ -335,11 +330,8 @@ function dropItemPacket(player, buf){
 
 function closeInterfacePacket(player, _){
 	player.closeInterface()
-	const holding = player.getItem(0, 36)
-	if(holding){
-		player.setItem(0, 36, null, true)
-		player.giveAndDrop(holding)
-	}
+	const holding = player.swapItems(2, 0, null)
+	if(holding) player.giveAndDrop(holding)
 }
 
 export function voiceChat(player, buf){
@@ -388,15 +380,12 @@ function appearPacket(player){
 }
 
 export function creativeItemPacket(player, buf){
+	const b = player.getItem(2, 0)
+	if(b && (b.constructor !== a.constructor || a.savedata)) return void player.swapItems(2, 0, null)
 	const id = buf.short()
-	const a = new ItemIDs[id](1)
-	a.count = min(a.maxStack, buf.byte()||1)
-	const b = player.getItem(0, 36)
-	if(b && b.constructor === a.constructor){
-		b.count = min(b.maxStack, b.count + a.count)
-		player.itemChanged(0, 36, b)
-	}else if(b) player.setItem(0, 36, null, true)
-	else player.setItem(0, 36, a, true)
+	if(id >= ItemIDs.length) return
+	const a = new ItemIDs[id](min(a.maxStack, buf.byte()||1))
+	player.putItems(2, 0, a)
 }
 
 export const codes = Object.assign(new Array(256), {

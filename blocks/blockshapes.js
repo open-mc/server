@@ -1,5 +1,5 @@
 import { Item } from "../items/item.js"
-import { place } from "../misc/ant.js"
+import { placeblock } from "../misc/ant.js"
 
 export const BlockShape = {}
 BlockShape.SLAB = [0, 0, 1, 0.5]
@@ -15,7 +15,7 @@ BlockShape.TWO_SHORT = [0, 0, 1, 14/16]
 
 export const slabifyItem = (I, B) => {
 	const o = class extends I{
-		place(fx, fy, p){ place(fy > 0.5 ? B.upperSlabShape : B.slabShape); super.use(1, p) }
+		place(fx, fy){ placeblock(fy > 0.5 ? B.upperSlabShape : B.slabShape); return 1 }
 	}
 	if(B.slabShape) B.slabShape.itemForm = o
 	if(B.upperSlabShape) B.upperSlabShape.itemForm = o
@@ -36,5 +36,5 @@ export const blockShaped = (C, s) => {
 }
 
 export const itemify = C => class extends Item{
-	place(fx, fy, p){ place(C); super.use(1, p) }
+	place(){ placeblock(C); return 1 }
 }

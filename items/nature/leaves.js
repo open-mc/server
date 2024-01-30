@@ -1,15 +1,14 @@
 import { Blocks } from "../../blocks/block.js"
-import { place } from "../../misc/ant.js"
+import { placeblock } from "../../misc/ant.js"
 import { Item, Items } from "../item.js"
 import "../../blocks/index.js"
 
 const leavesItem = (B, B2) => class extends Item{
-	interact(b, p){
-		if(b == B2.behind) return place(B2), void super.use(1, p)
-		return true
+	interact(b){
+		if(b == B2.behind) return placeblock(B2), 1
 	}
-	place(fx, fy, p){
-		place(B); super.use(1, p)
+	place(){
+		placeblock(B); return 1
 	}
 }
 

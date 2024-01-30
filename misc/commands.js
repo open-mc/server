@@ -171,11 +171,14 @@ Object.assign(commands, {
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			let max = _max
-			for(const id of e.allInterfaces??[]) e.allItems?.(id, (i, item) => {
-				if(!item || (Con && item.constructor != Con)) return
-				if(item.count <= max) e.setItem(id, i, null, true), max -= item.count
-				else item.count -= max, max = 0, e.itemChanged(id, i, item)
-			})
+			a: for(const {0:id,1:len} of e.allInterfaces??[]){
+				for(let j = 0; j < len; j++){
+					const item = e.getItem(id, j)
+					if(!item || (Con && item.constructor != Con)) return
+					max -= e.takeItems(id, j, max)?.count??0
+					if(!max) break a
+				}
+			}
 			cleared += _max - max
 		}
 		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)

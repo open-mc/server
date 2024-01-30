@@ -10,11 +10,12 @@ class CraftingInterface extends EphemeralInterface{
 	slots = [null, null, null, null, null, null, null, null, null]
 	output = null
 	getItem(id, slot){ return slot == 10 ? this.output : slot < 10 ? this.slots[slot] : null }
-	setItem(id, slot, item, force = false){
-		if(slot >= 10+force) return true
-		if(slot == 10) this.output = item
+	setItem(id, slot, item){
+		if(slot >= 11) return
+		// TODO
+		/*if(slot == 10) this.output = item
 		else this.slots[slot] = item
-		super.itemChanged(id, slot, item)
+		super.itemChanged(id, slot, item)*/
 		// TODO calculate crafting output into output
 	}
 	interfaceClosed(id, player){
@@ -35,6 +36,7 @@ Blocks.crafting_table = class extends Planks{
 	drops(){ return new Items.crafting_table(1) }
 	interact(_, player){
 		player.openInterface(new CraftingInterface, 0)
+		return 0
 	}
 }
 

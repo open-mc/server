@@ -90,34 +90,28 @@ export class Entity{
 	}
 	died(){
 		a: if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
-			for(const id of this.allInterfaces??[]) this.allItems(id, (i, itm) => {
-				if(!itm) return
-				if(this.setItem(id, i, null)) return
-				const e = new Entities.item()
-				e.item = itm
-				e.dx = random() * 30 - 15
-				e.dy = random() * 4 + 4
-				e.place(this.world, this.x, this.y + this.height / 2)
-			})
+			for(const {0:id,1:len} of this.allInterfaces??[]){
+				for(let j = 0; j < len; j++){
+					const itm = this.swapItems(id, j, null)
+					if(!itm) return
+					const e = new Entities.item()
+					e.item = itm
+					e.dx = random() * 30 - 15
+					e.dy = random() * 4 + 4
+					e.place(this.world, this.x, this.y + this.height / 2)
+				}
+			}
 		}
 	}
 	give(stack, id = 0){
-		const start = stack.count
-		this.allItems?.(id, (i, itm) => {
-			const amount = min(stack.count, stack.maxStack)
-			if(!itm){
-				if(!this.setItem(id, i, new stack.constructor(amount)))
-					stack.count -= amount
-			}else if(itm.constructor == stack.constructor && !stack.savedata){
-				const amount2 = min(amount, itm.maxStack - itm.count)
-				if(!amount2) return
-				itm.count += amount2
-				stack.count -= amount2
-				this.itemChanged(id, i, itm)
-			}else return
-			if(!stack.count) return true
-		})
-		return stack.count != start
+		let max = 0
+		for(const {0:_id,1:_max} of this.allInterfaces) if(_id===id) max=_max
+		if(max<=0) return stack
+		for(let j = 0; j < max; j++){
+			this.putItems(id, j, stack)
+			if(!stack?.count) return null
+		}
+		return stack
 	}
 	giveAndDrop(stack){
 		this.give(stack)
@@ -171,6 +165,37 @@ export class Entity{
 			if(load(this.sock.interfaceD) != peek()) return this.closeInterface(), true
 		}
 		return false
+	}
+	getItem(id, slot){return null}
+	setItem(id, slot, item){}
+	swapItems(id, slot, item){
+		const a = this.getItem(id, slot)
+		this.setItem(id, slot, item)
+		this.itemChanged(id, slot, item)
+		return a
+	}
+	putItems(id, slot, stack){
+		const i = this.getItem(id, slot)
+		if(!i){
+			const s = new stack.constructor(stack.count)
+			if(this.swapItems(id, slot, s) !== s) return stack.count = 0, this.itemChanged(id, slot, s), null
+			return stack
+		}
+		if(i.constructor != stack.constructor || i.savedata) return stack
+		const c = min(stack.count, i.maxStack - i.count)
+		stack.count -= c
+		i.count += c
+		this.itemChanged(id, slot, i)
+		return stack.count ? stack : null
+	}
+	takeItems(id, slot, count = Infinity){
+		const i = this.getItem(id, slot)
+		count = min(i.count, count)
+		i.count -= count
+		if(!i.count) this.setItem(id, slot, null)
+		this.itemChanged(id, slot, i.count?i:null)
+		if(!count) return null
+		return new i.constructor(count)
 	}
 	itemChanged(id = 0, slot, item = this.getItem(id, slot)){
 		if(!this.linked || (!this.chunk&&!this.sock)) return

@@ -130,6 +130,10 @@ export function place(bl, safe = false){
 	if(bl.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, 0)
 	return bl
 }
+export function placeblock(b, e = 1){
+	place(b)
+	gridevent(e)
+}
 
 let gridEventId = 0
 export function blockevent(ev, fn){

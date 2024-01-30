@@ -16,21 +16,13 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	craftingSlots = [null, null, null, null, null]
 	static interfaceList = [0, 1]
 	mode = 0
-	getItem(id, slot){return id == 0 && slot < 37 ? this.inv[slot] : id == 1 && slot < 5 ? this.items[slot] : undefined}
-	setItem(id, slot, item, force = false){
-		if(id == 0 && slot < 36+force) this.inv[slot] = item
+	getItem(id, slot){return id == 0 && slot < 36 ? this.inv[slot] : id == 1 && slot < 5 ? this.items[slot] : id == 2 ? this.inv[36] : null}
+	setItem(id, slot, item){
+		if(id == 0 && slot < 36) this.inv[slot] = item
 		else if(id == 1 && slot < 5) this.items[slot] = item
-		else return true
-		this.itemChanged(id, slot, item)
+		else if(id == 2) this.inv[36] = item
 	}
-	allItems(id, cb){
-		if(id == 0){
-			for(let i = 0; i < 36; i++) if(cb(i, this.inv[i])) return
-		}else if(id == 1){
-			for(let i = 0; i < 5; i++) if(cb(i, this.items[i])) return
-		}
-	}
-	static allInterfaces = [0, 1]
+	static allInterfaces = [[0, 36], [1, 5], [2, 1]]
 	selected = 0
 	skin = defaultSkin
 	breakGridEvent = 0

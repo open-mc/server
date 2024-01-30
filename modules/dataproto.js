@@ -72,6 +72,12 @@ export class DataReader extends DataView{
 		}else this.i++
 		return n
 	}
+	flint2(){
+		let n = this.getUint8(this.i)
+		if(n >= 128) n = this.getUint16(this.i) & 0x7FFF, this.i += 2
+		else this.i++
+		return n
+	}
 	uint8array(len = -1){
 		let i = this.i
 		if(len < 0){
@@ -175,6 +181,13 @@ export class DataWriter extends Array{
 			else this.cur.setUint32((this.i += 4) - 4, n | 0x80000000)
 		}else if(n > 0x3F)this.cur.setUint16((this.i += 2) - 2, n | 0x4000)
 		else this.cur.setUint8(this.i++, n)
+	}
+	flint2(n){
+		if(this.i > this.cur.byteLength - 2)this.allocnew()
+		if(n > 0x7F){
+			if(n > 0x7FFF)throw new RangeError('n > 32767')
+			else this.cur.setUint16((this.i += 2) - 2, n | 0x8000)
+		}else this.cur.setUint8(this.i++, n)
 	}
 	uint8array(v, len = -1){
 		if(len < 0){

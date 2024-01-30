@@ -1,9 +1,9 @@
 import { Blocks } from '../../blocks/block.js'
-import { place } from '../../misc/ant.js'
+import { placeblock } from '../../misc/ant.js'
 import { Item, Items } from '../item.js'
 
 class Sandstone extends Item{
-	place(fx, fy, p){ place(Blocks.sandstone); super.use(1, p) }
+	place(){ placeblock(Blocks.sandstone); return 1 }
 }
 
 Items.sandstone = Sandstone

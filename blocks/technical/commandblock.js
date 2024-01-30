@@ -27,6 +27,7 @@ Blocks.command_block = class CommandBlock extends Block{
 	}
 	interact(_, player){
 		player.openInterface(this, 0)
+		return 0
 	}
 }
 
