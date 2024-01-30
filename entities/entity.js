@@ -175,6 +175,7 @@ export class Entity{
 		return a
 	}
 	putItems(id, slot, stack){
+		if(!stack) return null
 		const i = this.getItem(id, slot)
 		if(!i){
 			const s = new stack.constructor(stack.count)
