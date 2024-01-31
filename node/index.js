@@ -77,14 +77,11 @@ class VolatileLevel extends Map{
 		return t
 	}
 }
-void([globalThis.version] = await Promise.all([
-	fs.readFile(PATH + 'package.json').then(a=>JSON.parse(a+'').version),
-	loadConfigs(false).then(() => {
-		globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()
-		if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
-		return DB.open()
-	})
-]))
+await loadConfigs(false).then(() => {
+	globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()
+	if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
+	return DB.open()
+})
 
 import { ready } from './internals.js'
 const {default: openServer} = await import('./server.js')

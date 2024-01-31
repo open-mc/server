@@ -13,6 +13,7 @@ import { X, Y } from '../entities/entity.js'
 import { damageTypes } from '../entities/deathmessages.js'
 import { playersConnecting, playersLevel } from './sock.js'
 import { executeCommand, PERMS, commands, stack, selector, serializeTypePretty, log, parseCoords, snbt, marks, ITEMCOMMONDATA, ENTITYCOMMONDATA, publicCommands } from './_commands.js'
+import { VERSION } from '../version.js'
 
 Object.assign(commands, {
 	list(){
@@ -277,7 +278,7 @@ Object.assign(commands, {
 		return log(this, `Set the spawn point to (${GAMERULES.spawnx.toFixed(2)}, ${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${version}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
+		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+currentTPS

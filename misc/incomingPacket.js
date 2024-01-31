@@ -380,11 +380,12 @@ function appearPacket(player){
 }
 
 export function creativeItemPacket(player, buf){
-	const b = player.getItem(2, 0)
-	if(b && (b.constructor !== a.constructor || a.savedata)) return void player.swapItems(2, 0, null)
 	const id = buf.short()
 	if(id >= ItemIDs.length) return
-	const a = new ItemIDs[id](min(a.maxStack, buf.byte()||1))
+	const a = new ItemIDs[id](1)
+	a.count = min(a.maxStack, buf.byte()||1)
+	const b = player.getItem(2, 0)
+	if(b && (b.constructor !== a.constructor || a.savedata)) return void player.swapItems(2, 0, null)
 	player.putItems(2, 0, a)
 }
 
@@ -423,5 +424,3 @@ export function onstring(player, text){
 		chat(prefix(player)+text, text[0]=='>'&&CONFIG.permissions.greentext?GREEN:WHITE, player)
 	}
 }
-
-export const PROTOCOL_VERSION = 5

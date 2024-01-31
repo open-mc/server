@@ -154,7 +154,7 @@ export class World extends Map{
 		const buf = new DataWriter()
 		buf.byte(19)
 		buf.byte(ev)
-		fn(buf)
+		fn?.(buf)
 		buf.byte(0)
 		const b = buf.build()
 		for(const p of players.values()){

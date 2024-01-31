@@ -9,9 +9,9 @@ Items.end_portal_frame = class extends Item{
 }
 
 Items.eye_of_ender = class extends Item{
-	interact(b){
+	interact(b, p){
 		if(b != Blocks.end_portal_frame) return
-		place(Blocks.filled_end_portal_frame)
+		placeblock(Blocks.filled_end_portal_frame)
 		check: {
 			jump(4,0)
 			if(peek() == Blocks.filled_end_portal_frame) {jump(-3,0); break check}
@@ -24,7 +24,7 @@ Items.eye_of_ender = class extends Item{
 		right(); place(Blocks.end_portal)
 		// Global Sound Event
 		if(GAMERULES.globalevents){
-			sock.entity.world.event(52)
+			p.world.event(52)
 		}else for(const sock of antChunk.sockets){
 			sock.entity.worldEvent(52)
 		}
