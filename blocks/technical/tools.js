@@ -4,11 +4,12 @@ import '../natural/stone.js'
 import { Planks } from '../building/planks.js'
 import { Entities } from '../../entities/entity.js'
 import { EphemeralInterface } from '../../items/privateinterface.js'
+import { getOutput } from '../../misc/crafting.js'
 
 class CraftingInterface extends EphemeralInterface{
 	static kind = 1
 	slots = [null, null, null, null, null, null, null, null, null]
-	output = null; canProduce = 0
+	output = null; canProduce = 0; leftovers = null
 	getItem(id, slot){ return slot == 9 ? this.output : slot < 9 ? this.slots[slot] : null }
 	setItem(id, slot, item){
 		if(slot == 9) this.output = item
@@ -16,8 +17,14 @@ class CraftingInterface extends EphemeralInterface{
 		this.calculateOutput()
 	}
 	calculateOutput(){
-		this.output = null; this.canProduce = 0
-		
+		const match = getOutput(this.slots)
+		if(match){
+			const {output, count, leftovers} = match
+			this.output = new output(count)
+			this.leftovers = leftovers
+			this.canProduce = 0
+			for(const i of this.slots) if(i&&i.count>this.canProduce) this.canProduce = i.count
+		}else this.output = null, this.canProduce = 0, this.leftovers = null
 		this.itemChanged(0, 9, this.output)
 	}
 	putItems(id, slot, item){
@@ -27,12 +34,12 @@ class CraftingInterface extends EphemeralInterface{
 	takeItems(id, slot, count){
 		if(slot < 9) return super.takeItems(id, slot, count)
 		else if(this.output){
-			const count = min(floor(this.output.maxStack/this.output.count), this.canProduce)
-			const s = new this.output.constructor(count*this.output.count)
+			const c = min(floor(this.output.maxStack/this.output.count), this.canProduce, count??1)
+			const s = new this.output.constructor(c*this.output.count)
 			let changed = false
 			for(let i = 0; i < 9; i++){
 				if(!this.slots[i]) continue
-				if((this.slots[i].count-=count)<=0) this.slots[i] = null, changed = true
+				if((this.slots[i].count-=c)<=0) this.slots[i] = null, changed = true
 				this.itemChanged(0, i, this.slots[i])
 			}
 			if(changed) this.calculateOutput()

@@ -47,4 +47,6 @@ if(modified){
 	await DB.put('itemindex', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
 }
 
+await import('./recipes.js')
+
 loaded(`${ItemIDs.length} Items loaded`)
