@@ -289,13 +289,13 @@ export const PERMS = {
 	mod: 3, moderator: 3, staff: 3,
 	op: 4, operator: 4, admin: 4
 }
-export const publicCommands = []
+export const publicCommands = [], modCommands = []
 export function executeCommand(name, params, player, perms = 0){
 	if(!(name in commands)) throw 'No such command: /'+name
 	const j = params.findIndex(a=>a[0]=='/')
 	if(perms < MOD){
 		if(!publicCommands.includes(name)) throw 'You do not have permission to use /'+name
-	}else if(perms == MOD && !mod_help[name]) throw 'You do not have permission to use /'+name
+	}else if(perms == MOD && !modCommands.includes(name)) throw 'You do not have permission to use /'+name
 	else if(perms == MOD && !CONFIG.permissions.mod_cheat && cheats.includes(name)) throw 'Server owner does not allow moderators to use /'+name
 	if(j > -1 && perms > NORMAL){
 		const res = commands[name].apply(player, params.slice(0, j))

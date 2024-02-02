@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Script to install modules and continue running server forever
 
 # Move to folder if not already
@@ -19,7 +19,7 @@ echo "$A" | grep 'behind ' > /dev/null
 if [ $? -eq 0 ]; then
 echo "$A" | grep 'ahead \| [A-Z] ' > /dev/null
 if [ $? -eq 0 ]; then
-echo "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
+echo -e "\033[33mYour server is not up to date.\012As it has been modified, consider updating it with a git rebase\012Press enter to start the server, or CTRL+C to exit\033[m"
 else
 git pull
 node -e "import('../version.js').then(a=>console.log('Server has been updated to '+a.version+'\\n\\n'))"
@@ -28,7 +28,7 @@ A=
 cd $OLDPWD
 while true; do
 $runtime "$(dirname $0)/index.js" $FLAGS "$@" && break
-echo "\012\033[31mServer stopped (exit code $?). \033[mRestarting..."
+echo -e "\012\033[31mServer stopped (exit code $?). \033[mRestarting..."
 FLAGS=
 sleep 1
 done

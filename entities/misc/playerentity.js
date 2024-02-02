@@ -22,7 +22,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 		else if(id == 1 && slot < 5) this.items[slot] = item
 		else if(id == 2) this.inv[36] = item
 	}
-	static allInterfaces = [[0, 36], [1, 5], [2, 1]]
+	static allInterfaces = new Map().set(0, 36).set(1, 5).set(2, 1)
 	selected = 0
 	skin = defaultSkin
 	breakGridEvent = 0

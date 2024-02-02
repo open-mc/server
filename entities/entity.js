@@ -104,8 +104,7 @@ export class Entity{
 		}
 	}
 	give(stack, id = 0){
-		let max = 0
-		for(const {0:_id,1:_max} of this.allInterfaces) if(_id===id) max=_max
+		const max = this.allInterfaces?.get(id) ?? 0
 		if(max<=0) return stack
 		for(let j = 0; j < max; j++){
 			this.putItems(id, j, stack)

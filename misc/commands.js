@@ -1,7 +1,7 @@
 import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world/index.js'
 import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat, ITALIC, prefix, GOLD, BOLD } from './chat.js'
-import { DXDY, Entities, Entity, EntityIDs } from '../entities/entity.js'
+import { DXDY, Entities, EntityIDs } from '../entities/entity.js'
 import '../node/internals.js'
 import { ItemIDs, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
@@ -12,7 +12,7 @@ import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
 import { damageTypes } from '../entities/deathmessages.js'
 import { playersConnecting, playersLevel } from './sock.js'
-import { executeCommand, PERMS, commands, stack, selector, serializeTypePretty, log, parseCoords, snbt, marks, ITEMCOMMONDATA, ENTITYCOMMONDATA, publicCommands } from './_commands.js'
+import { executeCommand, PERMS, commands, stack, selector, serializeTypePretty, log, parseCoords, snbt, marks, ITEMCOMMONDATA, ENTITYCOMMONDATA, publicCommands, modCommands } from './_commands.js'
 import { VERSION } from '../version.js'
 
 Object.assign(commands, {
@@ -27,6 +27,10 @@ Object.assign(commands, {
 		for(let {0:m} of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
 		col += s.match(/()black|()dark[-_]?red|()dark[-_]?green|()(?:gold|dark[-_]?yellow)|()dark[-_]?blue|()dark[-_]?purple|()dark[-_]?(?:aqua|cyan)|()(?:light[-_]?)?gr[ea]y|()dark[-_]?gr[ea]y|()red|()(?:green|lime)|()yellow|()blue|()purple|()(?:aqua|cyan)|$/).slice(1).indexOf('') & 15
 		chat(txt, col)
+	},
+	bell(){
+		globalThis.process?.stdout.write('\x07')
+		for(const p of players.values()) p.sock?.send('')
 	},
 	tpe(a, b){
 		if(!b)b = a, a = '@s'
@@ -343,8 +347,8 @@ Object.assign(commands, {
 		if(moved) this.rubber(Y)
 		return log(this, `Regenerated chunk located at (${x<<6}, ${y<<6}) in the ${w.id}`)
 	},
-	perm(u = '@s', a='default'){
-		if(!u) throw 'Specify user!'
+	perm(u, a){
+		if(!u || !a) throw 'Usage: /perm <player> <permission_level>'
 		if(!Object.hasOwn(PERMS, a)) throw 'Invalid permission'
 		a = PERMS[a]
 		let count = ''
@@ -363,9 +367,18 @@ Object.assign(commands, {
 		savePermissions()
 		return log(this, 'Set the permission of '+(typeof count=='number'?count+' players':count)+' to '+a)
 	},
-	ban(u, a = 1e100){
+	ban(u, a = ''){
 		if(!u) throw 'Specify user!'
-		a = round(Date.now()/1000+(+a??1e100))
+		a = a.toLowerCase()
+		if(a.endsWith('m')) a = a.slice(0, -1)*60
+		else if(a.endsWith('h')) a = a.slice(0, -1)*3600
+		else if(a.endsWith('d')) a = a.slice(0, -1)*86400
+		else if(a.endsWith('w')) a = a.slice(0, -1)*604800
+		else if(a.endsWith('mo')) a = a.slice(0, -2)*2592000
+		else if(a.endsWith('s')) a = +a.slice(0, -1)
+		else if(a.startsWith('in')) a = 1e100
+		else a = +a
+		a = round(Date.now()/1000+(a||604800))
 		let count = ''
 		if(u[0] != '@'){
 			PERMISSIONS[u] = a
@@ -381,7 +394,7 @@ Object.assign(commands, {
 			if(count) count = typeof count == 'string' ? 2 : count+1
 			else count = f.name
 			PERMISSIONS[f.name] = a
-			pl.sock.send('-119You have been banned from this server'), pl.sock.end()
+			f.sock.send('-119You have been banned from this server'), f.sock.end()
 		}
 		savePermissions()
 		return log(this, 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString()))
@@ -522,10 +535,12 @@ export const anyone_help = {
 	as: '[target] [...command] -- Execute a command as a target',
 	repeat: '[count] [...command] -- Execute a command multiple times',
 	delay: '[time_seconds] [...command] -- Execute a command after a delay',
-	restart: '(delay=0) -- Restart the server after delay'
+	restart: '(delay=0) -- Restart the server after delay',
+	bell: '-- @everyone'
 }, cheats = ['give', 'summon', 'setblock', 'fill']
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
 
 publicCommands.push(...Object.keys(anyone_help))
+modCommands.push(...Object.keys(mod_help))

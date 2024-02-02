@@ -2,10 +2,11 @@
 # We recommend using an editor with syntax highlighting like vscode, it's more intuitive
 # Comments have already been placed above some properties to describe what they do
 
-# Server-related config
+# Server name to appear in server list
 name: Test Server
-maxplayers: 20
+# Icon to appear in server list. Specify a URL. Must start with https:// or /
 icon: https://openmc.pages.dev/img/beacon.png
+# Message of the day. Chosen randomly to be displayed on server list
 motd:
   - One of the servers of all time
   - Bug-free!
@@ -19,6 +20,9 @@ motd:
   # get it?
   - More dimensions!
 
+# Maximum players that can join
+maxplayers: 20
+
 # Path of world savedata (relative to this config file)
 path: world
 
@@ -28,12 +32,13 @@ world:
   
   # 32 bit seed in the range [-2147483648, 2147483647]
   seed: 1234
-  # 8 in default minecraft. 123 in the nether corresponds to 123 x nether_scale in the overworld
+  # 8 in default minecraft. x=123 in the nether corresponds to x=(123 x nether_scale) in the overworld
   nether_scale: 16
   # Radius around players where chunks are loaded. Recommended: 3
+  # 3 = 5x5 square = 25 chunks loaded. 4 = 7x7 = 49 chunks loaded. 5 = 9x9 = 81 chunks etc...
   chunk_loading_range: 3
 
-# Client components/mods
+# Client components/mods. 
 components:
   - /vanilla/index.js
 
@@ -68,7 +73,7 @@ generators:
   void: void
 
 permissions:
-  # Allow anyone to use /kill to kill themselves (only moderators and above can kill other players)
+  # Allow anyone to use /kill to kill themselves (only moderators and above can /kill any player)
   suicide: true
 
   # Allow anyone to chat (disabling will only allow moderators and above to use chat)
@@ -86,20 +91,23 @@ permissions:
   # Default permission level when joining for the first time
   # 4 = op (NOT RECOMMENDED)
   # 3 = mod
-  # 2 = normal
-  # 1 = spectate (allowed to walk around but not place/break blocks or summon/damage entities)
-  # 0 = not allowed to join (whitelist)
+  # 2 = normal (RECOMMENDED)
+  # 1 = adventure (can't place/break/interact)
+  # 0 = not allowed to join
   # Individual player permissions can be changed with /perm <username> <level>
+  # For a whitelisted server, use 0 and manually whitelist players with /perm <player> 2
   default: 2
 
   # If true, new players will automatically be put into spectator
+  # Moderators and above can always switch in and out of spectator
+  # Spectators can break and place blocks as long as they have permissions (see above)
   join_as_spectator: false
 
-  # E.g if you want new players to not be able to interact with the world at all but still explore:
+  # E.g if you want new players to not be able to do anything but still move around and load chunks:
   # default: 1
   # join_as_spectator: true
 
-# Server port. By default the client connects on 27277, so set this to 27277
+# Server port. By default the client connects on 27277, so it makes sense to set this to 27277
 port: 27277
 # Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
 # Empty values will attempt to use a self signed certificate only valid for localhost
@@ -123,7 +131,7 @@ webhook_profiles: true
 magic_word: hi
 
 # info displayed on the banned notice screen
-ban_appeal_info: 
+ban_appeal_info: Ban appeals are not accepted at this time
 
 # Do not touch this section for multiplayer servers unless you ABSOLUTELY know what you're doing!
 # You have been warned!

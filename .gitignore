@@ -1,3 +1,6 @@
 **/node_modules/**
 **/package-lock.json
 **/.DS_Store
+.vscode
+node/static/**
+node/index.html

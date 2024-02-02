@@ -43,6 +43,7 @@ class CraftingInterface extends EphemeralInterface{
 				this.itemChanged(0, i, this.slots[i])
 			}
 			if(changed) this.calculateOutput()
+			else this.itemChanged(0, 9, this.output)
 			return s
 		}
 	}
