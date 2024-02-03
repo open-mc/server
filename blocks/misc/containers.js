@@ -16,7 +16,7 @@ Blocks.chest = class extends Block{
 		state: Uint8
 	}
 	drops(){ return [new Items.chest(1, this.name), ...this.items] }
-	getItem(id, slot){ return id == 0 && slot < 27 ? this.items[slot] : null}
+	getItem(id, slot){ return id == 0 && slot < 27 ? this.items[slot] : undefined}
 	setItem(id, slot, item){
 		if(id == 0 && slot < 27){
 			const i = this.items[slot]

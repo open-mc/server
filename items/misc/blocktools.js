@@ -11,5 +11,5 @@ Items.furnace = class extends Item{
 }
 
 Items.chest = class extends Item{
-	place(){ const ch = new Blocks.chest(); ch.state = +(fx>.5); ch.name = this.name; placeblock(ch); return 1 }
+	place(fx, fy){ const ch = new Blocks.chest(); ch.state = +(fx>.5); ch.name = this.name; placeblock(ch); return 1 }
 }

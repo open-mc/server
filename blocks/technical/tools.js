@@ -3,14 +3,14 @@ import { Block, Blocks } from '../block.js'
 import '../natural/stone.js'
 import { Planks } from '../building/planks.js'
 import { Entities } from '../../entities/entity.js'
-import { EphemeralInterface } from '../../items/privateinterface.js'
+import { EphemeralInterface } from '../../misc/ephemeralinterface.js'
 import { getOutput } from '../../misc/crafting.js'
 
 class CraftingInterface extends EphemeralInterface{
 	static kind = 1
 	slots = [null, null, null, null, null, null, null, null, null]
 	output = null; canProduce = 0; leftovers = null
-	getItem(id, slot){ return slot == 9 ? this.output : slot < 9 ? this.slots[slot] : null }
+	getItem(id, slot){ return slot == 9 ? this.output : slot < 9 ? this.slots[slot] : undefined }
 	setItem(id, slot, item){
 		if(slot == 9) this.output = item
 		else if(slot < 9) this.slots[slot] = item
@@ -27,29 +27,47 @@ class CraftingInterface extends EphemeralInterface{
 		}else this.output = null, this.canProduce = 0, this.leftovers = null
 		this.itemChanged(0, 9, this.output)
 	}
-	putItems(id, slot, item){
-		if(slot < 9) return super.putItems(id, slot, item)
-		else return item
-	}
-	takeItems(id, slot, count){
-		if(slot < 9) return super.takeItems(id, slot, count)
-		else if(this.output){
-			const c = min(floor(this.output.maxStack/this.output.count), this.canProduce, count??1)
-			const s = new this.output.constructor(c*this.output.count)
-			let changed = false
-			for(let i = 0; i < 9; i++){
-				if(!this.slots[i]) continue
-				if((this.slots[i].count-=c)<=0) this.slots[i] = null, changed = true
-				this.itemChanged(0, i, this.slots[i])
-			}
-			if(changed) this.calculateOutput()
-			else this.itemChanged(0, 9, this.output)
-			return s
+	slotClicked(id, slot, holding, player){
+		if(slot < 9) return super.slotClicked(id, slot, holding, player)
+		if(!this.output) return
+		let count = this.output.count
+		if(holding){
+			if(this.output.constructor === holding.constructor && !this.output.savedata) count = min(count, this.output.maxStack - holding.count)
+			else return
 		}
+		count = min(this.canProduce, floor(count/this.output.count))
+		if(holding) holding.count += count*this.output.count
+		else holding = new this.output.constructor(count*this.output.count)
+		let changed = false
+		for(let i = 0; i < 9; i++){
+			if(!this.slots[i]) continue
+			if((this.slots[i].count-=count)<=0) this.slots[i] = null, changed = true
+			this.itemChanged(0, i, this.slots[i])
+		}
+		if(changed) this.calculateOutput()
+		else this.itemChanged(0, 9, this.output), this.canProduce -= count
+		return holding
 	}
-	swapItems(id, slot, item){
-		if(slot < 9) return super.swapItems(id, slot, item)
-		else return item
+	slotAltClicked(id, slot, holding, player){
+		if(slot < 9) return super.slotAltClicked(id, slot, holding, player)
+		if(!this.output) return
+		let count = this.output.maxStack
+		if(holding){
+			if(this.output.constructor === holding.constructor && !this.output.savedata) count = this.output.maxStack - holding.count
+			else return
+		}
+		count = min(this.canProduce, floor(count/this.output.count))
+		if(holding) holding.count += count*this.output.count
+		else holding = new this.output.constructor(count*this.output.count)
+		let changed = false
+		for(let i = 0; i < 9; i++){
+			if(!this.slots[i]) continue
+			if((this.slots[i].count-=count)<=0) this.slots[i] = null, changed = true
+			this.itemChanged(0, i, this.slots[i])
+		}
+		if(changed) this.calculateOutput()
+		else this.itemChanged(0, 9, this.output), this.canProduce -= count
+		return holding
 	}
 	interfaceClosed(id, player){
 		for(let i = 0; i < 9; i++){

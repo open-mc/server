@@ -2,10 +2,6 @@ import { DataWriter } from '../modules/dataproto.js'
 
 export const ChunkLoader = T => class extends T{
 	radius = CONFIG.world.chunk_loading_range
-	place(a,b,c){
-		super.place(a,b,c)
-		this.load(floor(this.x) >> 6, floor(this.y) >> 6, this.world)
-	}
 	moved(){
 		const {world, _world, radius, sock} = this
 		if((!_world && !world) || !sock) return

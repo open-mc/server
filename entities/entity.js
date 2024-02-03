@@ -5,7 +5,7 @@ import { deathMessages } from './deathmessages.js'
 import { GAMERULES } from '../world/index.js'
 import { Block, BlockIDs, Blocks } from '../blocks/block.js'
 import { getX, getY, load, peek, save } from '../misc/ant.js'
-import { EphemeralInterface } from '../items/privateinterface.js'
+import { EphemeralInterface } from '../misc/ephemeralinterface.js'
 
 export const chatImport = {chat: null}
 
@@ -36,8 +36,8 @@ export class Entity{
 		if(this.netId < 0){
 			if(this.netId == -2) entityMap.set(this.netId = toUnlink.get(this), this), toUnlink.delete(this)
 			else entityMap.set(this.netId = ++i, this)
+			if(this.sock) this.sock.netId = this.netId, this.rubber()
 		}
-		if(this.sock) this.sock.netId = this.netId, this.rubber()
 	}
 	unlink(){
 		if(this.netId < 0) return
@@ -90,27 +90,32 @@ export class Entity{
 	}
 	died(){
 		a: if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
-			for(const {0:id,1:len} of this.allInterfaces??[]){
-				for(let j = 0; j < len; j++){
-					const itm = this.swapItems(id, j, null)
+			for(const id of this.allInterfaces??[]){
+				this.mapItems(id, itm => {
 					if(!itm) return
 					const e = new Entities.item()
 					e.item = itm
 					e.dx = random() * 30 - 15
 					e.dy = random() * 4 + 4
 					e.place(this.world, this.x, this.y + this.height / 2)
-				}
+					return null
+				})
 			}
 		}
 	}
 	give(stack, id = 0){
-		const max = this.allInterfaces?.get(id) ?? 0
-		if(max<=0) return stack
-		for(let j = 0; j < max; j++){
-			this.putItems(id, j, stack)
-			if(!stack?.count) return null
-		}
-		return stack
+		this.mapItems(id, itm => {
+			if(!stack.count) return
+			const count = min(stack.maxStack, stack.count)
+			if(!itm) return stack.count -= count, new stack.constructor(count)
+			if(itm.constructor == stack.constructor && !itm.savedata){
+				const c = min(count, itm.maxStack - itm.count)
+				stack.count -= c
+				itm.count += c
+				return itm
+			}
+		})
+		return stack.count ? stack : null
 	}
 	giveAndDrop(stack){
 		this.give(stack)
@@ -131,15 +136,18 @@ export class Entity{
 			res.byte(14)
 			res.int(getX())
 			res.int(getY())
+			res.byte(this.sock.interfaceId = id&255)
 		}else if(e instanceof Entity){
 			res.byte(13)
 			res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
+			res.byte(this.sock.interfaceId = id&255)
 		}else if(e instanceof EphemeralInterface){
 			res.byte(12)
 			res.short(e.constructor.kind??e.kind)
+			res.byte(this.sock.interfaceId = id&255)
+			e.encode?.(res)
 			e.sock = this.sock
 		}else throw '.openInterface(<here>, _): Block, entity or ephemeral interface expected'
-		res.byte(this.sock.interfaceId = id&255)
 		this.sock.interface = e
 		this.sock.interfaceD = e.isBlock ? save(e) : e instanceof Entity ? e : null
 		this.sock.send(res.build())
@@ -165,39 +173,11 @@ export class Entity{
 		}
 		return false
 	}
-	getItem(id, slot){return null}
+	getItem(id, slot){}
 	setItem(id, slot, item){}
-	swapItems(id, slot, item){
-		const a = this.getItem(id, slot)
-		this.setItem(id, slot, item)
-		this.itemChanged(id, slot, item)
-		return a
-	}
-	putItems(id, slot, stack){
-		if(!stack) return null
-		const i = this.getItem(id, slot)
-		if(!i){
-			const s = new stack.constructor(stack.count)
-			if(this.swapItems(id, slot, s) !== s) return stack.count = 0, this.itemChanged(id, slot, s), null
-			return stack
-		}
-		if(i.constructor != stack.constructor || i.savedata) return stack
-		const c = min(stack.count, i.maxStack - i.count)
-		stack.count -= c
-		i.count += c
-		this.itemChanged(id, slot, i)
-		return stack.count ? stack : null
-	}
-	takeItems(id, slot, count = Infinity){
-		const i = this.getItem(id, slot)
-		if(!i) return null
-		count = min(i.count, count)
-		i.count -= count
-		if(!i.count) this.setItem(id, slot, null)
-		this.itemChanged(id, slot, i.count?i:null)
-		if(!count) return null
-		return new i.constructor(count)
-	}
+	static slotClicked = EphemeralInterface.prototype.slotClicked
+	static slotAltClicked = EphemeralInterface.prototype.slotAltClicked
+	static mapItems = EphemeralInterface.prototype.mapItems
 	itemChanged(id = 0, slot, item = this.getItem(id, slot)){
 		if(!this.linked || (!this.chunk&&!this.sock)) return
 		for(const sock of this.chunk ? this.chunk.sockets : [this.sock]){

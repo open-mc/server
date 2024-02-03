@@ -6,9 +6,7 @@ import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { LivingEntity } from './living.js'
 
-const STEVE = "缀\x7f罿缀\x7f孛缀\x7f罿缀\x7f罿缀\x7f罿缀\x7f罿⠰ひ爨Ωせ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0缀\x7f桨栀h罿栀h桨栀h罿缀\x7f桨栀h罿⠰♲嬡Ωせ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0栀h桨栀h罿缀\x7f桨栀h罿缀\x7f桨栀h罿⠰♲嬡⠰ひ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0嬀[桨栀h孛缀\x7f桨栀h罿缀\x7f桨栀h罿⠰♲嬡⠰ひ爨⠰ひ爨Ωせ爨\0\0\0\0\0\0\0\0\0\0\0\0栀h孛嬀[孛徖陁䅟徖蝁㭕徖陁䅟徖蝁㭕⠰♲嬡⠰ひ爨⠰♲嬡⠰ひ爨ᬨ⠊ਛᨦ✊ଛᰩ㈌ဣ\u202dⴐဠ嬀[孛嬀[桨徖陁䅟徖蝁㭕徖陁䅟喇阻䅟⠰♲嬡⠰ひ爨⠰♲嬡Ωせ爨ᬨ⠊ਛᨦ☊ਚḬ⤎జḫ㌍ᄤ栀h孛嬀[桨喇阻䅟徖蝁㭕徖陁䅟喇阻䅟⠰♲嬡⠰ひ爨⠰ひ爨Ωせ爨Ḭ☎ଘᨦ⤊జḫ⠎ଛᠤ⤊జ缀\x7f桨栀h罿喇阻䅟徖陁䅟喇阻䅟喇阻䅟⠰ひ爨⠰ひ爨⠰ひ爨Ωせ爨ᬨ⠊ചᴭⰎพᬨ✊ଛḬ⼎ᄢ缀\x7f桨栀h罿喇阻䅟喇阻䅟喇阻䅟徖陁䅟⠰ひ爨⠰ひ爨⠰ひ爨⠰ひ爨ᬨ⠊ਛᬨ☊చᜣ蜉㩘掜㩅ᐨ缀\x7f桨缀\x7f罿徖陁䅟喇阻䅟徖陁䅟徖陁䅟㼿㼿㼿⠰ひ爨㼿㼿㼿⠰ひ爨ᬨ⠊ਛᨨ☍ଘḬ萑ㅒ徖衁㥚⠰♲嬡⠰♲嬡徖陁䅟喇阻䅟徖蝁㭕徖蝁㭕㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿Ḭ⠎ਛᴭ戎⽃檝驏䑣历甴⽇⠰♲嬡⠰ひ爨徖陁䅟徖陁䅟徖陁䅟徖蝁㭕㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿㼿历蘴㑓掚虄㑓果陈䅟妊琻⽈"
-const defaultSkin = new Uint8Array(1008)
-for(let i = 0; i < 1008; i+=2)defaultSkin[i]=STEVE.charCodeAt(i>>1),defaultSkin[i+1]=STEVE.charCodeAt(i>>1)>>8
+const d = Buffer.from('AH9/AH9/AH9/AFtbAH9/AH9/AH9/AH9/AH9/AH9/AH9/AH9/MChyMChyJiFbMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH9/AGhoAGhoAH9/AGhoAGhoAGhoAH9/AH9/AGhoAGhoAH9/MChyJiFbJiFbMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhoAGhoAGhoAH9/AH9/AGhoAGhoAH9/AH9/AGhoAGhoAH9/MChyJiFbMChyMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFtbAGhoAGhoAFtbAH9/AGhoAGhoAH9/AH9/AGhoAGhoAH9/MChyJiFbMChyMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhoAFtbAFtbAFtbll9Bll9Bll9Bh1U7ll9Bll9Bll9Bh1U7MChyJiFbMChyMChyMChyJiFbMChyMChyKBsKKBsKJhoKJxsLKRwMMiMQLSAQLSAQAFtbAFtbAFtbAGholl9Bll9Bll9Bh1U7ll9Bll9Bh1U7ll9BMChyJiFbMChyMChyMChyJiFbJiFbMChyKBsKKBsKJhoKJhoKLB4OKRwMKx4NMyQRAGhoAFtbAFtbAGhoh1U7ll9Bll9Bh1U7ll9Bll9Bh1U7ll9BMChyJiFbMChyMChyMChyMChyJiFbMChyLB4OJhgLJhoKKRwMKx4OKBsLJBgKKRwMAH9/AGhoAGhoAH9/h1U7ll9Bll9Bll9Bh1U7ll9Bh1U7ll9BMChyMChyMChyMChyMChyMChyJiFbMChyKBsKKBoNLR0OLB4OKBsKJxsLLB4OLyIRAH9/AGhoAGhoAH9/h1U7ll9Bh1U7ll9Bh1U7ll9Bll9Bll9BMChyMChyMChyMChyMChyMChyMChyMChyKBsKKBsKKBsKJhoMIxcJh1g6nGNFOigUAH9/AGhoAH9/AH9/ll9Bll9Bh1U7ll9Bll9Bll9Bll9Bll9BPz8/Pz8/MChyMChyPz8/Pz8/MChyMChyKBsKKBsKKBoNJhgLLB4RhFIxll9BiFo5MChyJiFbMChyJiFbll9Bll9Bh1U7ll9Bll9Bh1U7ll9Bh1U7Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/LB4OKBsKLR0OYkMvnWpPmmNEhlM0dUcvMChyJiFbMChyMChyll9Bll9Bll9Bll9Bll9Bll9Bll9Bh1U7Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/hlM0hlM0mmNEhlM0nGdIll9Bilk7dEgv','base64'), defaultSkin = new Uint8Array(d.buffer, d.byteOffset, d.byteLength)
 
 Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(37)
@@ -16,13 +14,13 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	craftingSlots = [null, null, null, null, null]
 	static interfaceList = [0, 1]
 	mode = 0
-	getItem(id, slot){return id == 0 && slot < 36 ? this.inv[slot] : id == 1 && slot < 5 ? this.items[slot] : id == 2 ? this.inv[36] : null}
+	getItem(id, slot){return id == 0 && slot < 36 ? this.inv[slot] : id == 1 && slot < 5 ? this.items[slot] : id == 2 && slot == 0 ? this.inv[36] : undefined}
 	setItem(id, slot, item){
 		if(id == 0 && slot < 36) this.inv[slot] = item
 		else if(id == 1 && slot < 5) this.items[slot] = item
 		else if(id == 2) this.inv[36] = item
 	}
-	static allInterfaces = new Map().set(0, 36).set(1, 5).set(2, 1)
+	static allInterfaces = [0, 1, 2]
 	selected = 0
 	skin = defaultSkin
 	breakGridEvent = 0

@@ -176,13 +176,14 @@ Object.assign(commands, {
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			let max = _max
-			a: for(const {0:id,1:len} of e.allInterfaces??[]){
-				for(let j = 0; j < len; j++){
-					const item = e.getItem(id, j)
+			a: for(const id of e.allInterfaces??[]){
+				e.mapItems(id, item => {
+					if(!max) return
 					if(!item || (Con && item.constructor != Con)) return
-					max -= e.takeItems(id, j, max)?.count??0
-					if(!max) break a
-				}
+					max -= item.count
+					item.count = -min(0, max)
+					return item.count > 0 ? item : null
+				})
 			}
 			cleared += _max - max
 		}
