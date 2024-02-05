@@ -38,6 +38,12 @@ export const gotopos = (c,p) => {world=c.world,cx=c.x,cy=c.y,chunk=c;pos=p}
 
 export const visibleTo = ({sock}) => chunk ? chunk.sockets.includes(sock) : false
 
+export function update(a = 0){
+	if(!chunk) return
+	const id = chunk[pos]; const b = id === 65535 ? chunk.tileData.get(pos) : BlockIDs[id]
+	if(b.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, a)
+}
+
 export function place(bl, safe = false){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
 	bl = bl === bl.constructor && bl.savedata ? new bl : bl

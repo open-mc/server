@@ -210,7 +210,7 @@ server.ws('/*', {
 			codes[code].call(sock, sock.entity, buf)
 		}catch(e){ if(argv.log) throw decoder.decode(sock.getRemoteAddressAsText()) + ' made a malicious packet: ' + (e?.stack??e?.message??e) }
 	},
-	close(sock){ const os = sock.state; sock.state = 0; close.call(sock, os); clients.delete(sock) }
+	close(sock){ const os = sock.state; sock.state = 0; if(clients.delete(sock)) close.call(sock, os) }
 })
 setInterval(() => {
 	for(const u of clients){

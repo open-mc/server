@@ -35,6 +35,6 @@ export const blockShaped = (C, s) => {
 	return o
 }
 
-export const itemify = C => class extends Item{
+export const itemify = (C, K=Item) => class extends K{
 	place(){ placeblock(C); return 1 }
 }

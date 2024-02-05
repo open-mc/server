@@ -24,6 +24,7 @@ export class EphemeralInterface{
 			const c = min(holding.count, t.maxStack - t.count)
 			holding.count -= c
 			t.count += c
+			this.setItem(id, slot, t)
 			this.itemChanged(id, slot, t)
 			return holding.count ? holding : null
 		}
@@ -36,8 +37,8 @@ export class EphemeralInterface{
 		if(t && !holding){
 			const count = t.count>>1
 			if(!count) return null
-			t.count -= count
-			this.itemChanged(id, slot, t.count ? t : (this.setItem(id, slot, null), null))
+			if(!(t.count -= count)) this.setItem(id, slot, null)
+			this.itemChanged(id, slot, t.count ? t : null)
 			return new t.constructor(count)
 		}else if(t&&holding&&(t.constructor!==holding.constructor||t.savedata)){
 			this.setItem(id, slot, holding)
@@ -50,6 +51,7 @@ export class EphemeralInterface{
 				this.itemChanged(id, slot, stack)
 			}else if(t.constructor === holding.constructor && !t.savedata && t.count < t.maxStack){
 				t.count++
+				this.setItem(id, slot, t)
 				this.itemChanged(id, slot, t)
 			}else return holding
 			return --holding.count ? holding : null

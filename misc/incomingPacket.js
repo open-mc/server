@@ -196,7 +196,7 @@ function playerMovePacket(player, buf){
 				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
 				else if(i2 && player.mode!=1){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
-					player.itemChanged(item.count <= 0 ? null : item)
+					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
 				return
 			}
@@ -246,7 +246,10 @@ function playerMovePacket(player, buf){
 
 function respawnPacket(player, _){
 	if(player.health) return
-	player.place(Dimensions[GAMERULES.spawnworld], GAMERULES.spawnx, GAMERULES.spawny)
+	player.world = Dimensions[GAMERULES.spawnworld]
+	player.x = GAMERULES.spawnx
+	player.y = GAMERULES.spawny
+	player.link()
 	player.damage(-Infinity, null)
 	player.age = 0
 	player.dx = player.dy = 0
@@ -293,11 +296,17 @@ function dropItemPacket(player, buf){
 		e.place(player.world, player.x, player.y + player.head - 0.5)
 	}
 }
-
+function dropSlot(p, id, slot){
+	const t = p.getItem(id, slot)
+	if(t) p.setItem(id, slot, null), p.itemChanged(id, slot, null), p.giveAndDrop(t)
+}
 function closeInterfacePacket(player, _){
 	player.closeInterface()
-	const holding = player.getItem(2, 0)
-	if(holding) player.setItem(2, 0, null), player.itemChanged(2, 0, null), player.giveAndDrop(holding)
+	dropSlot(player, 2, 0)
+	dropSlot(player, 1, 5)
+	dropSlot(player, 1, 6)
+	dropSlot(player, 1, 7)
+	dropSlot(player, 1, 8)
 }
 
 export function voiceChat(player, buf){

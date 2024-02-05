@@ -13,7 +13,7 @@ function uListToEntry(itms, set = null){
 		m ? map = m : map.set(key, map = new Map)
 	}
 	if(set) return map.set(end, set), set
-	else return map.get(end)
+	else return map.get(end) ?? null
 }
 
 function oListToEntry(itms, flag = 0, set = null){
@@ -62,22 +62,46 @@ export function getOutput({0:a,1:b,2:c,3:d,4:e,5:f,6:g,7:h,8:i}){
 		if(!b&&!e&&!h){ a=c;d=f;g=i; size -= 2 }
 		else{ a=b;d=e;g=h;b=c;e=f;h=i; size -= b||e||h?1:2 }
 	}else size -= (c||f||i?0:b||e||h?1:2)
+	if(!a) return null
 	let match = null
 	switch(size){
-		case 9: match = oListToEntry([a?.id??65535,b?.id??65535,c?.id??65535,d?.id??65535,e?.id??65535,f?.id??65535,g?.id??65535,h?.id??65535,i?.id??65535], 0); break
-		case 8: match = oListToEntry([a?.id??65535,b?.id??65535,d?.id??65535,e?.id??65535,g?.id??65535,h?.id??65535], 0); break
-		case 7: match = oListToEntry([a?.id??65535,d?.id??65535,g?.id??65535], 0); break
-		case 6: match = oListToEntry([a?.id??65535,b?.id??65535,c?.id??65535,d?.id??65535,e?.id??65535,f?.id??65535], 1); break
-		case 5: match = oListToEntry([a?.id??65535,b?.id??65535,d?.id??65535,e?.id??65535], 0); break
-		case 4: match = oListToEntry([a?.id??65535,d?.id??65535], 0); break
-		case 3: match = oListToEntry([a?.id??65535,b?.id??65535,c?.id??65535], 1); break
-		case 2: match = oListToEntry([a?.id??65535,b?.id??65535], 1); break
+		case 9: match = oListToEntry([a.id,b?.id??65535,c?.id??65535,d?.id??65535,e?.id??65535,f?.id??65535,g?.id??65535,h?.id??65535,i?.id??65535], 0); break
+		case 8: match = oListToEntry([a.id,b?.id??65535,d?.id??65535,e?.id??65535,g?.id??65535,h?.id??65535], 0); break
+		case 7: match = oListToEntry([a.id,d?.id??65535,g?.id??65535], 0); break
+		case 6: match = oListToEntry([a.id,b?.id??65535,c?.id??65535,d?.id??65535,e?.id??65535,f?.id??65535], 1); break
+		case 5: match = oListToEntry([a.id,b?.id??65535,d?.id??65535,e?.id??65535], 0); break
+		case 4: match = oListToEntry([a.id,d?.id??65535], 0); break
+		case 3: match = oListToEntry([a.id,b?.id??65535,c?.id??65535], 1); break
+		case 2: match = oListToEntry([a.id,b?.id??65535], 1); break
 	}
 	if(match) return match
-	const l = size == 9 ? [0,0,0,0,0,0,0,0,0] : [0,0,0,0,0,0]; let j = 0
-	if(a) l[j++] = a.id; if(b) l[j++] = b.id; if(c) l[j++] = c.id
-	if(d) l[j++] = d.id; if(e) l[j++] = e.id; if(f) l[j++] = f.id
-	if(g) l[j++] = g.id; if(h) l[j++] = h.id; if(i) l[j++] = i.id
+	const l = size == 9 ? [a.id,0,0,0,0,0,0,0,0] : [a.id,0,0,0,0,0]; let j = 0
+	if(b&&(size%3>1)) l[j++] = b.id; if(c&&(size%3>2)) l[j++] = c.id
+	if(d&&size>3) l[j++] = d.id; if(e&&(size>4&&size!=7)) l[j++] = e.id
+	if(f&&(size==6||size==9)) l[j++] = f.id; if(g&&size>6) l[j++] = g.id
+	if(h&&(size>7)) l[j++] = h.id; if(i&&size==9) l[j++] = i.id
 	l.length = j
 	return uListToEntry(l)
+}
+export function getOutput4({0:a,1:b,2:c,3:d}){
+	let size = 4
+	if(!a&&!b) a=c, b=d, size -= 2 
+	else if(!c&&!d) size -= 2
+	if(!a&&!c) a=b, c=d, size--
+	else if(!b&&!d) size--
+	if(!a) return null
+	let match = null
+	switch(size){
+		case 4: match = oListToEntry([a.id,b?.id??65535,c?.id??65535,d?.id??65535], 0); break
+		case 3: match = oListToEntry([a.id,c?.id??65535], 0); break
+		case 2: match = oListToEntry([a.id,b?.id??65535], 1); break
+	}
+	return match || uListToEntry(size==4?d?b?c?[a.id,b.id,c.id,d.id]:[a.id,b.id,d.id]:c?[a.id,c.id,d.id]:[a.id,d.id]:[a.id,b.id,c.id]:size==3?[a.id,c.id]:size==2?[a.id,b.id]:[a.id])
+}
+
+
+export const smeltMap = new Map
+
+export function createSmeltRecipe(item, output, xp = 0){
+	smeltMap.set(item.id, {output, xp})
 }

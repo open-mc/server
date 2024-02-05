@@ -1,10 +1,11 @@
-import { Items } from '../../items/item.js'
+import { Item, Items } from '../../items/item.js'
 import { Block, Blocks } from '../block.js'
 import '../natural/stone.js'
 import { Planks } from '../building/planks.js'
 import { Entities } from '../../entities/entity.js'
 import { EphemeralInterface } from '../../misc/ephemeralinterface.js'
-import { getOutput } from '../../misc/crafting.js'
+import { getOutput, smeltMap } from '../../misc/crafting.js'
+import { blockevent, update } from '../../misc/ant.js'
 
 class CraftingInterface extends EphemeralInterface{
 	static kind = 1
@@ -90,9 +91,85 @@ Blocks.crafting_table = class extends Planks{
 }
 
 Blocks.furnace = class extends Blocks.stone{
-	static savedata = {}
-	drops(){ return new Items.furnace(1) }
-}
-
-Blocks.lit_furnace = class extends Blocks.furnace{
+	input = null; fuel = null; output = null; cookTime = 0; fuelTime = 0
+	getItem(id, slot){return slot == 0 ? this.input : slot == 1 ? this.fuel : slot == 2 ? this.output : undefined}
+	setItem(id, slot, item){
+		if(slot == 0) this.input = item
+		else if(slot == 1) this.fuel = item
+		else if(slot == 2) this.output = item
+		this.calcCook()
+	}
+	calcCook(){
+		if(!this.input || this.cookTime) return
+		const m = smeltMap.get(this.input.id)
+		if(m && (!this.output || (this.output.count < this.output.maxStack && this.output.constructor === m.output)) && this.fuel){
+			this.fuelTime = round(this.fuel.canSmelt * 200)||200
+			this.cookTime = 200
+			this.sendTimes()
+			if(!--this.fuel.count) this.fuel = null
+			this.itemChanged(0, 1, this.fuel)
+			update()
+		}
+	}
+	static savedata = {
+		input: Item, fuel: Item, output: Item, cookTime: Byte, fuelTime: Short
+	}
+	drops(){ return [this.input, this.output, this.fuel, new Items.furnace(1)] }
+	interact(_, player){
+		player.openInterface(this, 0)
+		return 0
+	}
+	sendTimes(){
+		blockevent(10, buf => {
+			buf.byte(this.cookTime)
+			buf.short(this.fuelTime)
+			buf.short(this.fuel ? round(this.fuel.canSmelt * 200)||200 : 0)
+		})
+	}
+	update(a){
+		if(this.fuelTime <= 0){
+			if(!this.cookTime) return
+			else if((this.cookTime += 2) > 200) return void(this.cookTime = 0, this.sendTimes())
+			else return a
+		}
+		this.fuelTime--
+		if(!this.cookTime) return a
+		if(!this.fuelTime && this.cookTime && this.fuel){
+			this.fuelTime = round(this.fuel.canSmelt * 200)||200
+			this.sendTimes()
+			if(!--this.fuel.count) this.fuel = null
+			this.itemChanged(0, 1, this.fuel)
+		}
+		const m = smeltMap.get(this.input?.id)
+		if(!m || (this.output && (m.output !== this.output.constructor || this.output.count >= this.output.maxStack))) return this.cookTime = 0, this.sendTimes(), a
+		if(!--this.cookTime){
+			if(this.output) this.output.count++
+			else this.output = new m.output(1)
+			if(!--this.input.count) this.input = null
+			this.itemChanged(0, 0, this.input)
+			this.itemChanged(0, 2, this.output)
+			if((!this.output || this.output.count < this.output.maxStack) && this.fuelTime && this.input) this.cookTime = 200, this.sendTimes()
+		}
+		return a
+	}
+	slotClicked(id, slot, holding, player){
+		if(slot == 1 && holding && !holding.canSmelt) return holding
+		else if(slot < 2) return super.slotClicked(id, slot, holding, player)
+		if(holding) return holding
+		const o = this.output
+		this.output = null
+		this.itemChanged(0, 2, null)
+		this.calcCook()
+		return o
+	}
+	slotAltClicked(id, slot, holding, player){
+		if(slot == 1 && holding && !holding.canSmelt) return holding
+		else if(slot < 2) return super.slotAltClicked(id, slot, holding, player)
+		if(holding || !this.output) return holding
+		const o = this.output
+		if(!--this.output.count) this.output = null
+		this.itemChanged(0, 2, this.output)
+		this.calcCook()
+		return new o.constructor(1)
+	}
 }
