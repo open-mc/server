@@ -1,6 +1,6 @@
-import { Biomes, Blocks, chunk } from '../vars.js'
-import { biomesFor, constantBiome } from './biomes.js'
+import { Blocks, chunk } from '../vars.js'
 import { imxs32, imxs32_2 } from './random.js'
+import { constantBiome } from './biomes.js'
 
 const low = new Float64Array(4160)
 const high = new Float64Array(4160)
@@ -56,37 +56,85 @@ const lerpLookup = [
 ]
 const facs = new Float64Array(64)
 const heights = new Float64Array(64)
-export const filler = (fill = Blocks.stone, liquid = Blocks.water, level = 0, biomer, flags = 0) => (cx, cy) => {
-	const biomes = biomer(cx, cy)
-	const g = imxs32_2(cx, cy)
-	makeVector(0, g)
-	const g_up = imxs32_2(cx, cy + 1)
-	makeVector(272, g_up)
-	const g_right = imxs32_2(cx + 1, cy)
-	makeVector(16, g_right)
-	const g_upright = imxs32_2(cx + 1, cy + 1)
-	makeVector(288, g_upright)
-	for(let i = 0, x = .0078125, y = 0; i < 4160; i++,x+=.015625){if(x>=1)x=.0078125,y+=.015625
-		const nx = x - 1
-		const ny = y - 1
-		low[i] = (((x * xlow[0] + y * ylow[0]) * nx * nx + (nx * xlow[16] + y * ylow[16]) * x * x) * ny * ny
-		  + ((x * xlow[272] + ny * ylow[272]) * nx * nx + (nx * xlow[288] + ny * ylow[288]) * x * x) * y * y) * 4
-		high[i] = (((x * xhigh[0] + y * yhigh[0]) * nx * nx + (nx * xhigh[16] + y * yhigh[16]) * x * x) * ny * ny
-		  + ((x * xhigh[272] + ny * yhigh[272]) * nx * nx + (nx * xhigh[288] + ny * yhigh[288]) * x * x) * y * y) * 4
-		sel[i] = (((x * xsel[0] + y * ysel[0]) * nx * nx + (nx * xsel[16] + y * ysel[16]) * x * x) * ny * ny
-		  + ((x * xsel[272] + ny * ysel[272]) * nx * nx + (nx * xsel[288] + ny * ysel[288]) * x * x) * y * y) * 40 + 0.5
+const L = new Float64Array(16)
+
+export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface = Blocks.waterTop, level = 0, biomer, flags = 0) => (cx, cy) => {
+	const biomes = typeof biomer == 'function' ? biomer(cx, cy) : constantBiome(biomer)
+	let g = L[0] = imxs32_2(cx, cy); makeVector(0, g)
+	for(let i = 1; i < 16; i++) makeVector(i, L[i]=g=imxs32(g,-150702732))
+	for(let j = 0; j < 16; j++){
+		g = L[j]
+		for(let i = 17; i < 289; i+=17) makeVector(i+j, g=imxs32(g,1975484815))
 	}
+	makeVector(272, g = imxs32_2(cx, cy + 1))
+	for(let i = 273; i < 288; i++) makeVector(i, g=imxs32(g,-150702732))
+	makeVector(16, g = imxs32_2(cx + 1, cy))
+	for(let i = 33; i < 288; i+=17) makeVector(i, g=imxs32(g,1975484815))
+	makeVector(288, g = imxs32_2(cx + 1, cy + 1))
+	for(let i = 0, px = .0078125, py = 0; i < 4160; i++,px+=.015625){if(px>=1)px=.0078125,py+=.015625
+		let x = px, y = py
+		let F = 4.849660523763336
+		let l = 0, h = 0, s = 0
+		let nx = x - 1, ny = y - 1, nnx = nx*nx, nny = ny*ny, xx = x*x, yy = y*y
+		l += (((x * xlow[0] + y * ylow[0]) * nnx + (nx * xlow[16] + y * ylow[16]) * xx) * nny + ((x * xlow[272] + ny * ylow[272]) * nnx + (nx * xlow[288] + ny * ylow[288]) * xx) * yy) * F
+		h += (((x * xhigh[0] + y * yhigh[0]) * nnx + (nx * xhigh[16] + y * yhigh[16]) * xx) * nny + ((x * xhigh[272] + ny * yhigh[272]) * nnx + (nx * xhigh[288] + ny * yhigh[288]) * xx) * yy) * F
+		s += (((x * xsel[0] + y * ysel[0]) * nnx + (nx * xsel[16] + y * ysel[16]) * xx) * nny + ((x * xsel[272] + ny * ysel[272]) * nnx + (nx * xsel[288] + ny * ysel[288]) * xx) * yy) * F
+
+		x *= 2; y *= 2
+		let ixy = floor(x) * 8 + floor(y) * 136
+		x %= 1; y %= 1; F *= .4
+		nx = x - 1, ny = y - 1, nnx = nx*nx, nny = ny*ny, xx = x*x, yy = y*y
+		l += (((x * xlow[ixy] + y * ylow[ixy]) * nnx + (nx * xlow[ixy+8] + y * ylow[ixy+8]) * xx) * nny + ((x * xlow[ixy+136] + ny * ylow[ixy+136]) * nnx + (nx * xlow[ixy+144] + ny * ylow[ixy+144]) * xx) * yy) * F
+		h += (((x * xhigh[ixy] + y * yhigh[ixy]) * nnx + (nx * xhigh[ixy+8] + y * yhigh[ixy+8]) * xx) * nny + ((x * xhigh[ixy+136] + ny * yhigh[ixy+136]) * nnx + (nx * xhigh[ixy+144] + ny * yhigh[ixy+144]) * xx) * yy) * F
+		s += (((x * xsel[ixy] + y * ysel[ixy]) * nnx + (nx * xsel[ixy+8] + y * ysel[ixy+8]) * xx) * nny + ((x * xsel[ixy+136] + ny * ysel[ixy+136]) * nnx + (nx * xsel[ixy+144] + ny * ysel[ixy+144]) * xx) * yy) * F
+
+		x *= 2; y *= 2
+		ixy += floor(x) * 4 + floor(y) * 68
+		x %= 1; y %= 1; F *= .4
+		nx = x - 1, ny = y - 1, nnx = nx*nx, nny = ny*ny, xx = x*x, yy = y*y
+		l += (((x * xlow[ixy] + y * ylow[ixy]) * nnx + (nx * xlow[ixy+4] + y * ylow[ixy+4]) * xx) * nny + ((x * xlow[ixy+68] + ny * ylow[ixy+68]) * nnx + (nx * xlow[ixy+72] + ny * ylow[ixy+72]) * xx) * yy) * F
+		h += (((x * xhigh[ixy] + y * yhigh[ixy]) * nnx + (nx * xhigh[ixy+4] + y * yhigh[ixy+4]) * xx) * nny + ((x * xhigh[ixy+68] + ny * yhigh[ixy+68]) * nnx + (nx * xhigh[ixy+72] + ny * yhigh[ixy+72]) * xx) * yy) * F
+		s += (((x * xsel[ixy] + y * ysel[ixy]) * nnx + (nx * xsel[ixy+4] + y * ysel[ixy+4]) * xx) * nny + ((x * xsel[ixy+68] + ny * ysel[ixy+68]) * nnx + (nx * xsel[ixy+72] + ny * ysel[ixy+72]) * xx) * yy) * F
+
+		x *= 2; y *= 2
+		ixy += floor(x) * 2 + floor(y) * 34
+		x %= 1; y %= 1; F *= .4
+		nx = x - 1, ny = y - 1, nnx = nx*nx, nny = ny*ny, xx = x*x, yy = y*y
+		l += (((x * xlow[ixy] + y * ylow[ixy]) * nnx + (nx * xlow[ixy+2] + y * ylow[ixy+2]) * xx) * nny + ((x * xlow[ixy+34] + ny * ylow[ixy+34]) * nnx + (nx * xlow[ixy+36] + ny * ylow[ixy+36]) * xx) * yy) * F
+		h += (((x * xhigh[ixy] + y * yhigh[ixy]) * nnx + (nx * xhigh[ixy+2] + y * yhigh[ixy+2]) * xx) * nny + ((x * xhigh[ixy+34] + ny * yhigh[ixy+34]) * nnx + (nx * xhigh[ixy+36] + ny * yhigh[ixy+36]) * xx) * yy) * F
+		s += (((x * xsel[ixy] + y * ysel[ixy]) * nnx + (nx * xsel[ixy+2] + y * ysel[ixy+2]) * xx) * nny + ((x * xsel[ixy+34] + ny * ysel[ixy+34]) * nnx + (nx * xsel[ixy+36] + ny * ysel[ixy+36]) * xx) * yy) * F
+
+		x *= 2; y *= 2
+		ixy += floor(x) + floor(y) * 17
+		x %= 1; y %= 1; F *= .4
+		nx = x - 1, ny = y - 1, nnx = nx*nx, nny = ny*ny, xx = x*x, yy = y*y
+		l += (((x * xlow[ixy] + y * ylow[ixy]) * nnx + (nx * xlow[ixy+1] + y * ylow[ixy+1]) * xx) * nny + ((x * xlow[ixy+17] + ny * ylow[ixy+17]) * nnx + (nx * xlow[ixy+18] + ny * ylow[ixy+18]) * xx) * yy) * F
+		h += (((x * xhigh[ixy] + y * yhigh[ixy]) * nnx + (nx * xhigh[ixy+1] + y * yhigh[ixy+1]) * xx) * nny + ((x * xhigh[ixy+17] + ny * yhigh[ixy+17]) * nnx + (nx * xhigh[ixy+18] + ny * yhigh[ixy+18]) * xx) * yy) * F
+		s += (((x * xsel[ixy] + y * ysel[ixy]) * nnx + (nx * xsel[ixy+1] + y * ysel[ixy+1]) * xx) * nny + ((x * xsel[ixy+17] + ny * ysel[ixy+17]) * nnx + (nx * xsel[ixy+18] + ny * ysel[ixy+18]) * xx) * yy) * F
+
+		low[i] = l; high[i] = h; sel[i] = s * 12.5 + .5
+	}
+	const biomeData = [0,0,0,0,0,0,0,0,0,0]
+	let k = 0
+	for(let i = 0; i < 5; i++){
+		const {offset, height} = biomes[i]
+		const o = biomeData[i] = typeof offset == 'function' ? offset(cx+i/4, cy) : offset
+		const h = biomeData[i+5] = typeof height == 'function' ? height(cx+i/4, cy) : height
+		if(o - abs(h) > (cy << 6)+96) k -= Math.sign(h)||Math.sign(1/h)
+		else if(o + abs(h) < (cy<<6)-16) k += Math.sign(h)||Math.sign(1/h)
+	}
+	if(k >= 5){ chunk.fill(Blocks.air); return }
+	if(k <= -5){ chunk.fill(fill); return }
+	const lvl = typeof level == 'function' ? level(cx, cy) : level-cy
 	for(let i = 0; i < 4160;){
 		if(i < 64){
 			if(flags&1){
 				heights[i] = Infinity
 				facs[i] = 0
 			}else{
-				let {offset, height} = biomes[i >> 4 & 3]
-				const {offset: o2, height: h2} = biomes[(i >> 4 & 3) + 1]
 				const lerp = lerpLookup[i & 15]
-				offset = (1 - lerp) * offset + lerp * o2
-				height = (1 - lerp) * height + lerp * h2
+				const offset = (1 - lerp) * biomeData[i>>4] + lerp * biomeData[(i>>4)+1]
+				const height = (1 - lerp) * biomeData[(i>>4)+5] + lerp * biomeData[(i>>4)+6]
 				facs[i] = ((cy << 6) - offset) / height
 				heights[i] = height
 			}
@@ -103,7 +151,21 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, level = 0, bi
 			: s > -5/height && deepsurface ?
 				deepsurface
 			: fill
-		: cy < level ? liquid : Blocks.air
+		: lvl>0 ? lvl==1 && i >= 4032 ? liquidSurface : liquid : Blocks.air
 		i += 65
 	}
+}
+
+function fill(cx, cy){
+	let g = L[0] = imxs32_2(cx, cy); makeVector(0, g)
+	for(let i = 1; i < 16; i++) makeVector(i, L[i]=g=imxs32(g,-150702732))
+	for(let j = 0; j < 16; j++){
+		g = L[j]
+		for(let i = 17; i < 289; i+=17) makeVector(i+j, g=imxs32(g,1975484815))
+	}
+	makeVector(272, g = imxs32_2(cx, cy + 1))
+	for(let i = 273; i < 288; i++) makeVector(i, g=imxs32(g,-150702732))
+	makeVector(16, g = imxs32_2(cx + 1, cy))
+	for(let i = 33; i < 288; i+=17) makeVector(i, g=imxs32(g,1975484815))
+	makeVector(288, g = imxs32_2(cx + 1, cy + 1))
 }

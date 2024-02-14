@@ -1,11 +1,11 @@
 import { Blocks } from '../../blocks/block.js'
-import { place } from '../../misc/ant.js'
+import { placeblock } from '../../misc/ant.js'
 import { Item, Items } from '../item.js'
 
 Items.grass = class Grass extends Item{
-	place(){ place(Blocks.grass); super.use(true) }
+	place(){ placeblock(Blocks.grass); return 1 }
 }
 
 Items.dirt = class Dirt extends Item{
-	place(){ place(Blocks.dirt); super.use(true) }
+	place(){ placeblock(Blocks.dirt); return 1 }
 }

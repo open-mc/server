@@ -1,23 +1,30 @@
 import { Blocks } from '../../blocks/block.js'
-import { place } from '../../misc/ant.js'
+import { placeblock } from '../../misc/ant.js'
 import { Item, Items } from '../item.js'
 
-Items.stone = class Stone extends Item{
-	place(){ place(Blocks.stone); super.use() }
+Items.stone = class extends Item{
+	place(){ placeblock(Blocks.stone); return 1 }
+}
+Items.cobblestone = class extends Item{
+	place(){ placeblock(Blocks.cobblestone); return 1 }
 }
 
-Items.netherrack = class Netherrack extends Item{
-	place(){ place(Blocks.netherrack); super.use() }
+Items.netherrack = class extends Item{
+	place(){ placeblock(Blocks.netherrack); return 1 }
 }
 
-Items.obsidian = class Obsidian extends Item{
-	place(){ place(Blocks.obsidian); super.use() }
+Items.obsidian = class extends Item{
+	place(){ placeblock(Blocks.obsidian); return 1 }
 }
 Items.glowing_obsidian = class extends Items.obsidian{
-	place(){ place(Blocks.glowing_obsidian); super.use() }
+	place(){ placeblock(Blocks.glowing_obsidian); return 1 }
+}
+Items.bedrock = class extends Item{
+	static forbidden = true
+	place(){ placeblock(Blocks.bedrock); return 1 }
 }
 
 
 Items.endstone = class extends Item{
-	place(){ place(Blocks.endstone); super.use() }
+	place(){ placeblock(Blocks.endstone); return 1 }
 }

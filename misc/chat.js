@@ -1,7 +1,5 @@
-import { CONFIG } from '../config.js'
-import { httpHost, server } from '../server.js'
+import { chatImport } from '../entities/entity.js'
 import { players } from '../world/index.js'
-import fetch from 'node-fetch'
 
 export const BLACK = 0
 export const DARK_RED = 1
@@ -31,6 +29,7 @@ export const STRIKETHROUGH = 128
  * @param {{getName: () => string, getAvatar: () => string}} [player] sender of chat message, primarily used to prefix the message. Setting this to their websocket object will send the message as a command output
  */
 export function chat(msg, style = 15, who = null){
+	if(who?.isServer) who = null
 	let a = ''
 	if(style&BOLD)a+='1;'
 	if(style&ITALIC)a+='3;'
@@ -40,9 +39,9 @@ export function chat(msg, style = 15, who = null){
 	if(CONFIG.webhook && msg.length < 1994){
 		const wpf = CONFIG.webhook_profiles ?? true
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
-			content: !who ? '_**' + msg + '**_' : wpf ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
+			content: !who ? '***' + msg + '***' : wpf ? msg.replace(/<\w+> ?/y,'') : '`' + msg.replaceAll('`', 'ˋ') + '`',
 			username: wpf && who ? who.getName() : CONFIG.name,
-			avatar_url: wpf && who ? httpHost + '/avatar/' + who.name : CONFIG.icon,
+			avatar_url: wpf && who && httpHost ? httpHost + '/avatar/' + who.name + (who.sock ? '?t=' + who.sock.joinedAt : '') : CONFIG.icon,
 			allowed_mentions: { parse: [] }, flags: 4
 		})}).catch(e => null)
 	}
@@ -51,7 +50,10 @@ export function chat(msg, style = 15, who = null){
 		sock.send(msg)
 }
 
+// Every system has its flaws
+chatImport.chat = chat
+
 export function prefix(player, style = 0){
-	const {name} = player || server
+	const name = player?.name
 	return name ? style ? '[' + name + '] ' : '<' + name + '> ' : style ? '[!] ' : '[server] '
 }

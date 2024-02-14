@@ -1,32 +1,20 @@
-import { chat, prefix } from './chat.js'
-import { anyone_help, commands, err, mod_help } from './commands.js'
-import { CONFIG, GAMERULES, MOD, stat, statRecord } from '../config.js'
-import { Entities, entityMap } from '../entities/entity.js'
-import { DataWriter } from '../utils/data.js'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up } from './ant.js'
-import { current_tps } from '../world/tick.js'
-import { stepEntity } from '../world/physics.js'
-import { Dimensions } from '../world/index.js'
+import { GREEN, WHITE, chat, prefix } from './chat.js'
+import { err, executeCommand } from './_commands.js'
+import { Entities, Entity } from '../entities/entity.js'
+import { DataWriter } from '../modules/dataproto.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, save, load } from './ant.js'
+import { currentTPS, entityMap } from '../world/tick.js'
+import { fastCollision, stepEntity } from '../world/physics.js'
+import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
+import './commands.js'
+import { ItemIDs } from '../items/item.js'
 
 const REACH = 10
-
-/*function withinD(incoming, old, target){
-	const ratio = incoming / old
-	if(ratio > 0 && ratio < 1) return true
-	const ratio2 = incoming / target
-	return ratio2 > 0 && ratio2 < 1
-}
-function withinDa(incoming, target){
-	const ratio2 = incoming / target
-	return ratio2 > 0 && ratio2 < 1.25
-}*/
 
 function validateMove(sock, player, buf){
 	// where the player wants to be
 	const x = buf.double() || 0, y = buf.double() || 0
-	player.state = buf.short(); let rubber = false
-	//const dx = buf.float() || 0, dy = buf.float() || 0
-
+	player.state = player.state & 0xFFFF8000 | buf.short()&0x7fff; let rubber = false
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
 
@@ -34,7 +22,7 @@ function validateMove(sock, player, buf){
 	if(CONFIG.socket.movementchecks){
 		const {movementcheckmercy: mercy} = CONFIG.socket
 		if(mx >= 0){
-			const excess = mx - max(9, dx) / current_tps
+			const excess = mx - max(9, dx) / currentTPS
 			sock.rx -= excess
 			if(sock.rx < 0){
 				mx += sock.rx
@@ -42,7 +30,7 @@ function validateMove(sock, player, buf){
 				rubber = true
 			}else if(sock.rx > mercy) sock.rx = mercy
 		}else{
-			const excess = mx - min(-9, dx) / current_tps
+			const excess = mx - min(-9, dx) / currentTPS
 			sock.rx += excess
 			if(sock.rx < 0){
 				mx -= sock.rx
@@ -51,7 +39,7 @@ function validateMove(sock, player, buf){
 			}else if(sock.rx > mercy) sock.rx = mercy
 		}
 		if(my >= 0){
-			const excess = my - max(9, dy) / current_tps
+			const excess = my - max(9, dy) / currentTPS
 			sock.ry -= excess
 			if(sock.ry < 0){
 				my += sock.ry
@@ -60,7 +48,7 @@ function validateMove(sock, player, buf){
 			}else if(sock.ry > mercy) sock.ry = mercy
 		}else{
 			const tV = player.world.gy * player.gy / (1 - player.yDrag)
-			const excess = my - min(tV * 1.2, dy) / current_tps
+			const excess = my - min(tV * 1.2, dy) / currentTPS
 			sock.ry += excess
 			if(sock.ry < 0){
 				my -= sock.ry
@@ -69,113 +57,184 @@ function validateMove(sock, player, buf){
 			}else if(sock.ry > mercy) sock.ry = mercy
 		}
 	}
+	const idx = buf.float(), idy = buf.float()
 	if(!rubber){
-		player.dx = mx * current_tps
-		player.dy = my * current_tps
-		stepEntity(player)
+		if(player.linked){
+			player.dx = mx * currentTPS
+			player.dy = my * currentTPS
+			fastCollision(player)
+			player.impactDx = idx; player.impactDy = idy
+			stepEntity(player)
+		}else{
+			player.x += mx; player.y += my
+			player.dx = player.dy = 0
+			player.updateControls?.()
+		}
 	}else player.rubber()
 }
 
+const DEFAULT_BLOCKSHAPE = [0, 0, 1, 1]
 function playerMovePacket(player, buf){
+	if(!player.world) return
 	top: {
 		let t = Date.now() / 1000
-		if(t < (t = max(this.movePacketCd + 1 / current_tps, t - 2))) return
+		if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
 		this.movePacketCd = t
-		if(buf.byte() != this.r || !player.chunk) return
-
-		if(!player.health) break top
+		if(buf.byte() != this.r) return
+		if(player.health <= 0) break top
 
 		validateMove(this, player, buf)
+		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
+		if(!player.world) return
 		
-		statRecord('player', 'max_speed', Math.sqrt(player.dx * player.dx + player.dy * player.dy))
-		statRecord('player', 'max_dist', Math.sqrt(player.x * player.x + player.y * player.y))
+		statRecord('player', 'max_speed', sqrt(player.dx * player.dx + player.dy * player.dy))
+		statRecord('player', 'max_dist', sqrt(player.x * player.x + player.y * player.y))
 		const sel = buf.byte()
 		if(player.selected != (player.selected = (sel & 127) % 9)){
-			const res = new DataWriter()
-			res.byte(15)
-			res.uint32(player.netId); res.short(player.netId / 4294967296 | 0)
-			res.byte(player.selected)
-			player.emit(res)
+			const sel = player.selected
+			player.event(13, b => b.byte(sel))
 		}
 		const x = buf.float(), y = buf.float()
 		if(x != x){
 			player.f = y || 0
 			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
-			if(e && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.players.includes(player)){
+			if(this.permissions >= 2 && e && e.chunk && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
 				//hit e
 				const itm = player.inv[player.selected]
 				e.damage?.(itm?.damage?.(e) ?? 1, player)
 			}
 			break top
 		}
-		const bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
-		goto(bx, by, player.world)
-		const reach = sqrt(x * x + y * y)
+		if(this.permissions < 2) break top
+		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
+		goto(player.world, bx, by)
+		const reach = min(sqrt(x * x + y * y), 10)
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach
 		let l = 0
-		while(d < reach){
-			if(peek().solid)break
+		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
+		a: while(d < reach){
+			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
+			if((solid && !replacable) || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
+				for(let i = 0; i < blockShape.length; i += 4){
+					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
+					if(dx > 0 && px <= x0){
+						const iy = py + (dy / dx) * (x0-px)
+						if(iy >= y0 && iy <= y1) break a
+					}else if(dx < 0 && px >= x1){
+						const iy = py + (dy / dx) * (x1-px)
+						if(iy >= y0 && iy <= y1) break a
+					}
+					if(dy > 0 && py <= y0){
+						const ix = px + (dx / dy) * (y0-py)
+						if(ix >= x0 && ix <= x1) break a
+					}else if(dy < 0 && py >= y1){
+						const ix = px + (dx / dy) * (y1-py)
+						if(ix >= x0 && ix <= x1) break a
+					}
+				}
+			}
 			if(dx > 0){
 				const iy = py + dy * (1 - px) / dx
-				if(iy >= 0 && iy <= 1){right(); l=65535; d += (1 - px) / dx; px = 0; py = iy; continue}
+				if(iy >= 0 && iy <= 1){right(); l=l<<16|255; d += (1 - px) / dx; px = 0; py = iy; continue}
 			}else if(dx < 0){
 				const iy = py + dy * -px / dx
-				if(iy >= 0 && iy <= 1){left(); l=1; d += -px / dx; px = 1; py = iy; continue}
+				if(iy >= 0 && iy <= 1){left(); l=l<<16|1; d += -px / dx; px = 1; py = iy; continue}
 			}
 			if(dy > 0){
 				const ix = px + dx * (1 - py) / dy
-				if(ix >= 0 && ix <= 1){up(); l=-65536; d += (1 - py) / dy; py = 0; px = ix; continue}
+				if(ix >= 0 && ix <= 1){up(); l=l<<16|65280; d += (1 - py) / dy; py = 0; px = ix; continue}
 			}else if(dy < 0){
 				const ix = px + dx * -py / dy
-				if(ix >= 0 && ix <= 1){down(); l=65536; d += -py / dy; py = 1; px = ix; continue}
+				if(ix >= 0 && ix <= 1){down(); l=l<<16|256; d += -py / dy; py = 1; px = ix; continue}
 			}
 			//failsafe
 			break top
 		}
+		if(d >= reach){
+			const {solid, replacable, targettable, flows} = peekat(l << 24 >> 24, l << 16 >> 24)
+			if(((!solid && !replacable && targettable) || (interactFluid && flows === false))){
+				jump(l << 24 >> 24, l << 16 >> 24)
+				px -= l << 24 >> 24; py -= l << 16 >> 24
+				l >>>= 16
+				if(l == 1) px = 1
+				else if(l == 255) px = 0
+				else if(l == 256) py = 1
+				else if(l == 65280) py = 0
+			}else{
+				if(sel > 127) break top
+				px = (player.x + x) % 1; py = (player.y + player.head + y) % 1
+			}
+		}
+		px -= l << 24 >> 24; py -= l << 16 >> 24
 		if(sel > 127){
-			if(d >= reach) break top
-			const block = peek(), item = player.inv[sel & 127]
-			if(block.solid){
+			const block = peek()
+			if((block.targettable??block.solid) | block.mustBreak){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
-					player.blockBreakLeft = round((item ? item.breaktime(block) : block.breaktime) * current_tps)
-					player.breakGridEvent = gridevent(1, buf => buf.float(player.blockBreakLeft))
+					player.blockBreakLeft = player.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
+					player.breakGridEvent = gridevent(4, buf => buf.float(player.blockBreakLeft))
 				}
 				return
 			}
 			if(item && item.interact2){
-				item.interact2(player)
-				if(!item.count) player.inv[sel&127] = null
-				player.itemschanged([sel & 127])
+				const i2 = item.interact2(player)
+				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
+				else if(i2 && player.mode!=1){
+					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
+					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
+				}
 			}
 			break top
 		}
 		let b = peek()
-		const item = player.inv[sel]
-		if(b.solid){
-			if(item && item.interact && !item.interact(b)){
-				if(!item.count) player.inv[sel] = null
-				player.itemschanged([sel])
+		if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
+			b: if(item && item.interact){
+				const i2 = item.interact(b, player)
+				if(i2 === undefined) break b
+				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
+				else if(i2 && player.mode!=1){
+					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
+					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
+				}
+				return
+			}
+			b: if(!(player.state&2) && b.interact){
+				const i2 = b.interact(item, player)
+				if(i2 === undefined) break b
+				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
+				else if(i2 && player.mode!=1){
+					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
+					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
+				}
 				return
 			}
 			if(!l) break top
 		}
 		if(!item) break top
-		jump(l << 16 >> 16, l >> 16)
-		if(!peekup().solid && !peekleft().solid && !peekdown().solid && !peekright().solid) break top
-		b = peek()
+		jump(l << 24 >> 24, l << 16 >> 24)
 		{
+			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
+			if(interactFluid){
+				if(up.flows === false && left.flows === false && down.flows === false && right.flows === false) break top
+			}else if(!(up.targettable??up.solid) && !(left.targettable??left.solid) && !(down.targettable??down.solid) && !(right.targettable??right.solid)) break top
+		}
+		b = peek()
+		if(!b.replacable && !(interactFluid && b.flows === false)) break top
+		if(false){ // TODO better entity check allowing for quasi-solid blocks like sugar_cane
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
-		if(item.place){
-			item.place()
+		if(item.place && !(item.forbidden&&this.permissions<MOD)){
+			const i2 = item.place(px, py, player)
+			if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
+			else if(i2 && player.mode!=1){
+				if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
+				player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
+			}
 			stat('player', 'blocks_placed')
 		}
-		if(!item.count) player.inv[sel&127] = null
-		player.itemschanged([sel&127])
 	}
 	if(player.breakGridEvent){
 		cancelgridevent(player.breakGridEvent)
@@ -186,168 +245,162 @@ function playerMovePacket(player, buf){
 }
 
 function respawnPacket(player, _){
+	if(player.health) return
+	player.world = Dimensions[GAMERULES.spawnworld]
 	player.x = GAMERULES.spawnx
 	player.y = GAMERULES.spawny
-	player.world = Dimensions[GAMERULES.spawnworld]
-	player.rubber()
+	player.link()
 	player.damage(-Infinity, null)
+	player.age = 0
 	player.dx = player.dy = 0
-	player.f = PI / 2
+	player.rubber()
 }
 
-function openContainerPacket(player, buf){
-	if(player.interface) return
-	const x = buf.int(), y = buf.int()
-}
-function openEntityPacket(player, buf){
-	if(player.interface) return
-	const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
-	const dx = e.x - player.x, dy = e.y - player.y
-	if(dx * dx + dy * dy > (REACH + 2) * REACH || !e.chunk.players.includes(player)) return
-	player.interface = e
-	player.interfaceId = 0
-	const res = new DataWriter()
-	res.byte(13)
-	res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
-	res.byte(0)
-	res.pipe(player.sock)
+function openInventoryPacket(player, buf){
+	player.openInterface(player, 1)
 }
 function inventoryPacket(player, buf){
 	// Clicked on a slot in their inventory
-	if(!player.interface) return
+	if(player.checkInterface()) return
 	let slot = buf.byte()
-	let changed = 0
-	if(slot > 127){
-		slot &= 127
-		if(!player.interface.items || slot == 128) return
-		const {items} = player.interface
-		if(slot >= items.length) return
-		const t = items[slot], h = player.items[0]
-		if(!t && !h) return
-		if(t && !h) player.items[0] = t, items[slot] = null, changed |= 3
-		else if(h && !t) items[slot] = h, player.items[0] = null, changed |= 3
-		else if(h && t && h.constructor == t.constructor && !h.savedata){
-			const add = min(h.count, t.maxStack - t.count)
-			if(!(h.count -= add))player.items[0] = null, changed |= 1
-			t.count += add
-			changed |= 2
-		}else items[slot] = h, player.items[0] = t, changed |= 3
-		if(changed)
-			player.itemschanged(changed & 1 ? changed & 2 ? [slot | 128, 128] : [128] : [slot | 128])
-		return
+	const int = slot > 127 ? this.interface : player, id = slot > 127 ? this.interfaceId : 0
+	slot &= 127
+	const r = int.slotClicked(id, slot&127, player.getItem(2, 0), player)
+	if(r !== undefined){
+		player.setItem(2, 0, r)
+		player.itemChanged(2, 0, r)
 	}
-	if(slot >= player.inv.length) return
-	const t = player.inv[slot], h = player.items[0]
-	if(!t && !h) return
-	if(t && !h) player.items[0] = t, player.inv[slot] = null, changed |= 3
-	else if(h && !t) player.inv[slot] = h, player.items[0] = null, changed |= 3
-	else if(h && t && h.constructor == t.constructor && !h.savedata){
-		const add = min(h.count, t.maxStack - t.count)
-		if(!(h.count -= add))player.items[0] = null, changed |= 1
-		t.count += add
-		changed |= 2
-	}else player.inv[slot] = h, player.items[0] = t, changed |= 3
-	if(!changed) return
-	player.itemschanged(changed & 1 ? changed & 2 ? [128, slot] : [128] : [slot])
 }
 
 function altInventoryPacket(player, buf){
 	// Right-clicked on a slot in their inventory
-	if(!player.interface) return
+	if(player.checkInterface()) return
 	let slot = buf.byte()
-	if(slot > 127){
-		slot &= 127
-		if(!player.interface.items) return
-		const {items} = player.interface
-		if(slot >= items.length) return
-		const t = items[slot], h = player.items[0]
-		if(t && !h){
-			player.items[0] = t.constructor(t.count - (t.count >>= 1))
-			if(!t.count)items[slot] = null
-		}else if(h && !t){
-			items[slot] = h.constructor(1)
-			if(!--h.count)player.items[0] = null
-		}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
-			t.count++
-			if(!--h.count)player.items[0] = null
-		}else items[slot] = h, player.items[0] = t
-		player.itemschanged([128])
-		player.interface.itemschanged([slot | 128])
-		return
+	const int = slot > 127 ? this.interface : player, id = slot > 127 ? this.interfaceId : 0
+	slot &= 127
+	const r = int.slotAltClicked(id, slot&127, player.getItem(2, 0), player)
+	if(r !== undefined){
+		player.setItem(2, 0, r)
+		player.itemChanged(2, 0, r)
 	}
-	if(slot >= player.inv.length) return
-	const t = player.inv[slot], h = player.items[0]
-	if(t && !h){
-		player.items[0] = t.constructor(t.count - (t.count >>= 1))
-		if(!t.count)player.inv[slot] = null
-	}else if(h && !t){
-		player.inv[slot] = h.constructor(1)
-		if(!--h.count)player.items[0] = null
-	}else if(h && t && h.constructor == t.constructor && !h.savedata && t.count < t.maxStack){
-		t.count++
-		if(!--h.count)player.items[0] = null
-	}else player.inv[slot] = h, player.items[0] = t
-	player.itemschanged([128, slot])
 }
 
 function dropItemPacket(player, buf){
-	if(!player.inv[player.selected]) return
-	const e = Entities.item()
-	e.item = player.inv[player.selected]
-	e.dx = player.dx + player.f > 0 ? 7 : -7
-	e.place(player.world, player.x, player.y + player.head - 0.5)
-	player.inv[player.selected] = null
-	player.itemschanged([player.selected])
-}
-
-function closeInterfacePacket(player, _){
-	player.interface = null
-	if(player.items[0]){
-		const e = Entities.item()
-		e.item = player.items[0]
+	const item = player.getItem(0, player.selected)
+	if(item){
+		player.setItem(0, player.selected, null)
+		player.itemChanged(0, player.selected, null)
+		const e = new Entities.item()
+		e.item = item
 		e.dx = player.dx + player.f > 0 ? 7 : -7
 		e.place(player.world, player.x, player.y + player.head - 0.5)
-		player.items[0] = null
-		player.itemschanged([128])
 	}
+}
+function dropSlot(p, id, slot){
+	const t = p.getItem(id, slot)
+	if(t) p.setItem(id, slot, null), p.itemChanged(id, slot, null), p.giveAndDrop(t)
+}
+function closeInterfacePacket(player, _){
+	player.closeInterface()
+	dropSlot(player, 2, 0)
+	dropSlot(player, 1, 5)
+	dropSlot(player, 1, 6)
+	dropSlot(player, 1, 7)
+	dropSlot(player, 1, 8)
+}
+
+export function voiceChat(player, buf){
+	if(buf.left < 2) return
+	const r = CONFIG.proximitychat || 0
+	if(!r || !player.linked) return
+	const packet = new DataView(new ArrayBuffer(buf.left + 7))
+	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
+	packet.setUint8(0, 96)
+	const t = new Set
+	if(typeof r == 'number'){
+		packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
+		const cx0 = ifloor(player.x-r)>>>6, cx1 = ifloor(player.x+r)+64>>>6
+		const cy0 = ifloor(player.y-r)>>>6, cy1 = ifloor(player.y+r)+64>>>6
+		for(let x = cx0; x != cx1; x=x+1&0x3ffffff){
+			for(let y = cy0; y != cy1; y=y+1&0x3ffffff){
+				const ch = player.world.get(x+y*0x4000000)
+				if(!ch) continue
+				for(const s of ch.sockets){
+					if(!s.entity || s.entity === player) continue
+					const dx = s.entity.x - player.x, dy = s.entity.y - player.y
+					if(dx*dx+dy*dy > r*r) continue
+					t.add(s)
+				}
+			}
+		}
+	}else if(r == 'world'){
+		for(const p of players.values())
+			if(p.world == player.world && p != player)
+				t.add(p.sock)
+	}else if(r == 'server'){
+		for(const p of players.values())
+			if(p != player) t.add(p.sock)
+	}
+	for(const s of t) s.send(packet.buffer)
+}
+
+function disappearPacket(player){
+	if(this.permissions<3) return
+	player.unlink()
+}
+function appearPacket(player){
+	if(this.permissions<3) return
+	player.link()
+	if(player.health <= 0) player.damage(-Infinity, null)
+}
+
+export function creativeItemPacket(player, buf){
+	const id = buf.short()
+	if(id >= ItemIDs.length) return
+	const a = new ItemIDs[id](1)
+	a.count = min(a.maxStack, buf.byte()||1)
+	const b = player.getItem(2, 0)
+	if(b && (b.constructor !== a.constructor || a.savedata)){
+		player.setItem(2, 0, null)
+		player.itemChanged(2, 0, null)
+		return
+	}
+	player.setItem(2, 0, a)
+	player.itemChanged(2, 0, a)
 }
 
 export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	5: respawnPacket,
-	12: openContainerPacket,
-	13: openEntityPacket,
+	6: disappearPacket,
+	7: appearPacket,
+	13: openInventoryPacket,
 	15: closeInterfacePacket,
+	20: creativeItemPacket,
 	32: inventoryPacket,
 	33: altInventoryPacket,
-	34: dropItemPacket
+	34: dropItemPacket,
+	96: voiceChat,
 })
 export function onstring(player, text){
 	if(!(text = text.trimEnd())) return
 	if(text[0] == '/'){
 		try{
-			const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g)
-			if(!match) return void player.chat('Slash, yes, very enlightening.')
+			const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g) || ['help']
 			for(let i = 0; i < match.length; i++){
 				const a = match[i]
 				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 			}
-			if(!(match[0] in commands))throw 'No such command: /'+match[0]
-			if(this.permissions < MOD){
-				if(!anyone_help[match[0]])throw "You do not have permission to use /"+match[0]
-			}else if(player.permission == MOD && !mod_help[match[0]])throw "You do not have permission to use /"+match[0]
 			stat('misc', 'commands_used')
-			let res = commands[match[0]].apply(player, match.slice(1))
+			const res = executeCommand(match[0], match.slice(1), player, this.permissions)
 			if(res)
 				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e), 9))
 				else player.chat(res)
 		}catch(e){player.chat(err(e), 9)}
-	}else{
+	}else if(CONFIG.permissions.chat){
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
 		if(text.includes('pineapple') && text.includes('pizza')) stat('misc', 'controversial')
-		chat(prefix(player)+text, undefined, player)
+		chat(prefix(player)+text, text[0]=='>'&&CONFIG.permissions.greentext?GREEN:WHITE, player)
 	}
 }
-
-export const PROTOCOL_VERSION = 2

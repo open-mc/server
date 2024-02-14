@@ -1,19 +1,32 @@
-import { CONFIG, GAMERULES } from "../../config.js"
-import { X, Y } from "../../entities/misc/playerentity.js"
-import { antChunk, chunkTileIndex, getX, getY, goto, jump, peekdown, peekup, place, right } from "../../misc/ant.js"
-import { Dimensions } from "../../world/index.js"
-import { Block, Blocks } from "../block.js"
+import { DXDY, X, Y } from '../../entities/entity.js'
+import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, load, peek, peekdown, peekup, place, right, save, up } from '../../misc/ant.js'
+import { Dimensions, GAMERULES } from '../../world/index.js'
+import { Block, Blocks } from '../block.js'
 
 Blocks.portal = class extends Block{
 	static solid = false
+	static blockShape = [0.375, 0, 0.625, 1]
 	static breaktime = Infinity
 	static blast = Infinity
 	update(){
-		const d = peekdown(), u = peekup()
-		if((d != Blocks.obsidian & d != Blocks.portal) | (u != Blocks.obsidian & u != Blocks.portal)){
-			this.destroy(true, undefined)
-			antChunk.portals.remove(chunkTileIndex)
+		const u = peekup(), d = peekdown()
+		if((d == Blocks.obsidian | d == Blocks.portal) & (u == Blocks.obsidian | u == Blocks.portal)) return
+		place(Blocks.air)
+		const s = save()
+		{
+			let d; down()
+			while(d = peek(), d == Blocks.portal)
+				d.destroy(true, undefined), down()
 		}
+		load(s)
+		{
+			let d; up()
+			while(d = peek(), d == Blocks.portal)
+				d.destroy(true, undefined), up()
+		}
+	}
+	unset(){
+		antChunk.portals.remove(chunkTileIndex)
 	}
 	touched(e){
 		// & 1 == touched portal this tick
@@ -22,8 +35,8 @@ Blocks.portal = class extends Block{
 		e.flags |= 1
 		const dim = e.world == Dimensions.overworld ? Dimensions.nether : Dimensions.overworld
 		while(peekdown() == Blocks.portal) down()
-		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.netherscale : getX() * CONFIG.netherscale) | 0
-		const targetY = floor(dim == Dimensions.nether ? getY() / CONFIG.netherscale : getY() * CONFIG.netherscale) | 0
+		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.world.nether_scale : getX() * CONFIG.world.nether_scale) | 0
+		const targetY = floor(dim == Dimensions.nether ? getY() / CONFIG.world.nether_scale : getY() * CONFIG.world.nether_scale) | 0
 		const chs = [
 			dim.load(targetX - 32 >>> 6, targetY - 32 >>> 6),
 			dim.load(targetX + 32 >>> 6, targetY - 32 >>> 6),
@@ -46,13 +59,13 @@ Blocks.portal = class extends Block{
 		e.x = targetX + closestDx + 0.5
 		e.y = targetY + closestDy
 		e.world = dim
-		e.rubber?.(X | Y)
-		e.event(50)
+		if(e.sock) e.rubber(X | Y)
+		e.worldEvent(50)
 		if(closestDist < 2e9) return true // Portal exists
 		
 		// Create a portal
 		// we'll just put it at (targetX, targetY) for now
-		goto(targetX, targetY - 1, dim)
+		goto(dim, targetX, targetY - 1)
 		place(Blocks.obsidian)
 		up(); place(Blocks.portal)
 		antChunk.portals.push(chunkTileIndex)
@@ -70,9 +83,10 @@ Blocks.portal = class extends Block{
 	}
 }
 
-
 Blocks.end_portal = class extends Block{
 	static solid = false
+	static blockShape = [0, 0, 1, 0.75]
+	static softness = 1
 	static breaktime = Infinity
 	static blast = Infinity
 	touched(e){
@@ -80,12 +94,13 @@ Blocks.end_portal = class extends Block{
 		e.flags |= 1
 		if(e.world != Dimensions.end){
 			if(Dimensions.end.load(1,0).t<0) return void(e.flags&=-2)
-			e.event(50)
+			e.worldEvent(50)
 			e.world = Dimensions.end
 			e.x = 100.5
 			e.y = 1
-			e.rubber?.(X | Y)
-			goto(98, 0, Dimensions.end)
+			e.dx = e.dy = 0
+			if(e.sock) e.rubber(X | Y | DXDY)
+			goto(Dimensions.end, 98, 0)
 			for(let i = 0; i < 5; i++)
 				place(Blocks.obsidian), right()
 			for(let i = 0; i < 3; i++){
@@ -94,10 +109,11 @@ Blocks.end_portal = class extends Block{
 					place(Blocks.air), right()
 			}
 		}else{
-			e.world = GAMERULES.spawnWorld
-			e.x = GAMERULES.spawnX
-			e.y = GAMERULES.spawnY
-			e.rubber?.(X | Y)
+			e.worldEvent(50)
+			e.world = Dimensions[GAMERULES.spawnworld] ?? Dimensions.overworld
+			e.x = GAMERULES.spawnx
+			e.y = GAMERULES.spawny
+			if(e.sock) e.rubber(X | Y)
 		}
 		return true
 	}
@@ -106,8 +122,7 @@ Blocks.end_portal = class extends Block{
 Blocks.end_portal_frame = class extends Block{
 	static breaktime = Infinity
 	static blast = Infinity
+	static blockShape = [0, 0, 1, 13/16]
 }
-Blocks.filled_end_portal_frame = class extends Block{
-	static breaktime = Infinity
-	static blast = Infinity
+Blocks.filled_end_portal_frame = class extends Blocks.end_portal_frame{
 }

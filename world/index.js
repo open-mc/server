@@ -1,30 +1,78 @@
-import { World } from './world.js'
-import '../internals.js'
-import { fs } from '../internals.js'
-export const Dimensions = {
-	overworld: new World('overworld'),
-	nether: new World('nether'),
-	end: new World('end'),
-	void: new World('void')
-}
+import { DataWriter } from "../modules/dataproto.js"
+
+export const Dimensions = {}
 Object.setPrototypeOf(Dimensions, null)
-const dimCreate = []
-for(let i in Dimensions){
-	let d = Dimensions[i]
-	dimCreate.push(fs.readFile(WORLD + 'dimensions/' + d.id + '/meta').then(a => {
-		const buf = new DataReader(a)
-		return buf.read(d.constructor.savedatahistory[buf.flint()] || d.constructor.savedata, d)
-	}).catch(e => null))
-	dimCreate.push(fs.exists(WORLD + 'dimensions/' + d.id).then(a => a || fs.mkdir(WORLD + 'dimensions/' + d.id)))
-}
-await Promise.all(dimCreate)
-export const allDimensions = Object.values(Dimensions)
 
 export const players = new Map()
-players[Symbol.for('nodejs.util.inspect.custom')] = function(){
-	let a = '\x1b[32m' + this.size + '\x1b[m player'+(this.size==1?'':'s')+':'
-	for(let pl of this){
-		a += '\n' + pl[1]
+
+export const OP = 4, MOD = 3, NORMAL = 2, SPECTATE = 1
+
+const filesLoaded = task('Loading files')
+const json = a => JSON.parse(''+a)
+export const [
+	GAMERULES,
+	STATS,
+	PERMISSIONS
+] = await Promise.all([
+	DB.get('gamerules').then(json).catch(e=>({})),
+	DB.get('stats').then(json).catch(e=>({})),
+	DB.get('permissions').then(json).catch(e=>({'':2})),
+])
+Object.setPrototypeOf(PERMISSIONS, null)
+Object.setPrototypeOf(GAMERULES, null)
+filesLoaded('Files loaded')
+
+let resave = 0
+export async function savePermissions(){
+	if(resave) return void(resave = 2)
+	resave = 1
+	do await DB.put("permissions", JSON.stringify(PERMISSIONS)); while(resave == 2)
+	resave = 0
+}
+
+GAMERULES.commandlogs ??= true
+GAMERULES.spawnx ??= 0
+GAMERULES.spawny ??= 18
+GAMERULES.spawnworld ??= 'overworld'
+GAMERULES.randomtickspeed ??= 2
+GAMERULES.globalevents ??= true
+GAMERULES.keepinventory ??= false
+GAMERULES.mobloot ??= true
+GAMERULES.fastfluids ??= false
+
+export function stat(cat, name, v = 1){
+	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
+	return o[name] = (o[name] ?? 0) + v
+}
+export function statAvg(cat, name, v, lower = 0){
+	const countProp = name + '_count'
+	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0, [countProp]: 0})
+	const count = 1 / (o[countProp] = (o[countProp] ?? 0) + 1)
+	return o[name] = (o[name] ?? 0) * (1 - count) + v * count
+}
+export function statRecord(cat, name, v){
+	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
+	return o[name] = max(o[name] ?? 0, v)
+}
+export function setStat(cat, name, v){
+	const o = STATS[cat] ?? (STATS[cat] = {[name]: 0})
+	return o[name] = (o[name] ?? 0) + v
+}
+
+export const DEFAULT_TPS = 20
+export let saving = Promise.resolve(undefined)
+export function saveAll(){
+	const promises = []
+	for(const name in Dimensions){
+		const d = Dimensions[name]
+		const buf = new DataWriter()
+		buf.flint(d.constructor.savedatahistory.length)
+		buf.write(d.constructor.savedata, d)
+		promises.push(d.level.put('meta', buf.build()))
+		for (const ch of d.values()) d.save(ch)
 	}
-	return a
+	promises.push(DB.put('stats', JSON.stringify(STATS)))
+	promises.push(DB.put('gamerules', JSON.stringify(GAMERULES)))
+	saving = Promise.all(promises)
+	return saving
 }

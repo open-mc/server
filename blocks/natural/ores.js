@@ -1,4 +1,4 @@
-import { Block, Blocks } from "../block.js";
+import { Block, Blocks } from '../block.js'
 
 Blocks.coal_ore = class CoalOre extends Block{
 	static tool = 'pick'

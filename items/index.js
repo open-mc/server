@@ -1,14 +1,14 @@
-import { fs } from '../internals.js'
-import { jsonToType, typeToJson } from '../utils/data.js'
+import fs from 'fs/promises'
+import { jsonToType, typeToJson } from '../modules/dataproto.js'
+import { Item, ItemIDs, Items } from './item.js'
 
 const loaded = task('Loading items...')
 
 // Monstrosity for importing all ./*/*.js
-import { Item, ItemIDs, Items } from './item.js'
-await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import(PATH + 'items/' + name + '/' + file))))))
+await Promise.all((await fs.readdir(PATH + 'items/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'items/' + name).then(a => Promise.all(a.map(file => import('./' + name + '/' + file))))))
 let modified = false
 export let itemindex
-for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(itemindex = a+'').split('\n'))){
+for(const a of await DB.get('itemindex').catch(e=>'stone').then(a=>(itemindex = a+'').split('\n'))){
 	let [name, ...history] = a.split(' ')
 	const I = Items[name]
 	if(!I){ItemIDs.push(Items.stone);continue}
@@ -19,7 +19,7 @@ for(const a of await fs.readFile(WORLD + 'defs/itemindex.txt').then(a=>(iteminde
 		if(I.className != name) Items[name] = class extends I{static id = ItemIDs.length; static className = name}
 		else Object.hasOwn(I, 'otherIds') ? I.otherIds.push(ItemIDs.length) : I.otherIds = [ItemIDs.length]
 	else I.id = ItemIDs.length, I.className = name
-	ItemIDs.push(null)
+	ItemIDs.push(I)
 }
 for(const name in Items){
 	const I = Items[name]
@@ -30,9 +30,7 @@ for(const name in Items){
 		Object.setPrototypeOf(I.prototype, Item.prototype)
 	}
 	if(!Object.hasOwn(I, 'id'))
-		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(null), I.className = name, modified = true
-	I.constructor = ItemIDs[I.id] = Items[name] = (...c) => new I(...c)
-	I.constructor.prototype = I.prototype
+		I.id = ItemIDs.length, I.savedatahistory = [], ItemIDs.push(I), I.className = name, modified = true
 	if(I.otherIds) for(const i of I.otherIds) ItemIDs[i] = ItemIDs[I.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -44,8 +42,11 @@ for(const name in Items){
 		proto = Object.getPrototypeOf(proto)
 	}
 }
+if(ItemIDs.length > 65535) throw 'Limit of 65535 Item IDs exceeded'
 if(modified){
-	await fs.writeFile(WORLD + 'defs/itemindex.txt', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
+	await DB.put('itemindex', itemindex = ItemIDs.map(I=>I.prototype.className + I.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (I.prototype.savedata ? ' '+typeToJson(I.prototype.savedata) : '')).join('\n'))
 }
+
+await import('./recipes.js')
 
 loaded(`${ItemIDs.length} Items loaded`)

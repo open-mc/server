@@ -1,9 +1,12 @@
-import { Items } from "../../items/item.js";
-import { load, peek, peekdown, place, save, up, down } from "../../misc/ant.js";
-import { Block, Blocks } from "../block.js";
+import { Items } from '../../items/item.js'
+import { load, peek, peekdown, place, save, up, down, peekleft, peekright } from '../../misc/ant.js'
+import { Block, Blocks } from '../block.js'
+import './grass.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
+	static solid = false
+	static targettable = true
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1
@@ -18,10 +21,14 @@ Blocks.sugar_cane = class extends Block{
 		}
 	}
 	update(){
-		if(!peekdown().solid) this.destroy() // drops item
+		down()
+		const b = peek(), l = peekleft(), r = peekright()
+		up()
+		if(b === Blocks.sugar_cane) return
+		if(!b.solid | ((l.flows !== false | l.fluidType != 'water') & (r.flows !== false | r.fluidType != 'water')))
+			this.destroy()
 	}
-	// Single liners on one line unless you think you'll need to expand it in the future
-	drops(){ return Items.sugar_cane(1) }
+	drops(){ return new Items.sugar_cane(1) }
 }
 class PumpkinLeaf extends Block{
 	static breaktime = 0
@@ -51,15 +58,21 @@ Blocks.pumpkin_leaf3 = class extends PumpkinLeaf{
 
 		random() < .5 ? left() : right()
 		if(peek() == Blocks.air)
-	      place(Blocks.pumpkin)
+		place(Blocks.pumpkin)
 	}
 }
 
-Blocks.farmland = class extends Block{
-	
-}
-Blocks.hydrated_farmland = class extends Block{
+Blocks.farmland = class extends Blocks.dirt{
+	static blockShape = [0, 0, 1, 0.9375]
+	randomtick(){
 
+	}
+}
+Blocks.hydrated_farmland = class extends Blocks.dirt{
+	static blockShape = [0, 0, 1, 0.9375]
+	randomtick(){
+		
+	}
 }
 
 function growthRate(){

@@ -1,14 +1,14 @@
-import { fs } from '../internals.js'
-import { jsonToType, typeToJson } from '../utils/data.js'
+import fs from 'fs/promises'
+import { jsonToType, typeToJson } from '../modules/dataproto.js'
+import { Entities, Entity, EntityIDs } from './entity.js'
 
 const loaded = task('Loading entities...')
 
 // Monstrosity for importing all ./*/*.js
-import { Entities, Entity, EntityIDs } from './entity.js'
-await Promise.all((await fs.readdir(PATH + 'entities/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'entities/' + name).then(a => Promise.all(a.map(file => import(PATH + 'entities/' + name + '/' + file))))))
+await Promise.all((await fs.readdir(PATH + 'entities/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'entities/' + name).then(a => Promise.all(a.map(file => import('./' + name + '/' + file))))))
 let modified = false
 export let entityindex
-for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entityindex = ''+a).split('\n'))){
+for(const a of await DB.get('entityindex').catch(e=>'player {}').then(a=>(entityindex = ''+a).split('\n'))){
 	let [name, ...history] = a.split(' ')
 	const E = Entities[name]
 	if(!E){EntityIDs.push(Entities.player);continue}
@@ -19,7 +19,7 @@ for(const a of await fs.readFile(WORLD + 'defs/entityindex.txt').then(a=>(entity
 		if(E.className != name) Entities[name] = class extends E{static id = EntityIDs.length; static className = name}
 		else Object.hasOwn(E, 'otherIds') ? E.otherIds.push(EntityIDs.length) : E.otherIds = [EntityIDs.length]
 	else E.id = EntityIDs.length, E.className = name
-	EntityIDs.push(null)
+	EntityIDs.push(E)
 }
 for(const name in Entities){
 	const E = Entities[name]
@@ -30,9 +30,7 @@ for(const name in Entities){
 		Object.setPrototypeOf(E.prototype, Entity.prototype)
 	}
 	if(!Object.hasOwn(E, 'id'))
-		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(null), E.className = name, modified = true
-	E.constructor = EntityIDs[E.id] = Entities[name] = (...e) => new E(...e)
-	E.constructor.prototype = E.prototype
+		E.id = EntityIDs.length, E.savedatahistory = [], EntityIDs.push(E), E.className = name, modified = true
 	if(E.otherIds) for(const i of E.otherIds) EntityIDs[i] = EntityIDs[E.id]
 	// Copy static props to prototype
 	// This will also copy .prototype, which we want
@@ -44,8 +42,9 @@ for(const name in Entities){
 		proto = Object.getPrototypeOf(proto)
 	}
 }
+if(EntityIDs.length > 65535) throw 'Limit of 65535 Entity IDs exceeded'
 if(modified){
-	await fs.writeFile(WORLD + 'defs/entityindex.txt', entityindex = EntityIDs.map(E=>E.prototype.className + E.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.prototype.savedata ? ' ' + typeToJson(E.prototype.savedata) : '')).join('\n'))
+	await DB.put('entityindex', entityindex = EntityIDs.map(E=>E.prototype.className + E.prototype.savedatahistory.map(a=>' '+typeToJson(a)).join('') + (E.prototype.savedata ? ' ' + typeToJson(E.prototype.savedata) : '')).join('\n'))
 }
 
 loaded(`${EntityIDs.length} Entities loaded`)

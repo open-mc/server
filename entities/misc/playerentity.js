@@ -1,108 +1,13 @@
 import { Blocks } from '../../blocks/block.js'
-import { stat } from '../../config.js'
+import { stat } from '../../world/index.js'
 import { Item } from '../../items/item.js'
-import { blockevent, cancelgridevent, goto, peek, place } from '../../misc/ant.js'
-import { DataWriter } from '../../utils/data.js'
-import { current_tps } from '../../world/tick.js'
+import { cancelgridevent, goto, gridevent, peek, place } from '../../misc/ant.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
-import { PNG } from 'pngjs'
 import { LivingEntity } from './living.js'
+import { getOutput4 } from '../../misc/crafting.js'
 
-export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
-
-Entities.player = class Player extends ChunkLoader(LivingEntity){
-	inv = Array.null(36)
-	items = [null, null, null, null, null, null]
-	selected = 0
-	skin = null
-	sock = null
-	breakGridEvent = 0
-	blockBreakLeft = -1
-	bx = 0; by = 0
-	rubberMv = 0
-	static width = 0.3
-	get height(){return this.state & 2 ? 1.5 : 1.8}
-	get head(){return this.state & 2 ? 1.4 : 1.6}
-	toString(){
-		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
-	}
-	chat(msg, style = 15){
-		this.sock.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
-	}
-	changedWorld(){
-		let buf = new DataWriter()
-		buf.byte(2)
-		buf.string(this.world.id)
-		buf.float(this.world.gx)
-		buf.float(this.world.gy)
-		buf.double(this.world.tick)
-		buf.pipe(this.sock)
-	}
-	rubber(mv = 63){
-		this.sock.r = (this.sock.r + 1) & 0xff
-		let buf = new DataWriter()
-		buf.byte(1)
-		buf.int(this.netId | 0)
-		buf.short(this.netId / 4294967296 | 0)
-		buf.byte(this.sock.r)
-		buf.float(current_tps)
-		this.sock.packets.push(buf.build())
-		this.rubberMv |= mv
-	}
-	update(){
-		super.update()
-		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
-			goto(this.bx, this.by, this.world)
-			const tile = peek()
-			blockevent(2)
-			place(Blocks.air)
-			const drop = tile.drops?.(this.inv[this.selected])
-			if(drop instanceof Item){
-				const itm = Entities.item()
-				itm.item = drop
-				itm.dx = random() * 6 - 3
-				itm.dy = 6
-				itm.place(this.world, this.bx + 0.5, this.by + 0.375)
-			}else if(drop instanceof Array){
-				for(const d of drop){
-					const itm = Entities.item()
-					itm.item = d
-					itm.dx = random() * 6 - 3
-					itm.dy = 6
-					itm.place(this.world, this.bx + 0.5, this.by + 0.375)
-				}
-			}
-			stat('player', 'blocks_broken')
-			cancelgridevent(this.breakGridEvent)
-			this.breakGridEvent = 0
-		}
-	}
-	static savedata = {
-		health: Byte,
-		inv: [Item, 36],
-		items: [Item, 6],
-		selected: Byte,
-		skin: Uint8Array
-	}
-	_avatar = null
-	//todo: 64x64 size instead of 12x12
-	getAvatar(){
-		if(this._avatar) return this._avatar
-		const png = new PNG({width: 64, height: 64})
-		src = this.skin; dest = new Uint32Array(png.data.buffer)
-		// draw shoulder at x=22, y=49 (to x=42, y=64)
-		c3t4_5(3158, 4); c3t4_5(3163, 5); c3t4_5(3168, 6); c3t4_5(3173, 7)
-		c3t4_5(3478,32); c3t4_5(3483,33); c3t4_5(3488,34); c3t4_5(3493,35)
-		c3t4_5(3798,60); c3t4_5(3803,61); c3t4_5(3808,62); c3t4_5(3813,63)
-		// draw head at x=12, y=9
-		for(let i = 0; i < 64; i++)
-			c3t4_5(588 + (i&7)*5 + (i>>3)*320, 132 + (i&7) + (i>>3)*28)
-		// Free echo back service because discord is dumb and doesn't allow data avatar urls
-		return this._avatar = PNG.sync.write(png)
-	}
-	getName(){ return this.name }
-}
+const d = Buffer.from('AH9/AH9/AH9/AFtbAH9/AH9/AH9/AH9/AH9/AH9/AH9/AH9/MChyMChyJiFbMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH9/AGhoAGhoAH9/AGhoAGhoAGhoAH9/AH9/AGhoAGhoAH9/MChyJiFbJiFbMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhoAGhoAGhoAH9/AH9/AGhoAGhoAH9/AH9/AGhoAGhoAH9/MChyJiFbMChyMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFtbAGhoAGhoAFtbAH9/AGhoAGhoAH9/AH9/AGhoAGhoAH9/MChyJiFbMChyMChyMChyMChyJiFbMChyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhoAFtbAFtbAFtbll9Bll9Bll9Bh1U7ll9Bll9Bll9Bh1U7MChyJiFbMChyMChyMChyJiFbMChyMChyKBsKKBsKJhoKJxsLKRwMMiMQLSAQLSAQAFtbAFtbAFtbAGholl9Bll9Bll9Bh1U7ll9Bll9Bh1U7ll9BMChyJiFbMChyMChyMChyJiFbJiFbMChyKBsKKBsKJhoKJhoKLB4OKRwMKx4NMyQRAGhoAFtbAFtbAGhoh1U7ll9Bll9Bh1U7ll9Bll9Bh1U7ll9BMChyJiFbMChyMChyMChyMChyJiFbMChyLB4OJhgLJhoKKRwMKx4OKBsLJBgKKRwMAH9/AGhoAGhoAH9/h1U7ll9Bll9Bll9Bh1U7ll9Bh1U7ll9BMChyMChyMChyMChyMChyMChyJiFbMChyKBsKKBoNLR0OLB4OKBsKJxsLLB4OLyIRAH9/AGhoAGhoAH9/h1U7ll9Bh1U7ll9Bh1U7ll9Bll9Bll9BMChyMChyMChyMChyMChyMChyMChyMChyKBsKKBsKKBsKJhoMIxcJh1g6nGNFOigUAH9/AGhoAH9/AH9/ll9Bll9Bh1U7ll9Bll9Bll9Bll9Bll9BPz8/Pz8/MChyMChyPz8/Pz8/MChyMChyKBsKKBsKKBoNJhgLLB4RhFIxll9BiFo5MChyJiFbMChyJiFbll9Bll9Bh1U7ll9Bll9Bh1U7ll9Bh1U7Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/LB4OKBsKLR0OYkMvnWpPmmNEhlM0dUcvMChyJiFbMChyMChyll9Bll9Bll9Bll9Bll9Bll9Bll9Bh1U7Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/hlM0hlM0mmNEhlM0nGdIll9Bilk7dEgv','base64'), defaultSkin = new Uint8Array(d.buffer, d.byteOffset, d.byteLength)
 let src, dest
 // Function for copying 3 bytes from an rgb u8 image buffer to a 5x5 area in an rgba u32 image buffer
 const c3t4_5 = new Uint8Array(Uint16Array.of(1).buffer)[0] === 1
@@ -121,4 +26,149 @@ const c3t4_5 = new Uint8Array(Uint16Array.of(1).buffer)[0] === 1
 	dest[p+192] = dest[p+193] = dest[p+194] = dest[p+195] = dest[p+196] =
 	dest[p+256] = dest[p+257] = dest[p+258] = dest[p+259] = dest[p+260] =
 		src[o*=3] << 16 | src[o+1] << 8 | src[o+2] | 255
+}
+
+Entities.player = class Player extends ChunkLoader(LivingEntity){
+	inv = Array.null(37)
+	items = [null, null, null, null, null]
+	craftingSlots = [null, null, null, null]
+	mode = 0
+	getItem(id, slot){
+		return id == 0 && slot < 36 ? this.inv[slot] : id == 1 ? slot < 5 ? this.items[slot] : slot < 9 ? this.craftingSlots[slot-5] : slot == 10 ? this.output : undefined : id == 2 && slot == 0 ? this.inv[36] : undefined
+	}
+	setItem(id, slot, item){
+		if(id == 0 && slot < 36) this.inv[slot] = item
+		else if(id == 1){
+			if(slot < 5) this.items[slot] = item
+			else if(slot < 9) this.craftingSlots[slot-5] = item, this.calculateOutput()
+			else if(slot == 10) this.output = item
+		}else if(id == 2) this.inv[36] = item
+	}
+	static allInterfaces = [0, 1, 2]
+	selected = 0
+	skin = defaultSkin
+	breakGridEvent = 0
+	blockBreakLeft = -1
+	bx = 0; by = 0
+	rubberMv = 0
+	static width = 0.3
+	get height(){return this.state & 2 ? 1.5 : 1.8}
+	get head(){return this.state & 2 ? 1.4 : 1.6}
+	toString(){
+		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
+	}
+	updateControls(){
+		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
+			goto(this.world, this.bx, this.by)
+			const tile = peek()
+			gridevent(2)
+			place(tile.behind ?? Blocks.air)
+			if(this.mode < 1){
+				const drop = tile.drops?.(this.inv[this.selected])
+				if(drop instanceof Item){
+					const itm = new Entities.item()
+					itm.item = drop
+					itm.dx = random() * 6 - 3
+					itm.dy = 6
+					itm.place(this.world, this.bx + 0.5, this.by + 0.375)
+				}else if(drop instanceof Array){
+					for(const d of drop){
+						if(!d) continue
+						const itm = new Entities.item()
+						itm.item = d
+						itm.dx = random() * 6 - 3
+						itm.dy = 6
+						itm.place(this.world, this.bx + 0.5, this.by + 0.375)
+					}
+				}
+			}
+			stat('player', 'blocks_broken')
+			cancelgridevent(this.breakGridEvent)
+			this.breakGridEvent = 0
+		}
+	}
+	update(){
+		super.update()
+		this.updateControls()
+	}
+	static savedata = {
+		health: Byte, mode: Byte,
+		inv: [Item, 37],
+		items: [Item, 5],
+		craftingSlots: [Item, 4],
+		selected: Byte,
+		skin: Uint8Array
+	}
+	_avatar = null
+	getAvatar(){
+		if(this._avatar) return this._avatar
+		src = this.skin; dest = new Int32Array(4096)
+		// draw shoulder at x=22, y=49 (to x=42, y=64)
+		c3t4_5(3158, 4); c3t4_5(3163, 5); c3t4_5(3168, 6); c3t4_5(3173, 7)
+		c3t4_5(3478,32); c3t4_5(3483,33); c3t4_5(3488,34); c3t4_5(3493,35)
+		c3t4_5(3798,60); c3t4_5(3803,61); c3t4_5(3808,62); c3t4_5(3813,63)
+		// draw head at x=12, y=9
+		for(let i = 0; i < 64; i++)
+			c3t4_5(588 + (i&7)*5 + (i>>3)*320, 132 + (i&7) + (i>>3)*28)
+		this._avatar = PNG.write(dest, 64, 64)
+		this._avatar.then(a=>this._avatar=a)
+		return this._avatar
+	}
+	getName(){ return this.name }
+	output = null
+	canProduce = 0
+	leftovers = null
+	calculateOutput(){
+		const match = getOutput4(this.craftingSlots)
+		if(match){
+			const {output, count, leftovers} = match
+			this.output = new output(count)
+			this.leftovers = leftovers
+			this.canProduce = 0
+			for(const i of this.craftingSlots) if(i&&i.count>this.canProduce) this.canProduce = i.count
+		}else this.output = null, this.canProduce = 0, this.leftovers = null
+		this.itemChanged(1, 10, this.output)
+	}
+	slotClicked(id, slot, holding, player){
+		if(id != 1 || slot < 9) return super.slotClicked(id, slot, holding, player)
+		if(!this.output) return
+		let count = this.output.count
+		if(holding){
+			if(this.output.constructor === holding.constructor && !this.output.savedata) count = min(count, this.output.maxStack - holding.count)
+			else return
+		}
+		count = min(this.canProduce, floor(count/this.output.count))
+		if(holding) holding.count += count*this.output.count
+		else holding = new this.output.constructor(count*this.output.count)
+		let changed = false
+		for(let i = 0; i < 4; i++){
+			if(!this.craftingSlots[i]) continue
+			if((this.craftingSlots[i].count-=count)<=0) this.craftingSlots[i] = null, changed = true
+			this.itemChanged(1, i+5, this.craftingSlots[i])
+		}
+		if(changed) this.calculateOutput()
+		else this.itemChanged(1, 10, this.output), this.canProduce -= count
+		return holding
+	}
+	slotAltClicked(id, slot, holding, player){
+		if(id != 1 || slot < 9) return super.slotAltClicked(id, slot, holding, player)
+		if(!this.output) return
+		let count = this.output.maxStack
+		if(holding){
+			if(this.output.constructor === holding.constructor && !this.output.savedata) count = this.output.maxStack - holding.count
+			else return
+		}
+		count = min(this.canProduce, floor(count/this.output.count))
+		if(holding) holding.count += count*this.output.count
+		else holding = new this.output.constructor(count*this.output.count)
+		let changed = false
+		for(let i = 0; i < 4; i++){
+			if(!this.craftingSlots[i]) continue
+			if((this.craftingSlots[i].count-=count)<=0) this.craftingSlots[i] = null, changed = true
+			this.itemChanged(1, i+5, this.craftingSlots[i])
+		}
+		if(changed) this.calculateOutput()
+		else this.itemChanged(1, 10, this.output), this.canProduce -= count
+		return holding
+	}
 }

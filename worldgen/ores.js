@@ -1,8 +1,8 @@
-import { imxs32 } from "./util/random.js";
-import { Blocks, chunk } from "./vars.js";
+import { imxs32 } from './util/random.js'
+import { Blocks, chunk } from './vars.js'
 
 const blob = [0,1,-1,64,-64,65,-65,63,-63], ur = [63,64,65,1,-63], ul = [65,64,63,-1,-65], dr = [-65,-64,-63,1,65], dl = [-63,-64,-65,-1,63]
-function fillIf(r,arr, con, b){
+function fillIf(r, arr, con, b){
 	for(const o of arr)if(chunk[r+o & 4095] == con)chunk[r+o & 4095] = b
 }
 export function veins(rand, ore, tries = 4, size = 8, replace = Blocks.stone){

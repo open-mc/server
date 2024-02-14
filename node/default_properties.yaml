@@ -1,0 +1,149 @@
+# Everything after a # is a comment and is ignored by the server software
+# We recommend using an editor with syntax highlighting like vscode, it's more intuitive
+# Comments have already been placed above some properties to describe what they do
+
+# Server name to appear in server list
+name: Test Server
+# Icon to appear in server list. Specify a URL. Must start with https:// or /
+icon: https://openmc.pages.dev/img/beacon.png
+# Message of the day. Chosen randomly to be displayed on server list
+motd:
+  - One of the servers of all time
+  - Bug-free!
+  - New motd every day! (maybe)
+  - Zero warranty!
+  - One must imagine sisyphus happy
+  - And I have become death, the destroyer of worlds
+  - MOTD unavailable
+  - <img src onerror=alert(1)/>
+  - Less dimensions!
+  # get it?
+  - More dimensions!
+
+# Maximum players that can join
+maxplayers: 20
+
+# Path of world savedata (relative to this config file)
+path: world
+
+# World simulation stuff
+world:
+  # Adventure and spectator gamemode can be achieved in the "permissions:" category (look further down)
+  
+  # 32 bit seed in the range [-2147483648, 2147483647]
+  seed: 1234
+  # 8 in default minecraft. x=123 in the nether corresponds to x=(123 x nether_scale) in the overworld
+  nether_scale: 16
+  # Radius around players where chunks are loaded. Recommended: 3
+  # 3 = 5x5 square = 25 chunks loaded. 4 = 7x7 = 49 chunks loaded. 5 = 9x9 = 81 chunks etc...
+  chunk_loading_range: 3
+
+# Client components/mods. 
+components:
+  - /vanilla/index.js
+
+# Terrain generators
+generators:
+  # All generators have these options:
+  # default -> normal terrain generation
+  # flat -> normal biomes and foliage, structures, etc but all terrain is the same height (no oceans)
+  # perlin -> akin to java amplified, but goes up & down infinitely and is really smooth
+  # fill -> no air besides any naturally forming caves. Also means no grass and no oceans
+
+  # You may force a dimension to generate like another by specifying the dimension to copy before a slash
+  # (e.g you could set overworld to nether/perlin, and netherrack caves will generate in the overworld)
+
+  # You may also set any dimension to "void", where no blocks will naturally generate whatsoever
+
+  # Overworld also has these:
+  # superflat -> 1 layer of grass, 3 layers of dirt, stone below that. No features whatsoever
+  overworld: default
+
+  # Nether also has these:
+  # superflat -> netherrack below Y=-128 and above Y=128, air in between
+  # opensky -> no nether ceiling, giving a similar shape to the overworld
+  nether: default
+
+  # flat is almost the same as void
+  end: default
+
+  # void is a special dimension, it acts as an extra dimension for map-making and is not reachable in survival
+  # The only way to get there is with /tp
+  # It doesnt have any of its own generators, so it must borrow from another dimension
+  void: void
+
+permissions:
+  # Allow anyone to use /kill to kill themselves (only moderators and above can /kill any player)
+  suicide: true
+
+  # Allow anyone to chat (disabling will only allow moderators and above to use chat)
+  chat: true
+
+  # Allow green text in chat by prefixing your messages with >
+  greentext: true
+
+  # Allow moderators to use /give, /setblock, etc...
+  mod_cheat: true
+
+  # Maximum blocks you can /fill at once
+  max_fill: 16777216
+
+  # Default permission level when joining for the first time
+  # 4 = op (NOT RECOMMENDED)
+  # 3 = mod
+  # 2 = normal (RECOMMENDED)
+  # 1 = adventure (can't place/break/interact)
+  # 0 = not allowed to join
+  # Individual player permissions can be changed with /perm <username> <level>
+  # For a whitelisted server, use 0 and manually whitelist players with /perm <player> 2
+  default: 2
+
+  # If true, new players will automatically be put into spectator
+  # Moderators and above can always switch in and out of spectator
+  # Spectators can break and place blocks as long as they have permissions (see above)
+  join_as_spectator: false
+
+  # E.g if you want new players to not be able to do anything but still move around and load chunks:
+  # default: 1
+  # join_as_spectator: true
+
+# Server port. By default the client connects on 27277, so it makes sense to set this to 27277
+port: 27277
+# Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
+# Empty values will attempt to use a self signed certificate only valid for localhost
+key: ""
+cert: ""
+
+# Voice chat to players up to this many blocks away in-game
+# 0 to disable
+# Chat using the Enter ↵ key (Toggle using P)
+# Do not set to a large value, instead if you want dimension-wide chat use "world"
+# Or if you want server-wide use "server"
+# Nonsensical values like 99999 will degrade server performance
+proximitychat: 32
+# Show everyone's health on the TAB menu and server page
+showhealth: true
+# Webhook url for discord chat integration (optional)
+webhook:
+# Display a different discord avatar and username for each player when chatting
+webhook_profiles: true
+# Home page will count how often this word is said in chat
+magic_word: hi
+
+# info displayed on the banned notice screen
+ban_appeal_info: Ban appeals are not accepted at this time
+
+# Do not touch this section for multiplayer servers unless you ABSOLUTELY know what you're doing!
+# You have been warned!
+socket:
+  # Check for suspicious movement packets
+  # Recommended: true
+  # Setting to false will allow any player to move at any speed and teleport anywhere without creative or operator
+  # which may allow any player to load an excessive amount of chunks and crash the server
+  movementchecks: true
+
+  # Blocks player can stray before being rubberbanded
+  movementcheckmercy: 10
+
+  # Maximum queued data on a single socket in MB. 0 = no limit (dangerous). Recommended: 16
+  backpressure: 16

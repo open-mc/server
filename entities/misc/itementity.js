@@ -5,16 +5,18 @@ Entities.item = class ItemEntity extends Entity{
 	item = null
 	static width = 0.125
 	static height = 0.25
-	static collisionTestPadding = 0.5
+	static collisionPaddingX = 1
+	static collisionPaddingY = 0.5
 	static head = 0.125
 	static savedata = {item: Item}
+	damage(){ this.remove() }
 	touch(e){
 		if(!this.item){
 			this.remove()
 			return
 		}
 		if(e instanceof ItemEntity && e.age >= 10 && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
-			const maxRemovable = 255 - this.item.count
+			const maxRemovable = max(0, 32767 - this.item.count)
 			if(maxRemovable >= e.item.count){
 				if(this.item.count < e.item.count)
 					this.x = e.x, this.y = e.y
@@ -29,9 +31,10 @@ Entities.item = class ItemEntity extends Entity{
 			return
 		}
 		if(this.age < 10 || !e.inv) return
-		if(e.give(this.item)){
-			this.event(1)
-			if(this.item.count <= 0) this.remove()
+		if(this.item.count !== (e.give(this.item), this.item.count)){
+			const c = this.item.count
+			this.event(1, buf => buf.byte(c))
+			if(!this.item.count) this.remove()
 		}
 	}
 }

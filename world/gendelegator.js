@@ -1,25 +1,31 @@
-import { Worker, argv } from '../internals.js'
-import { CONFIG, stat } from '../config.js'
-import { gotStats } from '../internals.js'
-import { DataReader } from '../utils/data.js'
-const gen = new Worker(PATH + 'worldgen/genprocess.js', { argv })
+import '../node/internals.js'
+import { blockindex } from '../blocks/index.js'
+import { itemindex } from '../items/index.js'
+import { entityindex } from '../entities/index.js'
+import { stat } from './index.js'
+
 const loaded = task('Loading WorldGen process...')
+const gen = new Worker(PATH + 'worldgen/genprocess.js')
+
 const waiting = new Map()
 let key = 0
 
-gen.on('message', function({key, buf}){
-	if(key == -1)return loaded('WorldGen process loaded')
-	else if(key == -2)return gotStats(1,arguments[0])
+gen.on('message', function(a){
+	if(typeof a == 'string') throw '(from gen child process)\n'+a
+	const {key, buf} = a
+	if(key == -1) return loaded('WorldGen process loaded')
+	else if(key == -2) return perf.addData(1,arguments[0])
+	else if(key == -3) return gen.postMessage([blockindex, itemindex, entityindex])
 	stat('world', 'chunks_generated')
 	stat('world', 'chunk_revisits', -1)
-	waiting.get(key)(new DataReader(buf))
+	waiting.get(key)(buf)
 	waiting.delete(key)
 })
+gen.on('exit', () => process.exit(1))
+
 export const generator = (x, y, gend, genn) => new Promise(r => {
 	x = x << 6 >> 6; y = y << 6 >> 6
 	waiting.set(key, r)
 	gen.postMessage({x, y, d: gend, key, seed: CONFIG.world.seed, name: genn})
 	key++
 })
-gen.on('exit', () => process.exit(0))
-globalThis.genprocess = gen

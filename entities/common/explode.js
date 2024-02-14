@@ -1,7 +1,8 @@
-import { stat } from "../../config.js"
-import { optimize } from "../../internals.js"
-import { getX, getY, up, jump, peek, right, select, goto } from "../../misc/ant.js"
-import { DXDY } from "../misc/playerentity.js"
+import { stat } from '../../world/index.js'
+import '../../node/internals.js'
+import { getX, getY, up, jump, peek, right, select, goto } from '../../misc/ant.js'
+import { damageTypes } from '../deathmessages.js'
+import { DXDY } from '../entity.js'
 
 const DIAMETER = 41, LEFT = DIAMETER - 1 >>> 1
 const buffer = new Int32Array(DIAMETER * DIAMETER * 2)
@@ -73,8 +74,8 @@ export function explode(entity, strength = 100, fire = false){
 		const d = sqrt(dx * dx + dy * dy)
 		dx /= d; dy /= d
 		e.dx += dx * dmg / 4; e.dy += dy * dmg / 4
-		e.damage?.(round(dmg / 4))
-		e.rubber?.(DXDY)
+		e.damage?.(round(dmg / 4), damageTypes.explosion)
+		if(e.sock) e.rubber(DXDY)
 	})
 }
-optimize(explode)
+Function.optimizeImmediately(explode)

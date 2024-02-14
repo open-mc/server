@@ -1,60 +1,81 @@
-import { entityMap } from '../entities/entity.js'
-import { players } from '../world/index.js'
-import { DataWriter } from '../utils/data.js'
+import { players, stat, statAvg } from '../world/index.js'
+import { DataWriter } from '../modules/dataproto.js'
 import { Chunk } from './chunk.js'
-import { allDimensions, Dimensions } from './index.js'
-import { stepEntity } from './physics.js'
-import { DEFAULT_TPS, stat, statAvg } from '../config.js'
-import { mirrorEntity } from './encodemove.js'
+import { Dimensions } from './index.js'
+import { fastCollision, stepEntity } from './physics.js'
+import { encodeDelete, mirrorEntity, mirrorEntitySelf } from './encodemove.js'
 
+export let currentTPS = 0
+export const entityMap = new Map()
+export const toUnlink = new Map()
+export let actualTPS = currentTPS
 export function tick(){
-	if(exiting) return
-	for(const w of allDimensions){
+	for(const n in Dimensions){
+		const w = Dimensions[n]
 		w.tick++
 		for(const ch of Dimensions[w].values()){
 			if(!(ch instanceof Chunk))continue
 			w.check(ch)
 		}
+		Dimensions[n].update?.()
 	}
 	for(const e of entityMap.values()){
-		if(!!e.id & !(!e.chunk | !e.world))
+		if(!e.sock && e.shouldSimulate())
+			fastCollision(e)
+		if(!e.sock && e.shouldSimulate())
 			stepEntity(e)
+		if(e.netId < 0) continue
 		mirrorEntity(e)
 	}
+	for(const p of players.values()) if(p.netId<0) mirrorEntitySelf(p)
+	for(const {0:e,1:id} of toUnlink) encodeDelete(e, id)
+	toUnlink.clear()
 	for(const pl of players.values()){
-		const {packets, ebuf, tbuf} = pl.sock
+		const {packets, ebuf, tbuf, ibuf} = pl.sock
 		if(tbuf.length || tbuf.i > 1){
-			tbuf.pipe(pl.sock)
+			pl.sock.send(tbuf.build())
 			void (pl.sock.tbuf = new DataWriter()).byte(8)
 		}
 		if(ebuf.length || ebuf.i > 1){
-			ebuf.pipe(pl.sock)
+			pl.sock.send(ebuf.build())
 			void (pl.sock.ebuf = new DataWriter()).byte(20)
 		}
+		if(ibuf){
+			pl.sock.send(ibuf.build())
+			pl.sock.ibuf = null
+			pl.sock.ibufLastB = NaN
+		}
+		pl.checkInterface()
 		for(let i = 0; i < packets.length; i++)
 			pl.sock.send(packets[i])
 		packets.length = 0
 	}
-	statAvg('misc', 'tps', -1000 / (lastTick - (lastTick = performance.now())))
 }
-
 function everySecond(){
 	for(const pl of players.values()){
 		const buf = new DataWriter()
 		buf.byte(3)
 		buf.double(pl.world ? pl.world.tick : 0)
-		buf.pipe(pl.sock)
+		pl.sock.send(buf.build())
 	}
 	stat('misc', 'age')
 }
-let lastTick = 0
-let tickTimer = null, timer2 = null
-export let current_tps = DEFAULT_TPS
+let timer = null
 export function setTPS(a){
-	current_tps = a
+	currentTPS = actualTPS = a
 	lastTick = performance.now()
-	clearInterval(tickTimer)
-	tickTimer = setInterval(tick, 1000 / a)
-	clearInterval(timer2)
-	timer2 = setInterval(everySecond, 1000)
+	clearInterval(timer)
+	timer = setInterval(everySecond, 1000)
 }
+globalThis.exiting = false
+let lastTick = performance.now()
+setInterval(function s(){
+	const mspt = 1000 / currentTPS
+	const now = performance.now()
+	if(exiting || lastTick + mspt >= now) return
+	const dt = Math.floor((now - lastTick) / mspt)
+	lastTick += dt*mspt
+	actualTPS += (currentTPS/dt - actualTPS)/currentTPS/2
+	statAvg('misc', 'tps', currentTPS/dt)
+	tick()
+})
