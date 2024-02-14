@@ -1,7 +1,7 @@
 # index.js
 
 ## Overview
-This documentation provides an explanation of the code snippet provided.
+This documentation provides an explanation of index.js.
 
 ## Import Statements
 - `Dimensions` and `players` are imported from the `./world/index.js` module.
