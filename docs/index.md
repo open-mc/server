@@ -1,4 +1,4 @@
-# server.js
+# index.js
 
 ## Overview
 This documentation provides an explanation of the code snippet provided.
