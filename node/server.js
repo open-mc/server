@@ -146,7 +146,7 @@ server.ws('/*', {
 			httpHost = 'http://' + h
 			host = h
 		}
-		if(exiting) return
+		if(exiting) return void res.end(undefined, true)
 		const {1:username,2:pubKey,3:authSig} = req.getUrl().split('/').map(decodeURIComponent)
 		if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig||'', 'base64'))){
 			res.end(undefined, true)

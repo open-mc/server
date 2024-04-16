@@ -49,8 +49,8 @@ Object.assign(commands, {
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
 			e.x = x, e.y = y, e.world = w, e.dx = e.dy = 0, e.sock && e.rubber(X | Y | DXDY)
-		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to (${x.toFixed(3)}, ${y.toFixed(3)}) in the ${w.id}`)
-		else return log(this, `Teleported ${targets[0].name} to (${x.toFixed(3)}, ${y.toFixed(3)}) in the ${w.id}`)
+		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to (x=${x.toFixed(3)}, y=${y.toFixed(3)}) in the ${w.id}`)
+		else return log(this, `Teleported ${targets[0].name} to (x=${x.toFixed(3)}, y=${y.toFixed(3)}) in the ${w.id}`)
 	},
 	kick(a, ...r){
 		const reason = r.join(' ')
@@ -111,7 +111,7 @@ Object.assign(commands, {
 		snbt(data, 0, b, b.savedata)
 		goto(w, floor(x), floor(y))
 		place(b)
-		return log(this, 'Set block at ('+(floor(x)|0)+', '+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
+		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
 	},
 	fill(_x, _y, _x2, _y2, type, d = this.world || 'overworld'){
 		let n = performance.now()
@@ -280,7 +280,7 @@ Object.assign(commands, {
 		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
 			return commands.tp.call(this, y || '@s', GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
 		void ({x: GAMERULES.spawnx, y: GAMERULES.spawny, w: {id: GAMERULES.spawnworld}} = parseCoords(x,y,d,this))
-		return log(this, `Set the spawn point to (${GAMERULES.spawnx.toFixed(2)}, ${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
+		return log(this, `Set the spawn point to (x=${GAMERULES.spawnx.toFixed(2)}, y=${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
 		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
@@ -296,7 +296,7 @@ Object.assign(commands, {
 	kill(t = '@s', cause = 'void'){
 		if(this.sock.permissions < MOD){
 			if(!CONFIG.permissions.suicide) throw 'This server does not permit suicide'
-			if(t != '@s'/* || cause != 'void'*/) throw 'You do not have permission to use /kill against other players'
+			if(t != '@s' || cause != 'void') throw 'You do not have permission to use /kill that way'
 		}
 		const c = damageTypes[cause] || 0
 		let i = 0
@@ -306,6 +306,13 @@ Object.assign(commands, {
 			i++
 		}
 		return log(this, 'Killed '+i+' entities')
+	},
+	where(t = '@s'){
+		if(this.sock.permissions < MOD) if(t != '@s') throw 'You do not have permission to use /where for other players'
+		const [p, e] = selector(t, this)
+		if(e) throw 'Selector found more than one target'
+		const w = `(x=${p.x.toFixed(3)}, y=${p.y.toFixed(3)}) `+(p.world?'in the '+p.world.id:'outside of the space-time continuum')
+		return t == '@s' ? `You are at ${w} and have ${p.health/2} heart(s)` : `${p.name} is at ${w} and has ${p.health/2} heart(s)`
 	},
 	hide(t = '@s'){
 		let i = 0
@@ -346,7 +353,7 @@ Object.assign(commands, {
 		while((floor(this.y)&63|!moved) && peek().solid)
 			this.y = floor(this.y) + 1, moved = true, up()
 		if(moved) this.rubber(Y)
-		return log(this, `Regenerated chunk located at (${x<<6}, ${y<<6}) in the ${w.id}`)
+		return log(this, `Regenerated chunk located at (x=${x<<6}, y=${y<<6}) in the ${w.id}`)
 	},
 	perm(u, a){
 		if(!u || !a) throw 'Usage: /perm <player> <permission_level>'
@@ -443,7 +450,7 @@ Object.assign(commands, {
 		await Promise.all(end)
 		return 'Executed '+k+' commands successfully'
 	},
-	ping(){ return 'Pong! '+this.sock.pingTime+'ms' },
+	ping(){ return 'Pong! '+(this.sock.pingTime||0)+'ms' },
 	async repeat(k, c='ping', ...a){
 		k = min(k>>>0, 1e6)
 		for(let i = 0; i < k; i++)
@@ -473,7 +480,7 @@ Object.assign(commands, {
 		if(ex) throw '/mark only accepts one entity'
 		const m = {x: ifloat(ent.x + (+xo||0)), y: ifloat(ent.y + (+yo||0)), world: ent.world, entity: ent}
 		marks.set(this, m)
-		return `Mark set at (${m.x.toFixed(3)}, ${m.y.toFixed(3)}) in the ${m.world.id}`
+		return `Mark set at (x=${m.x.toFixed(3)}, y=${m.y.toFixed(3)}) in the ${m.world.id}`
 	},
 	restart(delay = 0){
 		if(!globalThis.process) throw '/restart is only available for multiplayer servers'
@@ -497,6 +504,7 @@ commands.op = function(u){return commands.perm.call(this,u,OP)}
 commands.deop = function(u){return commands.perm.call(this,u,NORMAL)}
 commands.unlink = commands.hide
 commands.link = commands.show
+commands.doxx = commands.where
 
 export const anyone_help = {
 	help: '[cmd] -- Help for a command',
@@ -520,8 +528,9 @@ export const anyone_help = {
 	kill: '[target] (cause=void) -- Kill a player or entity',
 	mark: '[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position and entity selectors with !',
 	id: '[block|item|entity|blockdata|itemdata|entitydata] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID',
-	unlink: '[player] -- Put a player in spectator',
-	link: '[player] -- Put a player out of spectator'
+	hide: '[player] -- Put a player in spectator',
+	show: '[player] -- Put a player out of spectator',
+	where: '[player] -- Where is a specific player?'
 }, help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
