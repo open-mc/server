@@ -11,7 +11,7 @@ Requirements: [Git](https://git-scm.com/downloads) and [Nodejs](https://nodejs.o
 Starting the server will create 1 file and 1 folder where the command is run:
 - `world` containing world data as well as config files
 - `properties.yaml` for server properties which you can edit in any text editor.
-	- You can optionally add a different path with something like `sh server/node/start /Path/To/Config/File` to change where this file is read/created.
+	- You can optionally add a different path with something like `sh server/node/start /Path/To/Properties/File` to change where this file is read/created.
 	- In this file you can also specify where the `world` directory should be read/created, relative to `properties.yaml`
 
 Got any issues? Open a new issue, or directly ask for help on [our discord](https://discord.gg/mqQwHNTncV)!

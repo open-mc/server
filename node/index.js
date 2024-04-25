@@ -21,6 +21,8 @@ function argvConfig(){
 	return o
 }
 function fallback(o, f){
+	if(o == null && typeof f == 'object') return f
+	else if(Array.isArray(o)) return o
 	for(const k in f){
 		if(k in o){
 			if(typeof f[k] == 'object') fallback(o[k], f[k])
