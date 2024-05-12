@@ -1,5 +1,5 @@
 import { BlockIDs } from '../blocks/block.js'
-import { GAMERULES, players } from './index.js'
+import { GAMERULES, players, stat } from './index.js'
 import { Entities, EntityIDs } from '../entities/entity.js'
 import { _newChunk, antWorld, down, gotopos, peek, peekpos, summon, up } from '../misc/ant.js'
 
@@ -222,6 +222,7 @@ export class Chunk extends Uint16Array{
 			if(aliveQuarters>>(p>>4&3|p>>8&12)&1){ this.blockupdates.set(p, v); continue }
 			const b = peekpos(this,p)
 			if(b.update){
+				updates++
 				const v2 = b.update(v)
 				if(v2 !== undefined) this.blockupdates.set(p, v2)
 			}
@@ -238,6 +239,7 @@ export class Chunk extends Uint16Array{
 			if(highest >= 0 && highest < 64){
 				gotopos(this, p&~4032|highest<<6)
 				summon(Entities.lightning_bolt)
+				lightningStrikes++
 			}
 		}
 	}
@@ -248,3 +250,9 @@ export class Chunk extends Uint16Array{
 }
 
 Function.optimizeImmediately(Chunk, Chunk.prototype.parse, Chunk.prototype.toBuf, Chunk.prototype.tick, Chunk.diskBufToPacket)
+
+let updates = 0, lightningStrikes = 0
+export function updateStats(){
+	if(updates) stat('world', 'block_updates', updates), updates = 0
+	if(lightningStrikes) stat('world', 'lightning_strikes', lightningStrikes), lightningStrikes = 0
+}

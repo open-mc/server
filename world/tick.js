@@ -1,6 +1,6 @@
 import { players, stat, statAvg } from '../world/index.js'
 import { DataWriter } from '../modules/dataproto.js'
-import { Chunk } from './chunk.js'
+import { Chunk, updateStats } from './chunk.js'
 import { Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
 import { encodeDelete, mirrorEntity, mirrorEntitySelf } from './encodemove.js'
@@ -50,6 +50,7 @@ export function tick(){
 			pl.sock.send(packets[i])
 		packets.length = 0
 	}
+	updateStats()
 }
 function everySecond(){
 	for(const pl of players.values()){

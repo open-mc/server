@@ -1,8 +1,7 @@
 import { GREEN, WHITE, chat, prefix } from './chat.js'
 import { err, executeCommand } from './_commands.js'
-import { Entities, Entity } from '../entities/entity.js'
-import { DataWriter } from '../modules/dataproto.js'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, save, load } from './ant.js'
+import { Entities } from '../entities/entity.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
@@ -400,7 +399,6 @@ export function onstring(player, text){
 	}else if(CONFIG.permissions.chat){
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
-		if(text.includes('pineapple') && text.includes('pizza')) stat('misc', 'controversial')
 		chat(prefix(player)+text, text[0]=='>'&&CONFIG.permissions.greentext?GREEN:WHITE, player)
 	}
 }

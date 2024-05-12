@@ -37,7 +37,7 @@ KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 const genInfo = () => {
 	const ps = [], playerData = CONFIG.showhealth ? [] : undefined
 	for(const p of players.values()) ps.push(p.name), playerData?.push(p.health)
-	return {players: ps, playerData, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)], stats: STATS}
+	return {players: ps, playerData, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, banner: CONFIG.banner, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)], stats: STATS}
 }
 
 const endpoints = {
@@ -174,7 +174,7 @@ server.ws('/*', {
 		buf.string(CONFIG.name || '')
 		buf.string(CONFIG.motd[floor(random() * CONFIG.motd.length)] || '')
 		buf.string(CONFIG.icon || '')
-		// buf.string(CONFIG.banner || '')
+		buf.string(CONFIG.banner || '')
 		buf.uint8array(indexCompressed)
 		buf.uint8array(data.challenge)
 		sock.send(buf.build())
@@ -193,9 +193,9 @@ server.ws('/*', {
 				const cli_ver = buf.short(), skin = new Uint8Array(a.slice(2, 1010))
 				if(crypto.verify('SHA256', challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + sock.pubKey + '\n-----END RSA PUBLIC KEY-----', new Uint8Array(a, 1010, a.byteLength - 1010))){
 					if(cli_ver < PROTOCOL_VERSION)
-						return void sock.send('-12fOutdated client! Please update your client.\n('+cli_ver+' < '+PROTOCOL_VERSION+')'), sock.end()
+						return void sock.send('-12fOutdated client! Please update your client.\n(Client v'+cli_ver+' < Server v'+PROTOCOL_VERSION+')'), sock.end()
 					else if(cli_ver > PROTOCOL_VERSION)
-						return void sock.send('-12fOutdated server! Contact server owner.\n('+cli_ver+' > '+PROTOCOL_VERSION+')'), sock.end()
+						return void sock.send('-12fOutdated server! Contact server owner.\n(Client v'+cli_ver+' > Server v'+PROTOCOL_VERSION+')'), sock.end()
 					sock.skin = skin
 					open.call(sock)
 				}else{

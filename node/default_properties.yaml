@@ -4,8 +4,9 @@
 
 # Server name to appear in server list
 name: Test Server
-# Icon to appear in server list. Specify a URL. Must start with https:// or /
+# Icon and banner to appear in server list. Specify a URL. Must start with https:// or /
 icon: https://openmc.pages.dev/img/beacon.png
+banner: # Not all servers need a banner!
 # Message of the day. Chosen randomly and displayed on server list
 motd:
   - One of the servers of all time

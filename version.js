@@ -1,12 +1,12 @@
-export const PROTOCOL_VERSION = 5
-export const VERSION = 'alpha 9'
+export const PROTOCOL_VERSION = 6
+export const VERSION = 'alpha 10'
 
 export const credit = `
 
-All image assets: Mojang AB
+All graphical assets: Mojang AB
 
-Background music: C418
-Other sounds: C418 + Mojang AB
+Music: C418
+Other sounds: C418, Mojang AB
 
 Client software: Open-MC organization (https://github.com/open-mc)
 Server software: Open-MC organization (https://github.com/open-mc)

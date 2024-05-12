@@ -9,7 +9,9 @@
 	font-style: normal;
 }
 *{padding:0;margin:0;box-sizing:border-box;min-width:0}
+::-webkit-scrollbar{ width: 0 }
 body{
+	scrollbar-width: 0;
 	margin: 0;
 	overscroll-behavior: none;
 	display: flex;
@@ -20,7 +22,7 @@ body{
 html{
 	height: 100%;
 	font-family: mc;
-	background: url('https://openmc.pages.dev/img/bg32.png') center/48px;
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgBAMAAACBVGfHAAAAFVBMVEU6Kh0cEw0vIhcmGxIqKioiIiIkHBUi57SIAAAAhUlEQVQoz23PMQ0DMBAEwaNwFJbCUjAFUwh/CCnsJnm389LrNgENaDUmA6TKqkFpJ0QbNWobJ7AjNSCGF0iKUve5/IMFaatVMyHVpTmr5QGePgrKA1DECupt/AWqrZ4RvMDE0ERYPkAhssFiJ1iE6H37APQj2NTAhPPHqr1xAwIuTrwd8AVsL0Zl36pHrwAAAABJRU5ErkJggg) center/48px;
 	background-attachment: fixed;
 	image-rendering: pixelated;
 	color: white;
@@ -48,8 +50,8 @@ category.open > entry{display: block}
 
 entry{
 	display: none;
-	user-select: text;
-	-webkit-user-select: text;
+	user-select: contain;
+	-webkit-user-select: contain;
 	color: var(--c);
 }
 entry::before{
@@ -85,6 +87,11 @@ flex > *{
 }
 category,entry,card,flex,h1,body{
 	text-shadow: .1em .1em 0 #444;
+}
+#bg{
+	position: absolute; z-index: -1;
+	top: 0; left: 0; width: 100%; height: 400px;
+	mask-image: linear-gradient(#000 50%, #0000);
 }
 </style></head></html><script>
 document.currentScript.remove()
@@ -124,7 +131,7 @@ const Category = (name, col, ...e) => {
 }
 const H1 = a => {const d = document.createElement('h1'); d.textContent = a; return d}
 const Card = (size, name, icon, desc) => {
-	const el = document.createElement('card');
+	const el = document.createElement('card')
 	const i = new Image()
 	i.src = icon
 	const d = document.createElement('div')
@@ -156,24 +163,28 @@ const App = () => [
 		Entry('Messages sent in chat', stats.misc.chat_messages),
 		Entry('Commands used', stats.misc.commands_used),
 		Entry('Times '+JSON.stringify(info.magic_word)+' said in chat', stats.misc.magic_word),
-		Entry('Controversial opinions shared in chat', stats.misc.controversial)
 	),
 	Category('World', 'green',
 		Entry('Chunks generated', stats.world.chunks_generated),
 		Entry('Chunk revisits', stats.world.chunk_revisits),
+		Entry('Block updates', stats.world.block_updates),
 		Entry('Explosions', stats.world.explosions),
+		Entry('Lightning strikes', stats.world.lightning_strikes),
 	),
 	Category('Player', '#25e',
 		Entry('Blocks placed by players', stats.player.blocks_placed),
 		Entry('Blocks broken by players', stats.player.blocks_broken),
 		Entry('Times someone stopped breaking a block', stats.player.break_abandon),
 		Entry('Maximum speed ever attained', (stats.player.max_speed ?? 0).toFixed(3) + ' b/s'),
-		Entry('Furthest distance ever reached', Math.floor(stats.player.max_dist) + ' blocks'),
+		Entry('Furthest distance travelled from (0,0)', Math.floor(stats.player.max_dist) + ' blocks'),
 	)
 ]
 
 for(const i of ['misc', 'world', 'player'])
 	if(!i in stats) stats[i] = {}
 
-document.body.append(...App())
+const bg = document.createElement('div')
+bg.id = 'bg'
+bg.style = `background:linear-gradient(75deg, #0005 20%, #0000 70%), url(${CSS.escape(info.banner)}) center/cover`
+document.body.append(bg, ...App())
 </script>
