@@ -451,23 +451,27 @@ Object.assign(commands, {
 		return 'Executed '+k+' commands successfully'
 	},
 	ping(){ return 'Pong! '+(this.sock.pingTime||0)+'ms' },
-	async repeat(k, c='ping', ...a){
+	async repeat(k, c='', ...a){
+		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		k = min(k>>>0, 1e6)
 		for(let i = 0; i < k; i++)
 			await executeCommand(c, a, this, this.sock?.permissions??4)
 		return 'Executed '+k+' commands successfully'
 	},
-	async try(c='ping', ...a){
+	async try(c='', ...a){
+		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		try{ return await executeCommand(c, a, this, this.sock?.permissions??4) }
 		catch(e){ return 'Command did not succeed: '+e }
 	},
-	async fail(c='ping', ...a){
+	async fail(c='', ...a){
+		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		let r
 		try{ r=await executeCommand(c, a, this, this.sock?.permissions??4) }
 		catch(e){ return 'Command failed successfully: '+e }
 		throw r?'Command succeeded: '+r:'Command succeeded'
 	},
-	delay(k, c='ping', ...a){
+	delay(k, c='', ...a){
+		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		k = max(-1e6, min(k, 1e6))
 		if(k != k) throw 'Invalid delay'
 		if(k <= 0){
