@@ -551,7 +551,7 @@ export const anyone_help = {
 	delay: '[time_seconds] [...command] -- Execute a command after a delay',
 	restart: '(delay=0) -- Restart the server after delay',
 	bell: '-- @everyone'
-}, cheats = ['give', 'summon', 'setblock', 'fill']
+}, cheats = ['give', 'summon', 'setblock', 'fill', 'mutate', 'time']
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
 Object.setPrototypeOf(help, null)
