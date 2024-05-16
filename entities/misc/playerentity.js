@@ -54,6 +54,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
 	get head(){return this.state & 2 ? 1.4 : 1.6}
+	static portalWait = 80
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
 	}

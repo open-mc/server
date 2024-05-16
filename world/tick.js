@@ -46,8 +46,9 @@ export function tick(){
 			pl.sock.ibufLastB = NaN
 		}
 		pl.checkInterface()
-		for(let i = 0; i < packets.length; i++)
+		for(let i = 0; i < packets.length; i++){
 			pl.sock.send(packets[i])
+		}
 		packets.length = 0
 	}
 	updateStats()

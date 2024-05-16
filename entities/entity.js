@@ -241,8 +241,11 @@ export class Entity{
 	static gy = 1
 
 	flags = 0
+	portalTimeout = 0
+	static portalWait = 1
 	update(){
-		this.flags = (this.flags&-4) | (this.flags&1)<<1
+		if(!(this.flags&1)) this.portalTimeout = this.portalWait
+		else this.flags &= -2
 	}
 	peek(x, y){
 		let ch = this.world.get((x>>>6)+(y>>>6)*0x4000000)

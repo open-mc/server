@@ -106,10 +106,10 @@ export class Chunk extends Uint16Array{
 			}else if(palette.length != 255) PM[id] = 0x0101, paletteFull.push(id)
 			else{ palette.length = 0; break }
 		}
-		let encode65535 = false
+		let lastId = -1
 		for(const p of paletteFull)
-			if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
-		if(encode65535) palette.push(65535)
+			if(PM[p]>=0x0100) PM[p] = palette.length, lastId = 0
+		if(!lastId) lastId = palette.push(65535)-1
 		try{
 			if(packet){
 				buf.byte(16)
@@ -180,7 +180,7 @@ export class Chunk extends Uint16Array{
 
 			//save block entities
 			for(let i = 0; i < 4096; i++){
-				if(PM[IDs[i]] === palette.length-1) buf.short(IDs[i])
+				if(PM[IDs[i]] === lastId) buf.short(IDs[i])
 				if(this[i] != 65535)continue
 				const tile = this.tileData.get(i)
 				buf.flint(tile.savedatahistory.length)

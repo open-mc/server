@@ -81,9 +81,9 @@ export class World extends Map{
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
 				for(const sock of ch.sockets)
-					sock.send(buf)
+					sock.packets.push(buf)
 			})
-		}else sock.send(ch.toBuf(new DataWriter(), true).build())
+		}else sock.packets.push(ch.toBuf(new DataWriter(), true).build())
 		ch.sockets.push(sock)
 	}
 	unlink(cx, cy, sock){
@@ -92,7 +92,7 @@ export class World extends Map{
 		ch.sockets.remove(sock)
 		const {ebuf} = sock
 		for(let e of ch.entities){
-			if(e.sock == sock) continue
+			//if(e.sock == sock) continue
 			ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
 		}
 		return true

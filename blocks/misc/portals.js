@@ -31,8 +31,9 @@ Blocks.portal = class extends Block{
 	touched(e){
 		// & 1 == touched portal this tick
 		// & 2 == touched portal last tick
-		if(e.flags & 3) return void(e.flags |= 1)
+		if(e.flags&1) return
 		e.flags |= 1
+		if(--e.portalTimeout > 0) return
 		const dim = e.world == Dimensions.overworld ? Dimensions.nether : Dimensions.overworld
 		while(peekdown() == Blocks.portal) down()
 		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.world.nether_scale : getX() * CONFIG.world.nether_scale) | 0
@@ -44,8 +45,8 @@ Blocks.portal = class extends Block{
 			dim.load(targetX + 32 >>> 6, targetY + 32 >>> 6)
 		]
 		if(chs[0].t<0 | chs[1].t<0 | chs[2].t<0 | chs[3].t<0)
-			return void(e.flags &= -2)
-		
+			return void(e.portalTimeout = 1)
+		e.portalTimeout = 600
 		// We've loaded all 4 chunks, we need to find a portal, or create one
 		let closestDx = 0, closestDy = 0, closestDist = 2e9
 		for(const ch of chs){

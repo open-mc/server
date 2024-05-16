@@ -78,10 +78,10 @@ function buildBuffer(){
 	}
 	const buffers = []
 	try{
-		let encode65535 = false
+		let lastId = -1
 		for(const p of paletteFull)
-			if(PM[p]>=0x0100) PM[p] = palette.length, encode65535 = true
-		if(encode65535) palette.push(65535)
+			if(PM[p]>=0x0100) PM[p] = palette.length, lastId = 0
+		if(!lastId) lastId = palette.push(65535) - 1
 		let buf = new Uint8Array(16 + palette.length * 2)
 		buffers.push(buf)
 		buf[3] = palette.length - 1
@@ -130,7 +130,7 @@ function buildBuffer(){
 		const bdata = new DataWriter()
 		//save block entities
 		for(let i = 0; i < 4096; i++){
-			if(PM[IDs[i]] === palette.length-1) bdata.short(IDs[i])
+			if(PM[IDs[i]] === lastId) bdata.short(IDs[i])
 			const b = chunk[i]
 			if(!b.savedata)continue
 			bdata.flint(b.savedatahistory.length)
