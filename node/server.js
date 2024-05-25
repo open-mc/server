@@ -193,14 +193,13 @@ server.ws('/*', {
 				const cli_ver = buf.short(), skin = new Uint8Array(a.slice(2, 1010))
 				if(crypto.verify('SHA256', challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + sock.pubKey + '\n-----END RSA PUBLIC KEY-----', new Uint8Array(a, 1010, a.byteLength - 1010))){
 					if(cli_ver < PROTOCOL_VERSION)
-						return void sock.send('-12fOutdated client! Please update your client.\n(Client v'+cli_ver+' < Server v'+PROTOCOL_VERSION+')'), sock.end()
+						return void sock.end(1000, '\\2fOutdated client! Please update your client.\n(Client v'+cli_ver+' < Server v'+PROTOCOL_VERSION+')')
 					else if(cli_ver > PROTOCOL_VERSION)
-						return void sock.send('-12fOutdated server! Contact server owner.\n(Client v'+cli_ver+' > Server v'+PROTOCOL_VERSION+')'), sock.end()
+						return void sock.end(1000, '\\2fOutdated server! Contact server owner.\n(Client v'+cli_ver+' > Server v'+PROTOCOL_VERSION+')')
 					sock.skin = skin
 					open.call(sock)
 				}else{
-					sock.send('-119Invalid signature')
-					sock.end()
+					sock.end(1000, '\\19Invalid signature')
 					throw 'Invalid signature'
 				}
 				return
@@ -234,8 +233,8 @@ process.on('SIGINT', code => {
 		const pr = []
 		for(const sock of clients){
 			if(code && !argv.manual){
-				const d = sock.pingTime + 1500 + round(started-performance.timeOrigin)
-				sock.send('-3' + d + ';0fReconnecting in '+Date.formatTime(d))
+				const d = min(round((sock.pingTime + 1500 + started-performance.timeOrigin)/10),999)
+				sock.end(3000+d, '\\0fReconnecting shortly...')
 			}
 			pr.push(close.call(sock))
 		}
@@ -278,7 +277,7 @@ export default function openServer(){
 			}else{
 				process.stdout.write('\x1b[A')
 				input(false)
-				chat('[server] ' + text, LIGHT_GREY + ITALIC)
+				chat('\\27[server] ' + text)
 			}
 		})
 		repl('$ ', async _ => _ == 'clear' ? clear() : console.log(util.inspect(await eval(_),false,5,true)))

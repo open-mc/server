@@ -4,7 +4,7 @@ import '../node/internals.js'
 
 let cx = 0, cy = 0, pos = 0
 let world = null, chunk = undefined
-export {pos as chunkTileIndex, world as antWorld, chunk as antChunk}
+export {pos as chunkTileIndex, world as antWorld, chunk as antChunk, cx as antChunkX, cy as antChunkY}
 // Our functions run on so little overhead that array or map caching becomes a big burden for close-together world access
 let cachec = undefined, cachex = 0, cachey = 0
 

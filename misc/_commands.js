@@ -1,6 +1,6 @@
 import { players, MOD, NORMAL } from '../world/index.js'
 import { Dimensions, GAMERULES } from '../world/index.js'
-import { chat, LIGHT_GREY, ITALIC, prefix } from './chat.js'
+import { chat } from './chat.js'
 import { Entity } from '../entities/entity.js'
 import '../node/internals.js'
 import { entityMap } from '../world/tick.js'
@@ -120,7 +120,7 @@ export function parseCoords(x = '~', y = '~', d = '~', t){
 
 export function log(who, msg){
 	if(!GAMERULES.commandlogs) return msg
-	chat(prefix(who, 1) + msg, LIGHT_GREY | ITALIC, who)
+	chat('\\27['+(who?.name||'!')+'] '+msg, who)
 }
 
 export function serializeTypePretty(type){
@@ -274,7 +274,7 @@ export let stack = null
 export function err(e){
 	if(!e.stack) return e
 	stack = e.stack
-	return e + '\nType /stacktrace to view full stack trace'
+	return '\\+9' + e + '\nType /stacktrace to view full stack trace'
 }
 export const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
 export const ITEMCOMMONDATA = {count: Uint8}

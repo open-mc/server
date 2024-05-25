@@ -1,7 +1,7 @@
-import { GREEN, WHITE, chat, prefix } from './chat.js'
+import { chat } from './chat.js'
 import { err, executeCommand } from './_commands.js'
 import { Entities } from '../entities/entity.js'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat } from './ant.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, antChunk } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
@@ -75,6 +75,7 @@ function validateMove(sock, player, buf){
 const DEFAULT_BLOCKSHAPE = [0, 0, 1, 1]
 function playerMovePacket(player, buf){
 	if(!player.world) return
+	let prx = 2147483648, pry = 0, plx = 2147483648, ply = 0
 	top: {
 		let t = Date.now() / 1000
 		if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
@@ -104,6 +105,7 @@ function playerMovePacket(player, buf){
 			}
 			break top
 		}
+		if(sel<128) prx = buf.int(), pry = buf.int()
 		if(this.permissions < 2) break top
 		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
 		goto(player.world, bx, by)
@@ -233,6 +235,15 @@ function playerMovePacket(player, buf){
 				player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 			}
 			stat('player', 'blocks_placed')
+		}
+	}
+	if(prx < 2147483648 && prx != plx || pry != ply){
+		goto(player.world, prx, pry)
+		if(antChunk.sockets.includes(player.sock)){
+			const bl = peek(), {tbuf} = player.sock
+			tbuf.byte(0); tbuf.int(getX()); tbuf.int(getY())
+			tbuf.short(bl.id)
+			if(bl.savedata) tbuf.write(bl.savedata, bl)
 		}
 	}
 	if(player.breakGridEvent){
@@ -393,12 +404,15 @@ export function onstring(player, text){
 			stat('misc', 'commands_used')
 			const res = executeCommand(match[0], match.slice(1), player, this.permissions)
 			if(res)
-				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e), 9))
+				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e)))
 				else player.chat(res)
-		}catch(e){player.chat(err(e), 9)}
+		}catch(e){player.chat(err(e))}
 	}else if(CONFIG.permissions.chat){
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
-		chat(prefix(player)+text, text[0]=='>'&&CONFIG.permissions.greentext?GREEN:WHITE, player)
+		text = text.replaceAll('\\','\\\\')
+		if(text[0]=='>'&&CONFIG.permissions.greentext) text = `<${player.name}> \\+a${text}`
+		else text = `<${player.name}> ${text}`
+		chat(text, player)
 	}
 }

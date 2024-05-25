@@ -204,9 +204,7 @@ export class Entity{
 			else this.sock.send(buf)
 		}
 	}
-	chat(msg, style = 15){
-		this.sock?.send((style<16?'0'+style.toString(16):style.toString(16)) + msg)
-	}
+	chat(msg){ this.sock?.send(msg) }
 	rubber(mv = 63){
 		if(!this.sock) return
 		this.sock.r = (this.sock.r + 1) & 0xff

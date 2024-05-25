@@ -1,6 +1,6 @@
 import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world/index.js'
 import { Dimensions, GAMERULES, stat } from '../world/index.js'
-import { chat, ITALIC, prefix, GOLD, BOLD } from './chat.js'
+import { chat } from './chat.js'
 import { DXDY, Entities, EntityIDs } from '../entities/entity.js'
 import '../node/internals.js'
 import { ItemIDs, Items } from '../items/item.js'
@@ -21,13 +21,7 @@ Object.assign(commands, {
 		for(let pl of players.values())a += '\n' + pl.name + ' ('+pl.health+')'
 		return a
 	},
-	say(s, ...l){
-		if(!l.length) throw 'Command usage: /say <style> <text...>\nExample: /say lime-bold Hello!'
-		let col = 0, txt = s.includes('raw') ? l.join(' ') : prefix(this, 1) + l.join(' ')
-		for(let {0:m} of (s.match(/bold|italic|underline|strike/g)||[]))col |= (m > 'i' ? m == 'u' ? 64 : 128 : m == 'b' ? 16 : 32)
-		col += s.match(/()black|()dark[-_]?red|()dark[-_]?green|()(?:gold|dark[-_]?yellow)|()dark[-_]?blue|()dark[-_]?purple|()dark[-_]?(?:aqua|cyan)|()(?:light[-_]?)?gr[ea]y|()dark[-_]?gr[ea]y|()red|()(?:green|lime)|()yellow|()blue|()purple|()(?:aqua|cyan)|$/).slice(1).indexOf('') & 15
-		chat(txt, col)
-	},
+	say(...s){ chat(s.join(' ')) },
 	bell(){
 		globalThis.process?.stdout.write('\x07')
 		for(const p of players.values()) p.sock?.send('')
@@ -60,8 +54,7 @@ Object.assign(commands, {
 		let kicked = 0
 		for(const pl of targets){
 			if(!pl.sock) continue
-			pl.sock.send(reason ? '-12fYou were kicked for: \n'+reason : '-12fYou were kicked')
-			pl.sock.end()
+			pl.sock.end(1000, reason ? '\\2fYou were kicked for: \n'+reason : '\\2fYou were kicked')
 			kicked++
 		}
 		return log(this, `Kicked ${kicked} player(s)`)
@@ -394,15 +387,16 @@ Object.assign(commands, {
 			const f = players.get(u)
 			if(f){
 				f.sock.permissions = a
-				f.sock.send('-119You have been banned from this server')
-				f.sock.end()
+				f.sock.end(1000, '\\19You have been banned from this server')
 			}
+			stat('misc', 'player_kicks', 1)
 		}else for(const f of selector(u, this)){
 			if(!f.sock | !f.name) continue
 			if(count) count = typeof count == 'string' ? 2 : count+1
 			else count = f.name
 			PERMISSIONS[f.name] = a
-			f.sock.send('-119You have been banned from this server'), f.sock.end()
+			f.sock.end(1000, '\\19You have been banned from this server')
+			stat('misc', 'player_kicks', 1)
 		}
 		savePermissions()
 		return log(this, 'Banned '+(typeof count=='number'?count+' players':count)+(a>=1e100?' permanently':' until '+new Date(a*1000).toLocaleString()))
@@ -414,11 +408,10 @@ Object.assign(commands, {
 			const p = players.get(u)
 			count = u
 			if(p){
-				p.sock.send('-31000;1f'+msg)
 				p.sock.entity.remove()
 				p.sock.entity = null
 				players.delete(u)
-				p.sock.end()
+				p.sock.end(3100, '\\1f'+msg)
 			}
 			playersConnecting.add(u)
 			playersLevel.del(u).then(() => playersConnecting.delete(u))
@@ -426,11 +419,10 @@ Object.assign(commands, {
 			if(!p.sock | !p.name) continue
 			if(count) count = typeof count == 'string' ? 2 : count+1
 			else count = p.name
-			p.sock.send('-31000;1f'+msg)
 			p.sock.entity.remove()
 			p.sock.entity = null
 			players.delete(p.name)
-			p.sock.end()
+			p.sock.end(3100, '\\1f'+msg)
 			playersConnecting.add(p.name)
 			playersLevel.del(p.name).then(() => playersConnecting.delete(p.name))
 		}
@@ -491,7 +483,7 @@ Object.assign(commands, {
 		delay *= 1000
 		if(!(delay >= 0)) throw 'Invalid delay'
 		setTimeout(process.emit.bind(process, 'SIGINT', 1), delay)
-		if(delay) chat('[SERVER] Server restarting in '+Date.formatTime(delay), GOLD | BOLD | ITALIC, null)
+		if(delay) chat('\\33[SERVER] Server restarting in '+Date.formatTime(delay))
 	},
 	creative(a=''+(1-this.mode)){
 		if(!(this instanceof Entities.player)) throw 'Self is not a player'

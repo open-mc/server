@@ -178,7 +178,7 @@ let total = 0, loaded = 0
 let resolvePromise = null
 const _started = Date.now()
 const print = parentPort ? _ => {} : desc => {
-	console.log(`\x1b[32m[${Date.formatTime(Date.now() - _started)}] -> ${desc}`)
+	console.log(`\x1b[32m[${Date.formatTime(Date.now() - _started)}] ${desc}`)
 }
 globalThis.task = function(desc = ''){
 	total++

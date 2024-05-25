@@ -1,7 +1,9 @@
 <!-- Stats page -->
 <!DOCTYPE html>
 <html lang="en" ontouchend="event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{clientX:event.clientX,clientY:event.clientY}))">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>Stats</title><style>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title></title>
+<link rel="icon" id="favicon">
+<style>
 @font-face {
 	font-family: mc;
 	src: url('https://openmc.pages.dev/img/font.ttf') format('truetype');
@@ -18,6 +20,7 @@ body{
 	flex-direction: column;
 	gap: 20px;
 	padding: 20px;
+	filter: invert(0);
 }
 html{
 	height: 100%;
@@ -87,6 +90,7 @@ flex > *{
 }
 category,entry,card,flex,h1,body{
 	text-shadow: .1em .1em 0 #444;
+	font-weight: normal;
 }
 #bg{
 	position: absolute; z-index: -1;
@@ -147,7 +151,7 @@ const Table = (w, a) => {
 	return d
 }
 const App = () => [
-	Card(3, info.name, info.icon, info.motd),
+	Card(3, document.title = info.name, favicon.href = info.icon, info.motd),
 	H1('Players'),
 	Table(100, info.players.map((a, i) =>
 		Card(1,a, '/avatar/'+a, info.playerData?'Health: '+info.playerData[i]:'')
@@ -158,6 +162,7 @@ const App = () => [
 		Entry('Map age', Date.formatTime(stats.misc.age*1000)),
 		Entry('Unique players', stats.misc.unique_players),
 		Entry('Sessions', stats.misc.sessions),
+		Entry('Server restarts', stats.misc.restarts),
 		Entry('Total ticks', stats.misc.tps_count),
 		Entry('Average tps', stats.misc.tps),
 		Entry('Messages sent in chat', stats.misc.chat_messages),

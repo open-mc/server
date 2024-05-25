@@ -37,36 +37,31 @@ export const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
 export const playersConnecting = new Set
 
 export async function open(){
+	this.state = 2
 	if(playersConnecting.has(this.username)){
-		this.send('-119You are still logging in/out from another session')
-		this.end()
+		this.end(1000, '\\19You are still logging in/out from another session')
 		throw 'Connect / disconnect shamble'
 	}
 	if(CONFIG.maxplayers && players.size + playersConnecting.size >= CONFIG.maxplayers){
-		this.state = 2
-		if(await queue(this)) return this.state && this.end()
+		if(await queue(this)) return
 		if(!this.state) return
-		this.state = 1
 	}
+	this.state = 1; this.send('')
 	let permissions = PERMISSIONS[this.username] ?? CONFIG.permissions.default
 	if(permissions*1000 > Date.now()){
-		this.send(permissions >= 2147483647 ? '-119You are permanently banned from this server':'-119You are banned from this server for '
+		this.end(1000, permissions >= 2147483647 ? '\\19You are permanently banned from this server':'\\19You are banned from this server for '
 			+ Date.formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
-		this.end()
 		return
-	}else if(permissions == 0){
-		this.send('-11fYou are not invited to play on this server')
-		this.end()
-		return
-	}else if(permissions > 9){ permissions = CONFIG.permissions.default }
+	}else if(permissions == 0)
+		return this.end(1000, '\\1fYou are not invited to play on this server')
+	else if(permissions > 9){ permissions = CONFIG.permissions.default }
 	playersConnecting.add(this.username)
 	let player, other = players.get(this.username)
 	let link = true
 	if(other){
-		other.sock.send('-119You are logged in from another session')
 		other.unlink()
 		other.sock.entity = null
-		other.sock.end()
+		other.sock.end(1000, '\\19You are logged in from another session')
 		other.sock = null
 		other._world = null
 		player = other
@@ -124,10 +119,6 @@ export async function open(){
 	if(link) player.link()
 	else this.netId = newId(), player.rubber(127)
 	players.set(this.username, player)
-	if(!other){
-		stat('misc', 'sessions')
-		chat(this.username + (other === null ? ' joined the game' : ' joined the server'), YELLOW)
-	}
 	this.tbuf = new DataWriter()
 	this.ebuf = new DataWriter()
 	this.ibuf = null; this.ibufLastA = 0; this.ibufLastB = NaN
@@ -136,6 +127,10 @@ export async function open(){
 	sendTabMenu(true)
 	this.bigintOffsetX = 0n
 	this.bigintOffsetY = 0n
+	if(!other){
+		stat('misc', 'sessions')
+		chat('\\+b' + this.username + (other === null ? ' joined the game' : ' joined the server'))
+	}
 }
 
 export async function close(state){
@@ -158,7 +153,7 @@ export async function close(state){
 	buf.float(entity.f)
 	buf.double(entity.age)
 	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
-	if(!exiting) chat(entity.name + ' left the game', YELLOW)
+	if(!exiting) chat('\\+b' + entity.name + ' left the game')
 	await playersLevel.put(this.username, buf.build())
 	playersConnecting.delete(this.username)
 	if(entity.world) entity.remove()

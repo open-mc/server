@@ -32,7 +32,6 @@ function fallback(o, f){
 }
 const resolve = (f, p) => !p || p[0] == '/' || p[0] == '~' ? p : f + p
 async function loadConfigs(i){
-	if(i)console.info("Reloading config...")
 	const p = CONFIG && CONFIG.path
 	const promises = []
 	for(let i = 0; i < argv.length; i++){
