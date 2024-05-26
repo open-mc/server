@@ -81,7 +81,7 @@ export class World extends Map{
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
 				for(const sock of ch.sockets)
-					sock.packets.push(buf)
+					sock.send(buf)
 			})
 		}else sock.packets.push(ch.toBuf(new DataWriter(), true).build())
 		ch.sockets.push(sock)
