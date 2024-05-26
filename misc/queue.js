@@ -14,9 +14,9 @@ export function playerLeft(){
 	queueLength--
 }
 
-export function playerLeftQueue(){
+export function playerLeftQueue(w){
 	let i = 0
-	while(i < queueLength && queued[i].ws != this) i++
+	while(i < queueLength && queued[i].ws != w) i++
 	if(i == queueLength) return
 	queued.splice(i, 1)
 	queueLength--

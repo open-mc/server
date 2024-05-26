@@ -134,7 +134,7 @@ export async function open(){
 }
 
 export async function close(state){
-	if(state == 2) return playerLeftQueue()
+	if(state == 2) return playerLeftQueue(this)
 	const {entity} = this
 	if(!entity) return
 	entity.closeInterface()
