@@ -10,6 +10,7 @@ class Water extends Block{
 	static climbable = true
 	static viscosity = 0.15
 	static delay = 5
+	static blast = 400
 	static combine(fluid){
 		if(fluid.fluidType == 'lava')
 			blockevent(32), place(fluid.flows ? Blocks.cobblestone : Blocks.obsidian)
