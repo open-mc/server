@@ -210,7 +210,7 @@ export class Chunk extends Uint16Array{
 		this.blockupdates = this.blockupdates2
 		this.blockupdates2 = s
 		let i = GAMERULES.randomtickspeed + 1
-		let aliveQuarters = (this.loadedAround&193)==193|((this.loadedAround&7)==7)<<1|((this.loadedAround&28)==28)<<2|((this.loadedAround&112)==112)<<3
+		let aliveQuarters = ((this.loadedAround&193)==193)<<2|((this.loadedAround&7)==7)<<3|((this.loadedAround&28)==28)<<1|((this.loadedAround&112)==112)
 		while(--i){
 			const p = floor(random() * 4096)
 			if(aliveQuarters>>(p>>5&1|p>>10&2)&1)

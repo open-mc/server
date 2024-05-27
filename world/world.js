@@ -83,7 +83,7 @@ export class World extends Map{
 				for(const sock of ch.sockets)
 					sock.send(buf)
 			})
-		}else sock.packets.push(ch.toBuf(new DataWriter(), true).build())
+		}else sock.send(ch.toBuf(new DataWriter(), true).build())
 		ch.sockets.push(sock)
 	}
 	unlink(cx, cy, sock){

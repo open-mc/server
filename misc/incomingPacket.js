@@ -74,18 +74,15 @@ function validateMove(sock, player, buf){
 
 const DEFAULT_BLOCKSHAPE = [0, 0, 1, 1]
 function playerMovePacket(player, buf){
-	if(!player.world) return
+	if(!player.world || player.health <= 0 || buf.byte() != this.r) return
+	let t = Date.now() / 1000
+	if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
+	this.movePacketCd = t
 	let prx = 2147483648, pry = 0, plx = 2147483648, ply = 0
 	top: {
-		let t = Date.now() / 1000
-		if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
-		this.movePacketCd = t
-		if(buf.byte() != this.r) return
-		if(player.health <= 0) break top
-
 		validateMove(this, player, buf)
 		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
-		if(!player.world) return
+		if(!player.world) break top
 		
 		statRecord('player', 'max_speed', sqrt(player.dx * player.dx + player.dy * player.dy))
 		statRecord('player', 'max_dist', sqrt(player.x * player.x + player.y * player.y))
@@ -109,7 +106,7 @@ function playerMovePacket(player, buf){
 		if(this.permissions < 2) break top
 		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
 		goto(player.world, bx, by)
-		const reach = min(sqrt(x * x + y * y), 10)
+		const reach = min(hypot(x, y), 10)
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach
 		let l = 0
@@ -199,7 +196,7 @@ function playerMovePacket(player, buf){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
-				return
+				break top
 			}
 			b: if(!(player.state&2) && b.interact){
 				const i2 = b.interact(item, player)
@@ -209,7 +206,7 @@ function playerMovePacket(player, buf){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
-				return
+				break top
 			}
 			if(!l) break top
 		}
@@ -355,13 +352,11 @@ export function voiceChat(player, buf){
 }
 
 function disappearPacket(player){
-	if(this.permissions<3) return
-	player.unlink()
-}
-function appearPacket(player){
-	if(this.permissions<3) return
-	player.link()
-	if(player.health <= 0) player.damage(-Infinity, null)
+	if(this.permissions<3) return void player.chat('\\+9You do not have permission to link/unlink')
+	if(!player.linked){
+		player.link()
+		if(player.health <= 0) player.damage(-Infinity, null)
+	}else player.unlink()
 }
 
 export function creativeItemPacket(player, buf){
@@ -383,7 +378,6 @@ export const codes = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	5: respawnPacket,
 	6: disappearPacket,
-	7: appearPacket,
 	13: openInventoryPacket,
 	15: closeInterfacePacket,
 	20: creativeItemPacket,

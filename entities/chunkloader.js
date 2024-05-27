@@ -50,27 +50,23 @@ export const ChunkLoader = T => class extends T{
 				}
 			}
 		}
-		sock.packets.push(trashed.build())
+		sock.send(trashed.build())
 		super.moved?.()
 	}
 	load(cx, cy, world){
 		const {radius, sock} = this
 		if(!sock) return
-		for(let x=cx-radius+1;x<cx+radius;x++){
-			for(let y=cy-radius+1;y<cy+radius;y++){
+		for(let x=cx-radius+1;x<cx+radius;x++)
+			for(let y=cy-radius+1;y<cy+radius;y++)
 				world.link(x, y, sock)
-			}
-		}
 	}
 	unload(cx, cy, world, send = true){
 		const {radius, sock} = this
 		if(!sock) return
 		if(!send){
-			for(let x = cx-radius+1;x<cx+radius;x++){
-				for(let y=cy-radius+1;y<cy+radius;y++){
+			for(let x = cx-radius+1;x<cx+radius;x++)
+				for(let y=cy-radius+1;y<cy+radius;y++)
 					world.unlink(x, y, sock)
-				}
-			}
 			return
 		}
 		let area = radius * 2 - 1
@@ -85,7 +81,7 @@ export const ChunkLoader = T => class extends T{
 				}
 			}
 		}
-		this.sock.packets.push(trashed.build())
+		this.sock.send(trashed.build())
 	}
 	remove(){
 		const cx = floor(this.x) >> 6

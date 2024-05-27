@@ -204,8 +204,13 @@ export function fastCollision(e, dt = 1 / currentTPS){
 			if(!b.touched) continue b
 			if(b.touched(e)){load(p);break a}else load(p)
 		}
-	v = 1 - v
-	e.dx *= v ** dt; e.dy *= v ** (dt*60)
+	v = (1 - v)**dt
+	e.dx *= v
+	if(e.dx > -.00390625 && e.dx < .00390625) e.dx = 0
+	/* fast pow(, 60) */
+	const v2 = v*v, v4 = v2*v2, v8 = v4*v4, v16 = v8*v8
+	e.dy *= v4*v8*v16*v16*v16
+	if(e.dy > -.00390625 && e.dy < .00390625) e.dy = 0
 	e.x = ifloat(e.x); e.y = ifloat(e.y)
 }
 

@@ -272,8 +272,8 @@ export function selector(a, who){
 
 export let stack = null
 export function err(e){
-	if(!e.stack) return e
-	stack = e.stack
+	if(!e.stack) return '\\+9'+e
+	e = e.stack
 	return '\\+9' + e + '\nType /stacktrace to view full stack trace'
 }
 export const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}

@@ -1,6 +1,4 @@
-import { entityMap } from './tick.js'
 import { EVENTS } from '../entities/entity.js'
-import { Chunk } from './chunk.js'
 
 export function calculateMv(e){
 	let mv = 0
