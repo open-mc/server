@@ -73,12 +73,11 @@ export function place(bl, safe = false){
 		if(bl.savedata) tbuf.write(bl.savedata, bl)
 	}
 	if((pos & 63) === 0b111111){
-		const ncx = cx+1&0x3FFFFFF
-		const c = ncx===cachex&cy===cachey ? cachec : world.get(ncx+cy*0x4000000)
+		const c = chunk.right
 		if(c){
 			const p = pos&0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
-			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.variant){pos=p,chunk=c,cx=c.x;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
 			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
@@ -88,12 +87,11 @@ export function place(bl, safe = false){
 		if(b.update && !chunk.blockupdates.has(pos+1)) chunk.blockupdates.set(pos+1, 0)
 	}
 	if((pos & 63) === 0){
-		const ncx = cx-1&0x3FFFFFF
-		const c = ncx===cachex&cy===cachey ? cachec : world.get(ncx+cy*0x4000000)
+		const c = chunk.left
 		if(c){
 			const p = pos|0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
-			if(b.variant){pos=p,chunk=c,cx=ncx;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.variant){pos=p,chunk=c,cx=c.x;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
 			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
@@ -103,12 +101,11 @@ export function place(bl, safe = false){
 		if(b.update && !chunk.blockupdates.has(pos-1)) chunk.blockupdates.set(pos-1, 0)
 	}
 	if((pos >> 6) === 0b111111){
-		const ncy = cy+1&0x3FFFFFF
-		const c = cx===cachex&ncy===cachey ? cachec : world.get(cx+ncy*0x4000000)
+		const c = chunk.up
 		if(c){
 			const p = pos&0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
-			if(b.variant){pos=p,chunk=c,cy=ncy;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.variant){pos=p,chunk=c,cy=c.y;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
 			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
@@ -118,12 +115,11 @@ export function place(bl, safe = false){
 		if(b.update && !chunk.blockupdates.has(pos+64)) chunk.blockupdates.set(pos+64, 0)
 	}
 	if((pos >> 6) === 0){
-		const ncy = cy-1&0x3FFFFFF
-		const c = cx===cachex&ncy===cachey ? cachec : world.get(cx+ncy*0x4000000)
+		const c = chunk.down
 		if(c){
 			const p = pos|0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
-			if(b.variant){pos=p,chunk=c,cy=ncy;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
+			if(b.variant){pos=p,chunk=c,cy=c.y;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)c[p]=65535,c.tileData.set(p,b=b===b.constructor?new b:b);else{if(c[p]==65535)c.tileData.delete(p);c[p]=b.id}}
 			if(b.update && !c.blockupdates.has(p)) c.blockupdates.set(p, 0)
 		}
 	}else{
@@ -180,47 +176,52 @@ export function summon(Fn){
 
 export const peek = () => {const b=chunk?chunk[pos]:0;return b===65535?chunk.tileData.get(pos):BlockIDs[b]}
 
-function nc(x,y){if(x===cachex&y===cachey){cachex=cx;cachey=cy;cx=x;cy=y;const c=cachec;cachec=chunk;chunk=c}else{cachex=cx;cachey=cy;cachec=chunk;chunk=world.get((cx=x)+(cy=y)*0x4000000)}}
-function npeek(x,y,p){if(x===cachex&y===cachey){const b=cachec?cachec[p]:0;return b===65535?cachec.tileData.get(pos):BlockIDs[b]}else{const c=world.get(x+y*0x4000000);const b=c?c[p]:0;return b===65535?c.tileData.get(pos):BlockIDs[b]}}
 
 export function left(){
 	if(pos & 0b000000111111){ pos--; return }
-	pos |= 0b000000111111; nc(cx-1 & 0x3FFFFFF, cy)
+	pos |= 0b000000111111; chunk = chunk.left; cx--
 }
 export function right(){
 	if((pos & 0b000000111111) != 0b000000111111){ pos++; return }
-	pos &= 0b111111000000; nc(cx+1 & 0x3FFFFFF, cy)
+	pos &= 0b111111000000; chunk = chunk.right; cx++
 }
 export function down(){
 	if(pos & 0b111111000000){ pos -= 64; return }
-	pos |= 0b111111000000; nc(cx, cy-1 & 0x3FFFFFF)
+	pos |= 0b111111000000; chunk = chunk.down; cy--
 }
 export function up(){
 	if((pos & 0b111111000000) != 0b111111000000){ pos += 64; return }
-	pos &= 0b000000111111; nc(cx, cy+1 & 0x3FFFFFF)
+	pos &= 0b000000111111; chunk = chunk.up; cy++
 }
 
 export function peekleft(){
 	if(pos & 0b000000111111){const b=chunk?chunk[pos-1]:0;return b===65535?chunk.tileData.get(pos-1):BlockIDs[b]}
-	return npeek(cx-1 & 0x3FFFFFF, cy, pos | 0b000000111111)
+	const b = chunk?chunk.left[pos|0b000000111111]:0
+	return b==65535?chunk.left.tileData.get(pos|0b000000111111):BlockIDs[b]
 }
 export function peekright(){
 	if((pos & 0b000000111111) != 0b000000111111){const b=chunk?chunk[pos+1]:0;return b===65535?chunk.tileData.get(pos+1):BlockIDs[b]}
-	return npeek(cx+1 & 0x3FFFFFF, cy, pos & 0b111111000000)
+	const b = chunk?chunk.right[pos&0b111111000000]:0
+	return b==65535?chunk.right.tileData.get(pos&0b111111000000):BlockIDs[b]
 }
 export function peekdown(){
 	if(pos & 0b111111000000){const b=chunk?chunk[pos-64]:0;return b===65535?chunk.tileData.get(pos-64):BlockIDs[b]}
-	return npeek(cx,cy-1 & 0x3FFFFFF, pos | 0b111111000000)
+	const b = chunk?chunk.down[pos|0b111111000000]:0
+	return b==65535?chunk.down.tileData.get(pos|0b111111000000):BlockIDs[b]
 }
 export function peekup(){
 	if((pos & 0b111111000000) != 0b111111000000){const b=chunk?chunk[pos+64]:0;return b===65535?chunk.tileData.get(pos+64):BlockIDs[b]}
-	return npeek(cx,cy+1 & 0x3FFFFFF, pos & 0b000000111111)
+	const b = chunk?chunk.up[pos&0b000000111111]:0
+	return b==65535?chunk.up.tileData.get(pos&0b000000111111):BlockIDs[b]
 }
 
 export function jump(dx, dy){
 	dx = (pos & 0b000000111111) + dx | 0; dy = (pos >> 6) + dy | 0
-	if((dx | dy) >>> 6){ nc(cx + (dx >>> 6) & 0x3FFFFFF, cy + (dy >>> 6) & 0x3FFFFFF); pos = (dx & 0b000000111111) | (dy & 0b000000111111) << 6; return }
-	pos = dx | dy << 6
+	if((dx | dy) >>> 6){
+		const x = cx + (dx >>> 6) & 0x3FFFFFF, y = cy + (dy >>> 6) & 0x3FFFFFF
+		if(x===cachex&y===cachey){cachex=cx;cachey=cy;cx=x;cy=y;const c=cachec;cachec=chunk;chunk=c}else{cachex=cx;cachey=cy;cachec=chunk;chunk=world.get((cx=x)+(cy=y)*0x4000000)}
+		pos = (dx & 0b000000111111) | (dy & 0b000000111111) << 6
+	}else pos = dx | dy << 6
 }
 
 export function peekat(dx, dy){
@@ -249,4 +250,4 @@ export function select(x0, y0, x1, y1, cb){
 	}
 }
 
-Function.optimizeImmediately(nc, npeek, place, goto, peek, jump, peekat, right, left, up, down, peekright, peekleft, peekup, peekdown, summon, gridevent, cancelgridevent, select)
+Function.optimizeImmediately(place, goto, peek, jump, peekat, right, left, up, down, peekright, peekleft, peekup, peekdown, summon, gridevent, cancelgridevent, select)

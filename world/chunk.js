@@ -14,6 +14,7 @@ export class Chunk extends Uint16Array{
 		this.entities = []; this.t = -1
 		this.biomes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		this.loadedAround = 0b00000000
+		this.up = this.left = this.right = this.down = null
 	}
 	parse(buf){
 		if(this.world == antWorld) _newChunk(this)

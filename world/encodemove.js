@@ -6,7 +6,6 @@ export function calculateMv(e){
 	if(e.y != e._y) e.y = ifloat(e.y), mv |= 2
 	if(e.dx != e._dx | e.dy != e._dy) e._dx = e.dx, e._dy = e.dy, mv |= 4
 	if(e.world != e._world){
-		e.changedWorld?.()
 		if(e.sock){
 			let buf = new DataWriter()
 			buf.byte(2)
@@ -15,8 +14,9 @@ export function calculateMv(e){
 			buf.float(e.world.gy)
 			buf.write(e.world.constructor.savedata, e.world)
 			e.sock.send(buf.build())
-		}
-		e.moved?.()
+			e.moved?.()
+			e.sock.send(Uint8Array.of(2))
+		}else e.moved?.()
 		e._world = e.world
 	}else if(mv & 3) e.moved?.()
 	e._x = e.x; e._y = e.y
