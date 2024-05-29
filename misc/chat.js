@@ -92,7 +92,7 @@ const discordReplacer = a => {
 }
 export function chat(msg, who = null){
 	style = 15
-	const ansiMsg = msg.replace(/[\x00-\x1f\x7f]|```|\\(\\|x[^][^]|u[^][^][^][^]|[^][^])/gi, ansiReplacer) + '\x1b[0m'
+	const ansiMsg = msg.replace(/[\x00-\x1f\x7f]|\\(\\|x[^][^]|u[^][^][^][^]|[^][^])/gi, ansiReplacer) + '\x1b[0m'
 	console.log(ansiMsg)
 	a: if(CONFIG.webhook){
 		const wpf = (CONFIG.webhook_profiles ?? true) && !!who
@@ -111,6 +111,10 @@ export function chat(msg, who = null){
 		})}).catch(e => null)
 	}
 	for(const {sock} of players.values()) sock.send(msg)
+}
+export function printChat(msg){
+	style = 15
+	console.log(msg.replace(/[\x00-\x1f\x7f]|\\(\\|x[^][^]|u[^][^][^][^]|[^][^])/gi, ansiReplacer) + '\x1b[0m')
 }
 
 // Every system has its flaws

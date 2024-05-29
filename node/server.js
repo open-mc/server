@@ -18,7 +18,7 @@ import { codes, onstring } from '../misc/incomingPacket.js'
 import { PROTOCOL_VERSION } from '../version.js'
 import { Dimensions } from '../world/index.js'
 import { entityMap, setTPS } from '../world/tick.js'
-import { chat, LIGHT_GREY, ITALIC } from '../misc/chat.js'
+import { chat, LIGHT_GREY, ITALIC, printChat } from '../misc/chat.js'
 import { commands, err, executeCommand } from '../misc/_commands.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { ItemIDs, Items } from '../items/item.js'
@@ -272,8 +272,8 @@ export default function openServer(){
 					if(!(match[0] in commands)) throw 'No such command: /'+match[0]
 					stat('misc', 'commands_used')
 					const res = await executeCommand(match[0], match.slice(1), serverObject, 4)
-					if(res)console.log(res)
-				}catch(e){ console.log('\x1b[31m'+err(e)+'\x1b[m'); return}
+					if(res)printChat(res)
+				}catch(e){ printChat(err(e)); return}
 			}else{
 				process.stdout.write('\x1b[A')
 				input(false)
