@@ -104,8 +104,8 @@ export const fluidify = (B, t, renewable = false) => {
 			if(l.fluidLevel && l.fluidType != t)
 				left(), this.combine?.(l), right()
 
-			const lvl = max(u.fluidLevel ?? 0, r.fluidLevel ?? 0, l.fluidLevel ?? 0)-1-(B.delay > 10)*2
-			if(this.fluidLevel > lvl) return void place(lvl<=0?Blocks.air:levels[lvl])
+			const lvl = max(u.fluidLevel ?? 0, r.fluidLevel ?? 0, l.fluidLevel ?? 0), a=1+(B.delay > 10)*2
+			if(this.fluidLevel >= lvl) return void place(lvl<=a?Blocks.air:levels[lvl-a])
 			down()
 			let b = peek()
 			if(b.fluidLevel >= 8){

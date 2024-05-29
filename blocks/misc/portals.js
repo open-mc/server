@@ -34,7 +34,7 @@ Blocks.portal = class extends Block{
 		if(e.flags&1) return
 		e.flags |= 1
 		if(--e.portalTimeout > 0) return
-		const dim = e.world == Dimensions.overworld ? Dimensions.nether : Dimensions.overworld
+		const dim = e.world == Dimensions.nether ? Dimensions.overworld : Dimensions.nether
 		while(peekdown() == Blocks.portal) down()
 		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.world.nether_scale : getX() * CONFIG.world.nether_scale) | 0
 		const targetY = floor(dim == Dimensions.nether ? getY() / CONFIG.world.nether_scale : getY() * CONFIG.world.nether_scale) | 0
