@@ -112,8 +112,8 @@ function playerMovePacket(player, buf){
 		let l = 0
 		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
 		a: while(d < reach){
-			const {solid, replacable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
-			if((solid && !replacable) || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
+			const {solid, replaceable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
+			if((solid && !replaceable) || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -150,8 +150,8 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		if(d >= reach){
-			const {solid, replacable, targettable, flows} = peekat(l << 24 >> 24, l << 16 >> 24)
-			if(((!solid && !replacable && targettable) || (interactFluid && flows === false))){
+			const {solid, replaceable, targettable, flows} = peekat(l << 24 >> 24, l << 16 >> 24)
+			if(((!solid && !replaceable && targettable) || (interactFluid && flows === false))){
 				jump(l << 24 >> 24, l << 16 >> 24)
 				px -= l << 24 >> 24; py -= l << 16 >> 24
 				l >>>= 16
@@ -219,7 +219,7 @@ function playerMovePacket(player, buf){
 			}else if(!(up.targettable??up.solid) && !(left.targettable??left.solid) && !(down.targettable??down.solid) && !(right.targettable??right.solid)) break top
 		}
 		b = peek()
-		if(!b.replacable && !(interactFluid && b.flows === false)) break top
+		if(!b.replaceable && !(interactFluid && b.flows === false)) break top
 		if(false){ // TODO better entity check allowing for quasi-solid blocks like sugar_cane
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top

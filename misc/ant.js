@@ -49,7 +49,7 @@ export function place(bl, safe = false){
 	bl = bl === bl.constructor && bl.savedata ? new bl : bl
 	if(!_chunk) return bl
 	const _b = _chunk[_pos] === 65535 ? _chunk.tileData.get(_pos) : BlockIDs[_chunk[_pos]]
-	if(safe && !_b.replacable) return
+	if(safe && !_b.replaceable) return
 	if(_b.unset){
 		_b.unset()
 		world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos

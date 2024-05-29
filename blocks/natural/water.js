@@ -6,7 +6,7 @@ import { fluidify } from '../fluid.js'
 
 class Water extends Block{
 	static solid = false
-	static replacable = true
+	static replaceable = true
 	static climbable = true
 	static viscosity = 0.15
 	static delay = 5

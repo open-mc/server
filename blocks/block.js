@@ -9,11 +9,11 @@ export class Block{
 	static breaktime = 3
 	static blast = 20
 	static solid = true
-	static replacable = false
+	static replaceable = false
 	static mustBreak = false
 	static tool = ''
 	static savedata = null
-	get nonSolidAndReplacable(){return !this.solid & (this.replacable|this.targettable)}
+	get nonSolidAndReplacable(){return !this.solid & (this.replaceable|this.targettable)}
 	destroy(sound = true, drop = this.drops?.(), replace = Blocks.air){
 		if(sound) gridevent(2)
 		place(replace)
