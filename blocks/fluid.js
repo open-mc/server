@@ -45,8 +45,7 @@ export const fluidify = (B, t, renewable = false) => {
 			let b = peekup()
 			if(b.fluidType != t){
 				const l = max(peekleft().fluidLevel??0, peekright().fluidLevel??0) - 1 - (B.delay > 10)*2
-				if(l <= 0) place(Blocks.air)
-				else place(levels[l])
+				place(l <= 0 ? Blocks.air : levels[l])
 			}
 			down()
 			b = peek()
@@ -105,8 +104,8 @@ export const fluidify = (B, t, renewable = false) => {
 			if(l.fluidLevel && l.fluidType != t)
 				left(), this.combine?.(l), right()
 
-			const lvl = max(u.fluidLevel ?? 0, r.fluidLevel ?? 0, l.fluidLevel ?? 0)
-			if(this.fluidLevel >= lvl) return void place(levels[max(0,lvl-1-(B.delay > 10)*2)])
+			const lvl = max(u.fluidLevel ?? 0, r.fluidLevel ?? 0, l.fluidLevel ?? 0)-1-(B.delay > 10)*2
+			if(this.fluidLevel > lvl) return void place(lvl<=0?Blocks.air:levels[lvl])
 			down()
 			let b = peek()
 			if(b.fluidLevel >= 8){
@@ -127,7 +126,8 @@ export const fluidify = (B, t, renewable = false) => {
 				return
 			}
 			if(!b.nonSolidAndReplacable){
-				const L = this.fluidLevel - 1 - (B.delay > 10)*2
+				let L = this.fluidLevel - 1 - (B.delay > 10)*2
+				if(L<0) L=0
 				up(); right()
 				let b = peek()
 				const sourceRight = renewable && b.fluidType == t && !b.flows
