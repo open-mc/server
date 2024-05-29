@@ -4,7 +4,6 @@ import { generator } from './gendelegator.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from './tick.js'
 import { Dimensions } from './index.js'
-import { BlockIDs, Blocks } from '../blocks/block.js'
 import { _invalidateCache, antWorld } from '../misc/ant.js'
 
 const dimLevel = DB.sublevel('dimensions')
@@ -45,11 +44,11 @@ export class World extends Map{
 		if(ul?.loadedAround&0x100) ch.loadedAround |= 128, ul.loadedAround |= 8
 	}
 	load(cx, cy){
-		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
+		const k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(!ch){
 			ch = new Chunk(cx, cy, this)
-			super.set((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000, ch)
+			super.set(k, ch)
 			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
@@ -66,11 +65,11 @@ export class World extends Map{
 		return ch
 	}
 	link(cx, cy, sock){
-		let k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
+		const k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
 		let ch = super.get(k)
 		if(!ch){
 			ch = new Chunk(cx, cy, this)
-			super.set((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000, ch)
+			super.set(k, ch)
 			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js

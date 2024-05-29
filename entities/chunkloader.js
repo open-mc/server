@@ -30,7 +30,7 @@ export const ChunkLoader = T => class extends T{
 		if(x0>x1)[x0, x1] = [x1-radius-radius+1,x0-radius-radius+1]
 		let XT = cx + radius
 		let YT = min(cy,ocy)+radius
-		let trashed = new DataWriter()
+		const trashed = new DataWriter()
 		trashed.byte(17)
 		for(let y = y0; y < y1; y++){
 			for(let x=cx-radius+1;x<XT;x++){
