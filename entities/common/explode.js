@@ -19,7 +19,7 @@ export function explode(entity, strength = 100, fire = false){
 	}
 	const bl = peek()
 	set(strength -= bl.blast)
-	if(strength > 0) bl.destroy(false)
+	if(strength > 0) bl.destroy?.(false)
 	else return
 	up(); y = 1
 	for(let i = 1; i < LEFT; i++){
@@ -30,7 +30,7 @@ export function explode(entity, strength = 100, fire = false){
 			if(y == -i) v = get(-1,1)-bl.blast*(2-(i&1))
 			else if(y < i) v = get(-1,0)-bl.blast
 			else v = get(-1,-1)-bl.blast*(2-(i&1))
-			if(v > 0) bl.destroy(false), set(v)
+			if(v > 0) bl.destroy?.(false), set(v)
 			up(); y++
 		}
 	}
@@ -43,7 +43,7 @@ export function explode(entity, strength = 100, fire = false){
 			if(y == -i) v = get(1,1)-bl.blast*(2-(i&1))
 			else if(y < i) v = get(1,0)-bl.blast
 			else v = get(1,-1)-bl.blast*(2-(i&1))
-			if(v > 0) bl.destroy(false), set(v)
+			if(v > 0) bl.destroy?.(false), set(v)
 			up(); y++
 		}
 	}
@@ -53,7 +53,7 @@ export function explode(entity, strength = 100, fire = false){
 		while(x < i){
 			const bl = peek()
 			const v = get(0,-1)-bl.blast
-			if(v > 0) bl.destroy(false), set(v)
+			if(v > 0) bl.destroy?.(false), set(v)
 			right(); x++
 		}
 	}
@@ -63,7 +63,7 @@ export function explode(entity, strength = 100, fire = false){
 		while(x < i){
 			const bl = peek()
 			const v = get(0,1)-bl.blast
-			if(v > 0) bl.destroy(false), set(v)
+			if(v > 0) bl.destroy?.(false), set(v)
 			right(); x++
 		}
 	}
