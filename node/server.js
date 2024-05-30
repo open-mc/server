@@ -246,8 +246,8 @@ process.on('SIGINT', code => {
 void function timeout(){if(exiting) return; setTimeout(() => saveAll().then(timeout), 300e3)}()
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 const serverObject = {
-	sock: {permissions: 4},
-	x: 0, y: 0,
+	sock: {perms: 4},
+	x: 0, y: 0, getName(){return ''},
 	world: Dimensions.overworld
 }
 export default function openServer(){

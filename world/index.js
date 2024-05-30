@@ -16,7 +16,7 @@ export const [
 ] = await Promise.all([
 	DB.get('gamerules').then(json).catch(e=>({})),
 	DB.get('stats').then(json).catch(e=>({})),
-	DB.get('permissions').then(json).catch(e=>({'':2})),
+	DB.get('perms').then(json).catch(e=>({'':2})),
 ])
 Object.setPrototypeOf(PERMISSIONS, null)
 Object.setPrototypeOf(GAMERULES, null)
@@ -26,7 +26,7 @@ let resave = 0
 export async function savePermissions(){
 	if(resave) return void(resave = 2)
 	resave = 1
-	do await DB.put("permissions", JSON.stringify(PERMISSIONS)); while(resave == 2)
+	do await DB.put("perms", JSON.stringify(PERMISSIONS)); while(resave == 2)
 	resave = 0
 }
 

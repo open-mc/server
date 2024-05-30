@@ -95,7 +95,7 @@ function playerMovePacket(player, buf){
 		if(x != x){
 			player.f = y || 0
 			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
-			if(this.permissions >= 2 && e && e.chunk && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
+			if(this.perms >= 2 && e && e.chunk && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
 				//hit e
 				const itm = player.inv[player.selected]
 				e.damage?.(itm?.damage?.(e) ?? 1, player)
@@ -103,7 +103,7 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		if(sel<128) prx = buf.int(), pry = buf.int()
-		if(this.permissions < 2) break top
+		if(this.perms < 2) break top
 		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
 		goto(player.world, bx, by)
 		const reach = min(hypot(x, y), 10)
@@ -171,7 +171,7 @@ function playerMovePacket(player, buf){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
-					player.blockBreakLeft = player.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
+					player.blockBreakLeft = this.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
 					player.breakGridEvent = gridevent(4, buf => buf.float(player.blockBreakLeft))
 				}
 				return
@@ -179,7 +179,7 @@ function playerMovePacket(player, buf){
 			if(item && item.interact2){
 				const i2 = item.interact2(player)
 				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
-				else if(i2 && player.mode!=1){
+				else if(i2 && this.mode!=1){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
@@ -192,7 +192,7 @@ function playerMovePacket(player, buf){
 				const i2 = item.interact(b, player)
 				if(i2 === undefined) break b
 				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
-				else if(i2 && player.mode!=1){
+				else if(i2 && this.mode!=1){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
@@ -202,7 +202,7 @@ function playerMovePacket(player, buf){
 				const i2 = b.interact(item, player)
 				if(i2 === undefined) break b
 				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
-				else if(i2 && player.mode!=1){
+				else if(i2 && this.mode!=1){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
@@ -224,10 +224,10 @@ function playerMovePacket(player, buf){
 			const x = getX(), y = getY()
 			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
 		}
-		if(item.place && !(item.forbidden&&this.permissions<MOD)){
+		if(item.place && !(item.forbidden&&this.perms<MOD)){
 			const i2 = item.place(px, py, player)
 			if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
-			else if(i2 && player.mode!=1){
+			else if(i2 && this.mode!=1){
 				if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 				player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 			}
@@ -352,7 +352,7 @@ export function voiceChat(player, buf){
 }
 
 function disappearPacket(player){
-	if(this.permissions<3) return void player.chat('\\+9You do not have permission to link/unlink')
+	if(this.perms<3) return void player.chat('\\+9You do not have permission to link/unlink')
 	if(!player.linked){
 		player.link()
 		if(player.health <= 0) player.damage(-Infinity, null)
@@ -396,7 +396,7 @@ export function onstring(player, text){
 				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
 			}
 			stat('misc', 'commands_used')
-			const res = executeCommand(match[0], match.slice(1), player, this.permissions)
+			const res = executeCommand(match[0], match.slice(1), player, this.perms)
 			if(res)
 				if(res.then) res.then(a => a && player.chat(a), e => player.chat(err(e)))
 				else player.chat(res)

@@ -47,23 +47,25 @@ export async function open(){
 		if(!this.state) return
 	}
 	this.state = 1; this.send('')
-	let permissions = PERMISSIONS[this.username] ?? CONFIG.permissions.default
-	if(permissions*1000 > Date.now()){
-		this.end(1000, permissions >= 2147483647 ? '\\19You are permanently banned from this server':'\\19You are banned from this server for '
-			+ Date.formatTime(permissions*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
+	let perms = PERMISSIONS[this.username] ?? CONFIG.permissions.default
+	if(perms*1000 > Date.now()){
+		this.end(1000, perms >= 2147483647 ? '\\19You are permanently banned from this server':'\\19You are banned from this server for '
+			+ Date.formatTime(perms*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
 		return
-	}else if(permissions == 0)
+	}else if(perms == 0)
 		return this.end(1000, '\\1fYou are not invited to play on this server')
-	else if(permissions > 9){ permissions = CONFIG.permissions.default }
+	else if(perms > 9){ perms = CONFIG.permissions.default }
 	playersConnecting.add(this.username)
 	let player, other = players.get(this.username)
 	let link = true
+	this.mode = 0
 	if(other){
 		other.unlink()
 		other.sock.entity = null
 		other.sock.end(1000, '\\19You are logged in from another session')
 		other.sock = null
 		other._world = null
+		perms = other.perms; this.mode = other.mode
 		player = other
 		playersConnecting.delete(this.username)
 	}else try{
@@ -80,6 +82,7 @@ export async function open(){
 		player._dx = player.dx = buf.float(); player.dy = player.dy = buf.float()
 		player.f = player.f = buf.float(); player.age = buf.double()
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
+		if(buf.left) this.mode = buf.byte()
 	}catch(e){
 		player = new Entities.player()
 		player.x = GAMERULES.spawnx; player.y = GAMERULES.spawny
@@ -104,7 +107,7 @@ export async function open(){
 	player._avatar = null
 	player.sock = this
 	player.name = this.username
-	this.permissions = permissions
+	this.perms = perms
 	this.movePacketCd = now / 1000 - 1
 	this.joinedAt = now
 	this.r = 255
@@ -154,6 +157,7 @@ export async function close(state){
 	buf.double(entity.age)
 	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
 	if(!exiting) chat('\\+b' + entity.name + ' left the game')
+	buf.byte(this.mode)
 	await playersLevel.put(this.username, buf.build())
 	playersConnecting.delete(this.username)
 	if(entity.world) entity.remove()

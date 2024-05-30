@@ -213,7 +213,8 @@ export class Entity{
 		buf.uint32(this.sock.netId | 0), buf.uint16(this.sock.netId / 4294967296 | 0)
 		buf.byte(this.sock.r)
 		buf.float(currentTPS)
-		buf.byte(this.sock.permissions)
+		buf.byte(this.sock.perms)
+		buf.byte(this.sock.mode)
 		this.sock.packets.push(buf.build())
 		this.rubberMv |= mv
 	}

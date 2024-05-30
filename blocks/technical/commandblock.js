@@ -20,7 +20,7 @@ Blocks.command_block = class CommandBlock extends Block{
 	static blast = 2147483647
 	update(a){
 		if(this.type == 2){
-			const ctx = {x: getX()+.5, y: getY(), world: antWorld, name: '!', sock: {permissions: 4}}
+			const ctx = {x: getX()+.5, y: getY(), world: antWorld, name: '!', sock: {perms: 4}}
 			for(const group of this.commands) execGroup(group, ctx).catch(e => null)
 			return a
 		}

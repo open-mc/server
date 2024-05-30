@@ -9,15 +9,18 @@ export const marks = new WeakMap
 
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
 const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
-export function snbt(s, i, t, T1, T2){
+
+export const snbt = (s, t, T1, T2) => {try{return _snbt(s,0,t,T1,T2)}catch(e){throw 'invalid syntax in snbt'}}
+
+function _snbt(s, i, t, T1, T2){
 	if(typeof t == 'object'){
-		if(s[i] != '{') throw 'Expected dict literal'
+		if(s[i] != '{') throw 'expected dict literal'
 		while(s[++i] == ' ');
 		if(s[i] == '}') return
 		while(true){
 			ID.lastIndex = i
 			const {0:k} = s.match(ID)
-			if(!k.length) throw 'expected prop name in dict declaration'
+			if(!k.length) throw 'expected prop name in dict declaration in snbt'
 			i = ID.lastIndex - 1
 			while(s[++i] == ' ');
 			if(s[i] != ':' && s[i] != '=') throw 'expected : or = after prop name in snbt'
@@ -26,7 +29,7 @@ export function snbt(s, i, t, T1, T2){
 			switch(T){
 				case Int8: case Int16: case Int32: case Float32:
 				case Uint8: case Uint16: case Uint32: case Float64:
-				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
+				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'expected number for key '+k+' in snbt'
 				NUM.lastIndex = i
 				t[k] = T(+s.match(NUM)[0])
 				i = NUM.lastIndex
@@ -36,17 +39,17 @@ export function snbt(s, i, t, T1, T2){
 				switch(s.match(BOOL)[0][0]){
 					case 't': case 'T': case '1':	t[k] = true; break
 					case 'f': case 'F': case '0': t[k] = false; break
-					default: throw 'Expected boolean for key '+k
+					default: throw 'expected boolean for key '+k+' in snbt'
 				}
 				i = BOOL.lastIndex
 				case String:
 				STRING.lastIndex = i
 				const a = s.match(STRING)
-				if(!a) throw 'Expected string for key '+k
+				if(!a) throw 'expected string for key '+k
 				t[k] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
 				break
-				case undefined: case null: throw 'Object does not have key '+k
-				default: i = snbt(s, i, t[k])
+				case undefined: case null: throw 'Key '+k+' invalid in snbt'
+				default: i = _snbt(s, i, t[k])
 			}
 			i--
 			while(s[++i] == ' ');
@@ -55,17 +58,17 @@ export function snbt(s, i, t, T1, T2){
 			while(s[++i] == ' ');
 		}
 	}else if(Array.isArray(t)){
-		if(s[i] != '[') throw 'Expected array literal'
+		if(s[i] != '[') throw 'expected array literal in snbt'
 		while(s[++i] == ' ');
 		let {0: T, 1: l = NaN} = T1 || T2
 		if(s[i] == ']' && !l) return void(t.length=0);
 		let j = -1
 		while(true){
-			if(++j == l) throw 'Too many elements in array literal'
+			if(++j == l) throw 'Too many elements in array literal in snbt'
 			switch(T){
 				case Int8: case Int16: case Int32: case Float32:
 				case Uint8: case Uint16: case Uint32: case Float64:
-				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'Expected number for key '+k
+				if((s[i] < '0' || s[i] > '9') && s[i] != '.' && s[i] != '-' && s[i] != '+') throw 'expected number for key '+k+' in snbt'
 				NUM.lastIndex = i
 				t[j] = T(+s.match(NUM)[0])
 				i = NUM.lastIndex
@@ -75,19 +78,19 @@ export function snbt(s, i, t, T1, T2){
 				switch(s.match(BOOL)[0][0]){
 					case 't': case 'T': case '1':	t[j] = true; break
 					case 'f': case 'F': case '0': t[j] = false; break
-					default: throw 'Expected boolean for key '+k
+					default: throw 'expected boolean for key '+k+' in snbt'
 				}
 				i = BOOL.lastIndex
 				case String:
 				STRING.lastIndex = i
 				const a = s.match(STRING)
-				if(!a) throw 'Expected string for key '+k
+				if(!a) throw 'expected string for key '+k+' in snbt'
 				t[j] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
 				break
-				case undefined: case null: throw 'Invalid array type (weird)'
-				default: i = snbt(s, i, t[j])
+				case undefined: case null: throw 'Invalid array type in snbt (this is a bug, please report it)'
+				default: i = _snbt(s, i, t[j])
 			}
-			if(j < l) throw 'Not enough elements in array literal'
+			if(j < l) throw 'Not enough elements in array literal in snbt'
 			i--
 			while(s[++i] == ' ');
 			if(i >= s.length || s[i] == '}') break
@@ -100,18 +103,23 @@ export function snbt(s, i, t, T1, T2){
 export function parseCoords(x = '~', y = '~', d = '~', t){
 	const m = marks.get(t)
 	if(!m&&(x[0]=='!'||y[0]=='!'||d=='!')) throw 'No marker set'
-	let w = d == '~' ? t.world || Dimensions.overworld : d == '!' ? m.world : Dimensions[d]
+	let w = (d == '~' ? t && t.world : d == '!' ? m.world : typeof d == 'string' ? Dimensions[d] : d?.world) || Dimensions.overworld
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
+		if(!t) throw '\'^\' coordinate specifier unavailable'
 		x = (+x.slice(1))/180*PI - t.f
 		y = +y.slice(1);
 		[x, y] = [t.x - sin(x) * y, t.y + cos(x) * y]
 	}else{
-		if(x[0] == "~") x = t.x + +x.slice(1)
-		else if(x[0]=='!') x = m.x + +x.slice(1)
+		if(x[0] == "~"){
+			if(!t) throw '\'~\' coordinate specifier unavailable'
+			x = t.x + +x.slice(1)
+		}else if(x[0]=='!') x = m.x + +x.slice(1)
 		else x -= 0
-		if(y[0] == "~") y = t.y + +y.slice(1)
-		else if(y[0]=='!') y = m.y + +y.slice(1)
+		if(y[0] == "~"){
+			if(!t) throw '\'~\' coordinate specifier unavailable'
+			y = t.y + +y.slice(1)
+		}else if(y[0]=='!') y = m.y + +y.slice(1)
 		else y -= 0
 	}
 	if(x != x || y != y) throw 'Invalid coordinates'
@@ -168,7 +176,7 @@ const specifiers = {
 		const p = PERMS[t]
 		if(p === undefined) return		
 		const f = comp(s)
-		return e => f((e.sock?.permissions??0)-p)
+		return e => f((e.sock?.perms??0)-p)
 	},
 	x(t, s){
 		const p = ifloat(+t)
@@ -197,7 +205,6 @@ export function selector(a, who){
 		return [e]
 	}
 	if(a[0] == '@'){
-		let arr
 		if(a.length > 2 && (a[2] !== '[' || a[a.length-1] !== ']')) throw 'Unable to parse selector: expected []'
 		const filters = []; let limit = Infinity
 		if(a.slice(3,-1).replace(/\s*(\w+)\s*(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*"))\s*(?:,|;|$)|\s*(\d+)\s*(?:,|;|$)/gy, (_, a, s, b, c='') => {
@@ -273,7 +280,7 @@ export function selector(a, who){
 export let stack = null
 export function err(e){
 	if(!e.stack) return '\\+9'+e
-	e = e.stack
+	stack = e.stack
 	return '\\+9' + e + '\nType /stacktrace to view full stack trace'
 }
 export const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
@@ -308,4 +315,4 @@ export function executeCommand(name, params, player, perms = 0){
 	}else return commands[name].apply(player, params)
 }
 
-Function.optimizeImmediately(parseCoords, snbt)
+Function.optimizeImmediately(parseCoords, _snbt)

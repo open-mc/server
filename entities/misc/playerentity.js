@@ -32,7 +32,6 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	inv = Array.null(37)
 	items = [null, null, null, null, null]
 	craftingSlots = [null, null, null, null]
-	mode = 0
 	getItem(id, slot){
 		return id == 0 && slot < 36 ? this.inv[slot] : id == 1 ? slot < 5 ? this.items[slot] : slot < 9 ? this.craftingSlots[slot-5] : slot == 10 ? this.output : undefined : id == 2 && slot == 0 ? this.inv[36] : undefined
 	}
@@ -64,7 +63,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			const tile = peek()
 			gridevent(2)
 			place(tile.behind ?? Blocks.air)
-			if(this.mode < 1){
+			if(this.sock?.mode < 1){
 				const drop = tile.drops?.(this.inv[this.selected])
 				if(drop instanceof Item){
 					const itm = new Entities.item()
@@ -93,7 +92,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 		this.updateControls()
 	}
 	static savedata = {
-		health: Byte, mode: Byte,
+		health: Byte,
 		inv: [Item, 37],
 		items: [Item, 5],
 		craftingSlots: [Item, 4],

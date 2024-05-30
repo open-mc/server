@@ -26,7 +26,7 @@ Object.assign(commands, {
 		globalThis.process?.stdout.write('\x07')
 		for(const p of players.values()) p.sock?.send('')
 	},
-	tpe(a, b){
+	tpe(a='@s', b){
 		if(!b)b = a, a = '@s'
 		const targets = selector(a, this)
 		const [target, _] = selector(b, this)
@@ -37,8 +37,9 @@ Object.assign(commands, {
 		if(targets.length>1) return log(this, `Teleported ${targets.length} entities to ${target.name}`)
 		else return log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
-	tp(a, _x, _y, d = this.world || 'overworld'){
-		if(!_y)_y=_x,_x=a,a='@s'
+	tp(a='@s', _x, _y, d = '~'){
+		if(!_y)d=_y||'~',_y=_x||'~',_x=a=='@s'?'~':a,a='@s'
+		else if(!_x)_x='~'
 		const targets = selector(a, this)
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
@@ -49,7 +50,7 @@ Object.assign(commands, {
 	kick(a, ...r){
 		const reason = r.join(' ')
 		const targets = selector(a, this)
-		if(targets.length > 1 && this.sock.permissions < OP) throw 'Moderators may not kick more than 1 person at a time'
+		if(targets.length > 1 && this && this.sock.perms < OP) throw 'Moderators may not kick more than 1 person at a time'
 		stat('misc', 'player_kicks', targets.length)
 		let kicked = 0
 		for(const pl of targets){
@@ -68,7 +69,7 @@ Object.assign(commands, {
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			const stack = new itm(c)
-			snbt(dat, 0, stack, stack.savedata, ITEMCOMMONDATA)
+			snbt(dat, stack, stack.savedata, ITEMCOMMONDATA)
 			player.giveAndDrop(stack)
 		}
 		return log(this, 'Gave '+(typeof count=='number'?count+' players':count)+' '+item+'*'+c)
@@ -77,7 +78,7 @@ Object.assign(commands, {
 		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		if(!(type in Entities)) throw 'No such entity: ' + type
 		const e = new Entities[type]()
-		snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
+		snbt(data, e, e.savedata, ENTITYCOMMONDATA)
 		e.place(w, x, y)
 		return log(this, 'Summoned a(n) '+type+' with an ID of '+e.netId)
 	},
@@ -85,7 +86,7 @@ Object.assign(commands, {
 		let i = 0
 		for(const e of selector(sel, this)){
 			i++
-			snbt(data, 0, e, e.savedata, ENTITYCOMMONDATA)
+			snbt(data, e, e.savedata, ENTITYCOMMONDATA)
 			if(e.rubber) e.rubber()
 		}
 		return log(this, 'Successfully mutated '+i+' entities')
@@ -101,12 +102,12 @@ Object.assign(commands, {
 			if(!(type in Blocks)) throw 'No such block: ' + type
 			b = Blocks[type]
 		}
-		snbt(data, 0, b, b.savedata)
+		snbt(data, b, b.savedata)
 		goto(w, floor(x), floor(y))
 		place(b)
 		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
 	},
-	fill(_x, _y, _x2, _y2, type, d = this.world || 'overworld'){
+	fill(_x, _y, _x2, _y2, type, d = '~'){
 		let n = performance.now()
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
@@ -183,7 +184,7 @@ Object.assign(commands, {
 		return log(this, `Cleared a total of ${cleared} items from ${typeof count=='number'?count+' entities':count}`)
 	},
 	help(c){
-		const perm = this.isServer ? OP : this.sock ? this.sock.permissions : 0
+		const perm = !this ? OP : this.sock ? this.sock.perms : 0
 		const cmds = perm == MOD ? mod_help : perm == OP ? help : anyone_help
 		if(!c){
 			return 'Commands: /'+Object.keys(cmds).join(', /')+'\n/help '+cmds.help
@@ -198,8 +199,8 @@ Object.assign(commands, {
 		console.warn(stack)
 		return stack
 	},
-	time(time, d = this.world || 'overworld'){
-		if(typeof d == 'string')d = Dimensions[d]
+	time(time, d = this?this.world:'overworld'){
+		if(typeof d == 'string') d = Dimensions[d]
 		if(!d) throw 'Invalid dimension'
 		if(!time){
 			return `This dimension is on tick ${d.tick}\nThe day is ${floor((d.tick + 7000) / 24000)} and the time is ${floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
@@ -232,9 +233,9 @@ Object.assign(commands, {
 		}
 		return log(this, 'Set the '+d.id+' time to '+d.tick)
 	},
-	weather(type, duration, w = this.world.id){
-		const world = Dimensions[w] ?? this.world
-		if(world != Dimensions.overworld) throw 'This command is not available for this dimension'
+	weather(type, duration, world = this?this.world:'overworld'){
+		if(typeof world == 'string') world = Dimensions[world]
+		if(!world || world != Dimensions.overworld) throw 'This command is not available for this dimension'
 		if(!type){
 			const {weather} = world
 			return 'The current weather is '+(!weather?'clear':
@@ -250,7 +251,7 @@ Object.assign(commands, {
 		else if(type == 'downpour') world.weather = 0x20000000 + duration
 		else throw 'Allowed weather types: clear, rain, thunder, downpour'
 		world.event(10, buf => buf.uint32(world.weather))
-		return 'Set the weather to '+type+(world.weather?' for '+round(duration/currentTPS)+'s':'')
+		return log(this, 'Set the weather to '+type+(world.weather?' for '+round(duration/currentTPS)+'s':''))
 	},
 	gamerule(a, b){
 		if(!a){
@@ -269,14 +270,14 @@ Object.assign(commands, {
 		}
 		return log(this, 'Set gamerule ' + a + ' to ' + JSON.stringify(GAMERULES[a]))
 	},
-	spawnpoint(x='~',y='~',d=this.world||'overworld'){
+	spawnpoint(x='~',y='~',d=this){
 		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
 			return commands.tp.call(this, y || '@s', GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
 		void ({x: GAMERULES.spawnx, y: GAMERULES.spawny, w: {id: GAMERULES.spawnworld}} = parseCoords(x,y,d,this))
 		return log(this, `Set the spawn point to (x=${GAMERULES.spawnx.toFixed(2)}, y=${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
+		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tps(tps){
 		if(!tps) return 'The TPS is '+currentTPS
@@ -287,7 +288,7 @@ Object.assign(commands, {
 		return log(this, 'Set the TPS to '+currentTPS)
 	},
 	kill(t = '@s', cause = 'void'){
-		if(this.sock.permissions < MOD){
+		if(this && this.sock.perms < MOD){
 			if(!CONFIG.permissions.suicide) throw 'This server does not permit suicide'
 			if(t != '@s' || cause != 'void') throw 'You do not have permission to use /kill that way'
 		}
@@ -301,7 +302,7 @@ Object.assign(commands, {
 		return log(this, 'Killed '+i+' entities')
 	},
 	where(t = '@s'){
-		if(this.sock.permissions < MOD) if(t != '@s') throw 'You do not have permission to use /where for other players'
+		if(this && this.sock.perms < MOD) if(t != '@s') throw 'You do not have permission to use /where for other players'
 		const [p, e] = selector(t, this)
 		if(e) throw 'Selector found more than one target'
 		const w = `(x=${p.x.toFixed(3)}, y=${p.y.toFixed(3)}) `+(p.world?'in the '+p.world.id:'outside of the space-time continuum')
@@ -341,11 +342,13 @@ Object.assign(commands, {
 		const del = delw.build()
 		for(const sock of chunk.sockets)
 			sock.send(del), sock.send(Chunk.diskBufToPacket(buf, x, y))
-		goto(this)
-		let moved = false
-		while((floor(this.y)&63|!moved) && peek().solid)
-			this.y = floor(this.y) + 1, moved = true, up()
-		if(moved) this.rubber(Y)
+		if(this){
+			goto(this)
+			let moved = false
+			while((floor(this.y)&63|!moved) && peek().solid)
+				this.y = floor(this.y) + 1, moved = true, up()
+			if(moved) this.rubber(Y)
+		}
 		return log(this, `Regenerated chunk located at (x=${x<<6}, y=${y<<6}) in the ${w.id}`)
 	},
 	perm(u, a){
@@ -357,13 +360,13 @@ Object.assign(commands, {
 			PERMISSIONS[u] = a
 			count = u
 			const f = players.get(u)
-			if(f) f.sock.permissions = a, f.rubber(0)
+			if(f) f.sock.perms = a, f.rubber(0)
 		}else for(const f of selector(u, this)){
 			if(!f.sock | !f.name) continue
 			if(count) count = typeof count == 'string' ? 2 : count+1
 			else count = f.name
 			PERMISSIONS[f.name] = a
-			f.sock.permissions = a, f.rubber(0)
+			f.sock.perms = a, f.rubber(0)
 		}
 		savePermissions()
 		return log(this, 'Set the permission of '+(typeof count=='number'?count+' players':count)+' to '+a)
@@ -386,7 +389,7 @@ Object.assign(commands, {
 			count = u
 			const f = players.get(u)
 			if(f){
-				f.sock.permissions = a
+				f.sock.perms = a
 				f.sock.end(1000, '\\19You have been banned from this server')
 			}
 			stat('misc', 'player_kicks', 1)
@@ -438,38 +441,38 @@ Object.assign(commands, {
 		let k = 0
 		const end = []
 		for(const e of selector(t, this))
-			end.push(executeCommand(c, a, e, this.sock?.permissions??4), k++)
+			end.push(executeCommand(c, a, e, this?.sock?.perms??4), k++)
 		await Promise.all(end)
 		return 'Executed '+k+' commands successfully'
 	},
-	ping(){ return 'Pong! '+(this.sock.pingTime||0)+'ms' },
+	ping(){ return this?.sock?'Pong! '+(this.sock.pingTime)+'ms':'Pong!' },
 	async repeat(k, c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		k = min(k>>>0, 1e6)
 		for(let i = 0; i < k; i++)
-			await executeCommand(c, a, this, this.sock?.permissions??4)
+			await executeCommand(c, a, this, this?.sock?.perms??4)
 		return 'Executed '+k+' commands successfully'
 	},
 	async try(c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
-		try{ return await executeCommand(c, a, this, this.sock?.permissions??4) }
-		catch(e){ return 'Command did not succeed: '+e }
+		try{ return await executeCommand(c, a, this, this?.sock?.perms??4) }
+		catch(e){ return 'Command did not succeed: \\+9'+e }
 	},
 	async fail(c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		let r
-		try{ r=await executeCommand(c, a, this, this.sock?.permissions??4) }
-		catch(e){ return 'Command failed successfully: '+e }
-		throw r?'Command succeeded: '+r:'Command succeeded'
+		try{ r=await executeCommand(c, a, this, this?.sock?.perms??4) }
+		catch(e){ return 'Command failed successfully: \\+9'+e }
+		throw r?'Command succeeded: \\+f'+r:'Command succeeded'
 	},
 	delay(k, c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		k = max(-1e6, min(k, 1e6))
 		if(k != k) throw 'Invalid delay'
 		if(k <= 0){
-			setTimeout(() => executeCommand(c, a, this, this.sock?.permissions??4), k*-1000)
+			setTimeout(() => executeCommand(c, a, this, this.sock?.perms??4), k*-1000)
 			return 'Command scheduled'
-		}else return new Promise(r => setTimeout(r, k*1000)).then(() => executeCommand(c, a, this, this.sock?.permissions??4))
+		}else return new Promise(r => setTimeout(r, k*1000)).then(() => executeCommand(c, a, this, this.sock?.perms??4))
 	},
 	mark(e='@s',xo='0',yo='0'){
 		const [ent, ex] = selector(e, this)
@@ -485,11 +488,20 @@ Object.assign(commands, {
 		setTimeout(process.emit.bind(process, 'SIGINT', 1), delay)
 		if(delay) chat('\\33[SERVER] Server restarting in '+Date.formatTime(delay))
 	},
-	creative(a=''+(1-this.mode)){
-		if(!(this instanceof Entities.player)) throw 'Self is not a player'
-		this.mode = a=='1'||a.toLowerCase()=='true'?1:0
-		this.event(20, buf => buf.byte(this.mode))
-		return 'Set to '+(this.mode==1?'creative':'survival')
+	mode(a='1', sel='@s'){
+		a &= 255
+		if(a>1) throw 'Invalid game mode'
+		let players = 0
+		for(const p of selector(sel, this)){
+			if(!p.sock) continue
+			if(players === 0) players = p.name
+			else if(typeof players == 'string') players = 2
+			else players++
+			p.sock.mode = a
+			p.rubber(0)
+		}
+		if(players === 0) throw 'Selector found no players'
+		return `Set the mode of ${typeof players == 'string'?players:players+' players'} to ${(a==1?'creative':'survival')}`
 	}
 })
 
@@ -535,7 +547,7 @@ export const anyone_help = {
 	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
 	perm: '[target] <int>|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
-	unban: '[username] -- Unban a player, they will be able to rejoin with default permissions',
+	unban: '[username] -- Unban a player, they will be able to rejoin with default perms',
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',

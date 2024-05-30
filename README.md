@@ -64,7 +64,7 @@ Type `/help` for a list of commands or `/help <command>` for more help on a spec
 - `/info` or `/i`, see server info (version, uptime, CPU & RAM usage)
 - `/give [player]`
 - `/hide [player]`, `/show [player]` - Put someone in/out of spectator
-- `/perm [player] [op or mod or normal or visitor or deny]` - Change someone's permissions
+- `/perm [player] [op or mod or normal or visitor or deny]` - Change someone's perms
 - `/op [player]` - Same as `/perm [player] op`
 - `/ban [player] (duration)` - Ban a player from your server
 - `/wipe [player]` - Wipe someone's playerdata, sending them back to world spawn with an empty inventory.
