@@ -9,14 +9,13 @@ export class Block{
 	static breaktime = 3
 	static blast = 20
 	static solid = true
+	static targettable = true
 	static replaceable = false
 	static mustBreak = false
 	static tool = ''
 	static savedata = null
-	get nonSolidAndReplacable(){return !this.solid & (this.replaceable|this.targettable)}
-	destroy(sound = true, drop = this.drops?.(), replace = Blocks.air){
+	destroy(sound = true, drop = this.drops?.()){
 		if(sound) gridevent(2)
-		place(replace)
 		if(drop instanceof Item){
 			const itm = new Entities.item()
 			itm.item = drop

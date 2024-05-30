@@ -1,5 +1,5 @@
 import { Items } from '../../items/item.js'
-import { load, peek, peekdown, place, save, up, down, peekleft, peekright } from '../../misc/ant.js'
+import { load, peek, place, save, up, down, peekleft, peekright } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
 import './grass.js'
 
@@ -7,6 +7,7 @@ Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
 	static solid = false
 	static targettable = true
+	static replaceable = true
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1

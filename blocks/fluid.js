@@ -12,25 +12,25 @@ export const fluidify = (B, t, renewable = false) => {
 			down()
 			const b = peek()
 			if(b.fluidLevel && b.fluidType != t) return void this.combine?.(b)
-			if(!b.nonSolidAndReplacable | b.fluidLevel >= 8){
+			if(!b.replaceable | b.fluidLevel >= 8){
 				up(); right()
 				let b = peek()
-				if(b.nonSolidAndReplacable && !b.fluidLevel) place(levels[7])
-				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
+				if(b.replaceable && !b.fluidLevel) b.destroy?.(false), place(levels[7])
+				else if(b.replaceable && b.fluidLevel < 7){
 					if(b.fluidType != t) this.combine?.(b)
-					else place(levels[7])
+					else b.destroy?.(false), place(levels[7])
 				}
 				left(); left()
 				b = peek()
-				if(b.nonSolidAndReplacable && !b.fluidLevel) place(levels[7])
-				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
+				if(b.replaceable && !b.fluidLevel) b.destroy?.(false), place(levels[7])
+				else if(b.replaceable && b.fluidLevel < 7){
 					if(b.fluidType != t) this.combine?.(b)
-					else place(levels[7])
+					else b.destroy?.(false), place(levels[7])
 				}
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
-				else place(flowing)
-			}else place(flowing)
+				else b.destroy?.(false), place(flowing)
+			}else b.destroy?.(false), place(flowing)
 		}
 		static fluidLevel = 8
 		static flows = false
@@ -54,41 +54,35 @@ export const fluidify = (B, t, renewable = false) => {
 				else if(renewable && !b.flows){
 					up()
 					b = peekright()
-					if(!b.nonSolidAndReplacable){
+					if(!b.replaceable){
 						b = peekleft()
 						if(b.fluidType != t || b.flows) return
 					}else{
 						if(b.fluidType != t || b.flows) return
 						b = peekleft()
-						if((b.fluidType != t || b.flows) && b.nonSolidAndReplacable) return
+						if((b.fluidType != t || b.flows) && b.replaceable) return
 					}
 					place(filled)
 				}
 				return
 			}
-			if(!b.nonSolidAndReplacable){
+			if(!b.replaceable){
 				up(); right()
 				let b = peek()
-				const sourceRight = renewable && b.fluidType == t && !b.flows
-				if(b.nonSolidAndReplacable && !b.fluidLevel) place(levels[7])
-				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
-					if(b.fluidType != t) this.combine?.(b)
-					else place(levels[7])
-				}
+				let fillSource = renewable
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(false), place(levels[7]), fillSource = false
+				else if(b.fluidType != t) this.combine?.(b), fillSource = false
+				else if(b.flows) fillSource = false
 				left(); left()
 				b = peek()
-				if(b.nonSolidAndReplacable && !b.fluidLevel) place(levels[7])
-				else if(b.nonSolidAndReplacable && b.fluidLevel < 7){
-					if(b.fluidType != t) this.combine?.(b)
-					else place(levels[7])
-				}
-				if(sourceRight || (renewable && b.fluidType == t && !b.flows)){
-					right(); place(filled)
-				}
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(false), place(levels[7]), fillSource = false
+				else if(b.fluidType != t) this.combine?.(b), fillSource = false
+				else if(b.flows) fillSource = false
+				if(fillSource) right(), place(filled)
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
-				else place(flowing)
-			}else place(flowing)
+				else b.destroy?.(false), place(flowing)
+			}else b.destroy?.(false), place(flowing)
 		}
 		static fluidLevel = 8
 		static flows = true
@@ -105,7 +99,7 @@ export const fluidify = (B, t, renewable = false) => {
 				left(), this.combine?.(l), right()
 
 			const lvl = max(u.fluidLevel ?? 0, r.fluidLevel ?? 0, l.fluidLevel ?? 0), a=1+(B.delay > 10)*2
-			if(this.fluidLevel > lvl) return void place(lvl<=a?Blocks.air:levels[lvl-a])
+			if(this.fluidLevel >= lvl) return void place(lvl<=a?Blocks.air:levels[lvl-a])
 			down()
 			let b = peek()
 			if(b.fluidLevel >= 8){
@@ -113,39 +107,33 @@ export const fluidify = (B, t, renewable = false) => {
 				else if(renewable && !b.flows){
 					up()
 					b = peekright()
-					if(!b.nonSolidAndReplacable){
+					if(!b.replaceable){
 						b = peekleft()
 						if(b.fluidType != t || b.flows) return
 					}else{
 						if(b.fluidType != t || b.flows) return
 						b = peekleft()
-						if((b.fluidType != t || b.flows) && b.nonSolidAndReplacable) return
+						if((b.fluidType != t || b.flows) && b.replaceable) return
 					}
 					place(filled)
 				}
 				return
 			}
-			if(!b.nonSolidAndReplacable){
+			if(!b.replaceable){
 				let L = this.fluidLevel - 1 - (B.delay > 10)*2
 				if(L<0) L=0
 				up(); right()
 				let b = peek()
-				const sourceRight = renewable && b.fluidType == t && !b.flows
-				if(b.nonSolidAndReplacable && !b.fluidLevel) place(levels[L])
-				else if(b.nonSolidAndReplacable && b.fluidLevel < L){
-					if(b.fluidType != t) this.combine?.(b)
-					else place(levels[L])
-				}
+				let fillSource = renewable
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(false), place(levels[L]), fillSource = false
+				else if(b.fluidType != t) this.combine?.(b), fillSource = false
+				else if(b.flows) fillSource = false
 				left(); left()
 				b = peek()
-				if(b.nonSolidAndReplacable && !b.fluidLevel) place(levels[L])
-				else if(b.nonSolidAndReplacable && b.fluidLevel < L){
-					if(b.fluidType != t) this.combine?.(b)
-					else place(levels[L])
-				}
-				if(sourceRight || (renewable && b.fluidType == t && !b.flows)){
-					right(); place(filled)
-				}
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(false), place(levels[L]), fillSource = false
+				else if(b.fluidType != t) this.combine?.(b), fillSource = false
+				else if(b.flows) fillSource = false
+				if(fillSource) right(), place(filled)
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
 				else place(flowing)
