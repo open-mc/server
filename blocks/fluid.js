@@ -6,6 +6,7 @@ import { BlockShape } from "./blockshapes.js"
 export const fluidify = (B, t, renewable = false) => {
 	B.fluidType = t
 	const filled = class extends B{
+		static destroy = undefined
 		variant(){ return !peekup().fluidLevel ? top : undefined }
 		update(v){
 			if(v < B.delay && !GAMERULES.fastfluids) return v+1
@@ -15,31 +16,35 @@ export const fluidify = (B, t, renewable = false) => {
 			if(!b.replaceable | b.fluidLevel >= 8){
 				up(); right()
 				let b = peek()
-				if(b.replaceable && !b.fluidLevel) b.destroy?.(false), place(levels[7])
+				if(b.replaceable && !b.fluidLevel) b.destroy?.(), place(levels[7])
 				else if(b.replaceable && b.fluidLevel < 7){
 					if(b.fluidType != t) this.combine?.(b)
-					else b.destroy?.(false), place(levels[7])
+					else b.destroy?.(), place(levels[7])
 				}
 				left(); left()
 				b = peek()
-				if(b.replaceable && !b.fluidLevel) b.destroy?.(false), place(levels[7])
+				if(b.replaceable && !b.fluidLevel) b.destroy?.(), place(levels[7])
 				else if(b.replaceable && b.fluidLevel < 7){
 					if(b.fluidType != t) this.combine?.(b)
-					else b.destroy?.(false), place(levels[7])
+					else b.destroy?.(), place(levels[7])
 				}
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
-				else b.destroy?.(false), place(flowing)
-			}else b.destroy?.(false), place(flowing)
+				else b.destroy?.(), place(flowing)
+			}else b.destroy?.(), place(flowing)
 		}
 		static fluidLevel = 8
 		static flows = false
 	}
 	const top = class extends filled{
+		static destroy = undefined
 		variant(){ return peekup().fluidLevel ? filled : undefined }
 		static blockShape = BlockShape.TWO_SHORT
 	}
 	const flowing = class extends B{
+		static fluidLevel = 8
+		static flows = true
+		static destroy = undefined
 		update(v){
 			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			let b = peekup()
@@ -70,25 +75,24 @@ export const fluidify = (B, t, renewable = false) => {
 				up(); right()
 				let b = peek()
 				let fillSource = renewable
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(false), place(levels[7]), fillSource = false
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = false
 				else if(b.fluidType != t) this.combine?.(b), fillSource = false
 				else if(b.flows) fillSource = false
 				left(); left()
 				b = peek()
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(false), place(levels[7]), fillSource = false
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = false
 				else if(b.fluidType != t) this.combine?.(b), fillSource = false
 				else if(b.flows) fillSource = false
 				if(fillSource) right(), place(filled)
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
-				else b.destroy?.(false), place(flowing)
-			}else b.destroy?.(false), place(flowing)
+				else b.destroy?.(), place(flowing)
+			}else b.destroy?.(), place(flowing)
 		}
-		static fluidLevel = 8
-		static flows = true
 	}
 	const level = class extends B{
 		static flows = true
+		static destroy = undefined
 		update(v){
 			if(v < B.delay && !GAMERULES.fastfluids) return v+1
 			const u = peekup(), r = peekright(), l = peekleft()
@@ -125,12 +129,12 @@ export const fluidify = (B, t, renewable = false) => {
 				up(); right()
 				let b = peek()
 				let fillSource = renewable
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(false), place(levels[L]), fillSource = false
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = false
 				else if(b.fluidType != t) this.combine?.(b), fillSource = false
 				else if(b.flows) fillSource = false
 				left(); left()
 				b = peek()
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(false), place(levels[L]), fillSource = false
+				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = false
 				else if(b.fluidType != t) this.combine?.(b), fillSource = false
 				else if(b.flows) fillSource = false
 				if(fillSource) right(), place(filled)
