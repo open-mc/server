@@ -228,6 +228,10 @@ export class Entity{
 		buf.byte(0)
 		this.sock.send(buf.build())
 	}
+	skyExposed(){
+		const ch=this.chunk
+		return ch?this.y-ch.exposed[floor(this.x)&63]>=0:true
+	}
 	static savedata = null
 	static maxHealth = 20
 	static groundDrag = .0000244

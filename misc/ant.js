@@ -44,6 +44,8 @@ export function update(a = 0){
 	if(b.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, a)
 }
 
+export const skyExposed = () => (chunk.exposure[pos&63]-(pos>>6|cy<<6)|0)<=0
+
 export function place(bl, safe = false){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
 	bl = bl === bl.constructor && bl.savedata ? new bl : bl
