@@ -14,7 +14,7 @@ export class Chunk extends Uint16Array{
 		this.entities = []; this.t = -1
 		this.biomes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		this.loadedAround = 0b00000000
-		this.up = this.left = this.right = this.down = null
+		this.up = this.left = this.right = this.down = this.exposure = null
 	}
 	parse(buf){
 		if(this.world == antWorld) _newChunk(this)
@@ -233,12 +233,10 @@ export class Chunk extends Uint16Array{
 		if(this.loadedAround != 511) return
 
 		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunk_loading_range-1)*sqrt(this.sockets.length/players.size)){
-			const p = floor(random() * 64) | 4032
-			gotopos(this, p)
-			let highest = 64
-			while(highest >= 0 && !peek().solid) down(), highest--
+			const p = floor(random() * 64)
+			const highest = this.exposure[p]-(this.y<<6)
 			if(highest >= 0 && highest < 64){
-				gotopos(this, p&~4032|highest<<6)
+				gotopos(this, p|highest<<6)
 				summon(Entities.lightning_bolt)
 				lightningStrikes++
 			}

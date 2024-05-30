@@ -5,6 +5,7 @@ import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from './tick.js'
 import { Dimensions } from './index.js'
 import { _invalidateCache, antWorld } from '../misc/ant.js'
+import { BlockIDs } from '../blocks/block.js'
 
 const dimLevel = DB.sublevel('dimensions')
 
@@ -23,6 +24,8 @@ export class World extends Map{
 	}
 	static new(id, u){ return Dimensions[id] ??= new this(id, u) }
 	_loaded(ch){
+		ch.t = 20
+		stat('world', 'chunk_revisits')
 		const {x: cx, y: cy} = ch
 		ch.loadedAround |= 0x100
 		const
@@ -34,14 +37,37 @@ export class World extends Map{
 			ur = super.get((cx+1&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
 			dl = super.get((cx-1&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000),
 			dr = super.get((cx+1&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000)
-		if(u?.loadedAround&0x100) ch.loadedAround |= 1, u.loadedAround |= 16,ch.up=u,u.down=ch
+		let expU = null, expD = null
+		if(u?.loadedAround&0x100) expU = u.exposure, ch.loadedAround |= 1, u.loadedAround |= 16,ch.up=u,u.down=ch
 		if(ur?.loadedAround&0x100) ch.loadedAround |= 2, ur.loadedAround |= 32
 		if(r?.loadedAround&0x100) ch.loadedAround |= 4, r.loadedAround |= 64,ch.right=r,r.left=ch
 		if(dr?.loadedAround&0x100) ch.loadedAround |= 8, dr.loadedAround |= 128
-		if(d?.loadedAround&0x100) ch.loadedAround |= 16, d.loadedAround |= 1,ch.down=d,d.up=ch
+		if(d?.loadedAround&0x100) expD = d.exposure, ch.loadedAround |= 16, d.loadedAround |= 1,ch.down=d,d.up=ch
 		if(dl?.loadedAround&0x100) ch.loadedAround |= 32, dl.loadedAround |= 2
 		if(l?.loadedAround&0x100) ch.loadedAround |= 64, l.loadedAround |= 4,ch.left=l,l.right=ch
 		if(ul?.loadedAround&0x100) ch.loadedAround |= 128, ul.loadedAround |= 8
+		if(expU){
+			let ty = cy+1<<6
+			for(let i = 0; i < 64; i++) if(expU[i]==ty){
+				let y=64
+				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?b.tileData.get(j):BlockIDs[b]).solid) break }
+				expU[i] = y+ty-63|0
+			}
+			ty = ty-64|0
+			if(expD){
+				for(let i = 0; i < 64; i++) if(expU[i]==ty) expU[i]=expD[i]
+				let c = d
+				while(c){c.exposure=expU;c=c.down}
+			}
+			ch.exposure = expU
+		}else if(expD){
+			const ty = cy<<6|1
+			for(let i = 0; i < 64; i++){
+				let y=64
+				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?ch.tileData.get(j):BlockIDs[b]).solid){ expD[i] = y+ty|0; break } }
+			}
+			ch.exposure = expD
+		}else ch.exposure = new Int32Array(64).fill(cy+1<<6)
 	}
 	load(cx, cy){
 		const k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
@@ -52,9 +78,7 @@ export class World extends Map{
 			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
-				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
-				ch.t = 20
 				try{ch.parse(buf)}catch(e){if(CONFIG.log)console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
@@ -73,9 +97,7 @@ export class World extends Map{
 			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
-				stat('world', 'chunk_revisits')
 				if(!super.has(k)) return
-				ch.t = 20
 				try{ch.parse(buf)}catch(e){if(CONFIG.log)console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
@@ -115,10 +137,6 @@ export class World extends Map{
 			if(c) c.loadedAround &= ~4, c.right=null
 			c = super.get((chx+1&0x3FFFFFF)+chy*0x4000000)
 			if(c) c.loadedAround &= ~64, c.left=null
-			c = super.get(chx+(chy+1&0x3FFFFFF)*0x4000000)
-			if(c) c.loadedAround &= ~16, c.down=null
-			c = super.get(chx+(chy-1&0x3FFFFFF)*0x4000000)
-			if(c) c.loadedAround &= ~1, c.up=null
 			c = super.get((chx-1&0x3FFFFFF)+(chy+1&0x3FFFFFF)*0x4000000)
 			if(c) c.loadedAround &= ~8
 			c = super.get((chx+1&0x3FFFFFF)+(chy+1&0x3FFFFFF)*0x4000000)
@@ -127,7 +145,36 @@ export class World extends Map{
 			if(c) c.loadedAround &= ~2
 			c = super.get((chx+1&0x3FFFFFF)+(chy-1&0x3FFFFFF)*0x4000000)
 			if(c) c.loadedAround &= ~128
-
+			let u = super.get(chx+(chy+1&0x3FFFFFF)*0x4000000)
+			if(u) u.loadedAround &= ~16, u.down=null
+			c = super.get(chx+(chy-1&0x3FFFFFF)*0x4000000)
+			if(c){
+				c.loadedAround &= ~1, c.up=null
+				const exp = c.exposure, y = chy<<6
+				if(u){
+					const expU = new Int32Array(64)
+					while(u){u.exposure=expU;u=u.up}
+					for(let i = 0; i < 64; i++){
+						const v = exp[i]
+						if((v-y|0)>=64) expU[i] = v
+						else expU[i] = y+64|0
+					}
+				}
+				for(let i = 0; i < 64; i++){
+					if((exp[i]-y|0)>0){
+						let y2 = y-1|0, c2 = c
+						while(c2){
+							const j=i|y2<<6&4032,b=c2[j]
+							if((b==65535?c2.tileData.get(j):BlockIDs[b]).solid) break
+							if(!(--y2&63)) c2 = c2.down
+						}
+						exp[i] = y2+1|0
+					}
+				}
+			}else{
+				const y = chy+1<<6
+				for(let i = 0; i < 64; i++) if((exp[i]>>>6)==chy) exp[i] = y
+			}
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
 		})
 	}

@@ -65,6 +65,18 @@ export function place(bl, safe = false){
 		bl.set()
 		world = _world; chunk = _chunk; cx = _cx; cy = _cy; pos = _pos
 	}
+	const {exposure} = _chunk, x = pos&63; let y = (pos>>6|cy<<6)+1|0
+	if(bl.solid){if(!_b.solid){
+		if((exposure[x]-y|0)<0) exposure[x] = y
+	}}else if(_b.solid&&exposure[x]==y){
+		y-=2; while(chunk){
+			const i=x|y<<6&4032,b=chunk[i]
+			if((b==65535?b.tileData.get(i):BlockIDs[b]).solid) break
+			if(!(--y&63)) chunk = chunk.down
+		}
+		exposure[x] = y+1|0
+		chunk = _chunk
+	}
 	for(const {tbuf} of _chunk.sockets){
 		tbuf.byte(0)
 		tbuf.int(_cx << 6 | (_pos&63))
@@ -132,10 +144,7 @@ export function place(bl, safe = false){
 	if(bl.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, 0)
 	return bl
 }
-export function placeblock(b, e = 1){
-	place(b)
-	gridevent(e)
-}
+export const placeblock = (b, e = 1) => void(place(b), gridevent(e))
 
 let gridEventId = 0
 export function blockevent(ev, fn){
