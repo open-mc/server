@@ -85,6 +85,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			stat('player', 'blocks_broken')
 			cancelgridevent(this.breakGridEvent)
 			this.breakGridEvent = 0
+			this.state &= -9
 		}
 	}
 	update(){

@@ -173,6 +173,7 @@ function playerMovePacket(player, buf){
 						cancelgridevent(player.breakGridEvent)
 					player.blockBreakLeft = this.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
 					player.breakGridEvent = gridevent(4, buf => buf.float(player.blockBreakLeft))
+					player.state |= 8
 				}
 				return
 			}
@@ -187,6 +188,7 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		let b = peek()
+		plx = getX(); ply = getY()
 		if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
 			b: if(item && item.interact){
 				const i2 = item.interact(b, player)
@@ -211,7 +213,8 @@ function playerMovePacket(player, buf){
 			if(!l) break top
 		}
 		if(!item) break top
-		jump(l << 24 >> 24, l << 16 >> 24)
+		const ax = l << 24 >> 24, ay = l << 16 >> 24
+		jump(ax, ay); plx = plx+ax|0; ply = ply+ay|0
 		{
 			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
 			if(interactFluid){
@@ -220,11 +223,12 @@ function playerMovePacket(player, buf){
 		}
 		b = peek()
 		if(!b.replaceable && !(interactFluid && b.flows === false)) break top
-		if(false){ // TODO better entity check allowing for quasi-solid blocks like sugar_cane
-			const x = getX(), y = getY()
-			if(x < player.x + player.width && x + 1 > player.x - player.width && y < player.y + player.height && y + 1 > player.y) break top
+		if(false){
+			// TODO better entity check allowing for quasi-solid blocks like sugar_cane
+			if(plx < player.x + player.width && plx + 1 > player.x - player.width && ply < player.y + player.height && ply + 1 > player.y) break top
 		}
 		if(item.place && !(item.forbidden&&this.perms<MOD)){
+			player.state |= 8
 			const i2 = item.place(px, py, player)
 			if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
 			else if(i2 && this.mode!=1){
@@ -234,6 +238,8 @@ function playerMovePacket(player, buf){
 			stat('player', 'blocks_placed')
 		}
 	}
+	if(plx < 2147483648) player.state |= 8
+	else player.state &= 9
 	if(prx < 2147483648 && prx != plx || pry != ply){
 		goto(player.world, prx, pry)
 		if(antChunk.sockets.includes(player.sock)){
@@ -247,6 +253,7 @@ function playerMovePacket(player, buf){
 		cancelgridevent(player.breakGridEvent)
 		player.breakGridEvent = 0
 		player.blockBreakLeft = -1
+		player.state &= -9
 		stat('player', 'break_abandon')
 	}
 }
