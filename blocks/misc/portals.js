@@ -8,6 +8,7 @@ Blocks.portal = class extends Block{
 	static blockShape = [0.375, 0, 0.625, 1]
 	static breaktime = Infinity
 	static blast = 40
+	static replaceable = true
 	update(){
 		const u = peekup(), d = peekdown()
 		if((d == Blocks.obsidian | d == Blocks.portal) & (u == Blocks.obsidian | u == Blocks.portal)) return
