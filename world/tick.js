@@ -9,25 +9,36 @@ export let currentTPS = 0
 export const entityMap = new Map()
 export const toUnlink = new Map()
 export let actualTPS = currentTPS
+
+export let tickFlags = 3
+export let setTickFlags = e => tickFlags = e
+
 export function tick(){
-	for(const n in Dimensions){
+	if(tickFlags&1) for(const n in Dimensions){
 		const w = Dimensions[n]
 		w.tick++
-		for(const ch of Dimensions[w].values()){
-			if(!(ch instanceof Chunk))continue
-			w.check(ch)
-		}
-		Dimensions[n].update?.()
+		for(const ch of w.values())
+			if(w.check(ch)) ch.tick()
+		w.update?.()
+	}else for(const n in Dimensions){
+		const w = Dimensions[n]
+		for(const ch of w.values()) w.check(ch)
 	}
-	for(const e of entityMap.values()){
-		if(!e.sock && e.shouldSimulate())
+	if(tickFlags&2) for(const e of entityMap.values()){
+		const {world, chunk, sock} = e
+		if(world && chunk && !sock){
+			if(floor(e.x)>>>5&1)
+				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&7)!=7) continue }
+				else if((chunk.loadedAround&28)!=28) continue
+			else
+				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&112)!=112) continue }
+				else if((chunk.loadedAround&193)!=193) continue
 			fastCollision(e)
-		if(!e.sock && e.shouldSimulate())
 			stepEntity(e)
-		if(e.netId < 0) continue
-		mirrorEntity(e)
+		}
+		if(e.netId >= 0) mirrorEntity(e)
 	}
-	for(const p of players.values()) if(p.netId<0) mirrorEntitySelf(p)
+	for(const p of players.values()) if(p.netId<0) mirrorEntitySelf(p); else mirrorEntity(p)
 	for(const {0:e,1:id} of toUnlink) encodeDelete(e, id)
 	toUnlink.clear()
 	for(const pl of players.values()){

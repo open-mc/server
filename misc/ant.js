@@ -249,12 +249,15 @@ export function select(x0, y0, x1, y1, cb){
 	y0 += cy<<6|pos>>6; y1 += (cy<<6|pos>>6) + 1
 	const cx0 = floor(x0) >>> 6, cx1 = ceil(x1 / 64) & 0x3FFFFFF
 	const cy0 = floor(y0) >>> 6, cy1 = ceil(y1 / 64) & 0x3FFFFFF
+	let c1 = 257, c2 = 17
 	for(let cxa = cx0; cxa != cx1; cxa = cxa + 1 & 0x3FFFFFF){
 		for(let cya = cy0; cya != cy1; cya = cya + 1 & 0x3FFFFFF){
 			const ch = (cxa === cx & cya === cy) && chunk || world.get(cxa+cya*0x4000000)
 			if(!ch || !ch.entities) continue
+			if(!--c1) return
 			for(const e of ch.entities){
 				if(e.netId<0 || (e.x < x0 | e.x > x1) || (e.y < y0 | e.y > y1)) continue
+				if(!--c2) return
 				cb(e)
 			}
 		}

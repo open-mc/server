@@ -6,7 +6,7 @@ import '../node/internals.js'
 import { ItemIDs, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
-import { currentTPS, setTPS } from '../world/tick.js'
+import { currentTPS, setTPS, setTickFlags, tickFlags } from '../world/tick.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
 import { X, Y } from '../entities/entity.js'
@@ -279,8 +279,12 @@ Object.assign(commands, {
 	info(){
 		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
-	tps(tps){
-		if(!tps) return 'The TPS is '+currentTPS
+	tick(tps=''){
+		const r = tpsRules[tps.toLowerCase()]
+		if(r>=0) setTickFlags(r)
+		const v = r >= 0 || !tps ? (tickFlags>1?tickFlags>2?'everything':'entities only':tickFlags>0?'blocks only':'nothing') : ''
+		if(r>=0) return log(this, 'Set the server to tick '+v)
+		if(!tps) return 'The TPS is '+currentTPS+' and the server is currently ticking '+v
 		setTPS(max(1, min((tps|0) || 20, 1000)))
 		for(const pl of players.values()){
 			pl.sock.r--; pl.rubber(0)
@@ -505,6 +509,13 @@ Object.assign(commands, {
 	}
 })
 
+const tpsRules = {
+	__proto__: null,
+	all: 3, everything: 3, resume: 3,
+	blocks: 1, block: 1, chunks: 1, chunk: 1,
+	entities: 2, entity: 2, none: 0, nothing: 0, freeze: 0,
+}
+
 //Aliases
 commands.stop = commands.restart
 commands.i = commands.info
@@ -543,9 +554,9 @@ export const anyone_help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
-	tps: '[tps] -- Set server-side tps',
+	tick: '[tps]|freeze|resume|entities|blocks|all|none -- Set server-side tick rate or tick rules',
 	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
-	perm: '[target] <int>|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
+	perm: '[target] [int]|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
 	unban: '[username] -- Unban a player, they will be able to rejoin with default perms',
 	op: '[target] -- Alias for /perm [target] op',

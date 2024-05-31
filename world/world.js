@@ -121,12 +121,11 @@ export class World extends Map{
 	check(ch){
 		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
 		if(ch.sockets.length){
-			if(ch.t <= 0) ch.t = -1 //-1 == chunk has had a player loading it and the chunk will need saving again
-			else ch.t = 20, ch.tick() //Reset the timer
-			return
+			if(ch.t <= 0) return ch.t = -1, false //-1 == chunk has had a player loading it and the chunk will need saving again
+			else return ch.t = 20, true //Reset the timer
 		}
-		if(ch.t <= 0) return
-		if(--ch.t) return //Count down timer
+		if(ch.t <= 0) return false
+		if(--ch.t) return false//Count down timer
 		const {x: chx, y: chy} = ch, k = chx+chy*0x4000000
 		const b = ch.toBuf(new DataWriter()).build()
 		this.level.put(''+k, b).then(() => {
@@ -177,6 +176,7 @@ export class World extends Map{
 			}
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
 		})
+		return false
 	}
 	save(ch){
 		if(ch instanceof Promise) return

@@ -77,17 +77,6 @@ export class Entity{
 			chatImport.chat((deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
 		this.unlink()
 	}
-	shouldSimulate(){
-		if(!this.world) return false
-		const chunk = this.world.get((floor(this.x)>>6&0x3FFFFFF)+(floor(this.y)>>6&0x3FFFFFF)*0x4000000)
-		if(!chunk) return false
-		if(floor(this.x)>>>5&1)
-			if(floor(this.y)>>>5&1) return (chunk.loadedAround&7)==7
-			else return (chunk.loadedAround&28)==28
-		else
-			if(floor(this.y)>>>5&1) return (chunk.loadedAround&112)==112
-			else return (chunk.loadedAround&193)==193
-	}
 	died(){
 		a: if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
 			for(const id of this.allInterfaces??[]){
