@@ -1,4 +1,4 @@
-import { explode } from '../common/explode.js'
+import { explode } from '../explode.js'
 import { Entities, Entity } from '../entity.js'
 
 Entities.tnt = class extends Entity{

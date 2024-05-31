@@ -1,4 +1,4 @@
-import { explode } from '../../entities/common/explode.js'
+import { explode } from '../../entities/explode.js'
 import { Items } from '../../items/item.js'
 import { gridevent } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
@@ -27,7 +27,7 @@ Blocks.glowing_obsidian = class extends Blocks.obsidian{
 	static breaktime = 500
 	drops(){
 		gridevent(3)
-		explode(null, 200, true)
+		explode(null, 180, true)
 		return new Items.glowing_obsidian(1)
 	}
 }

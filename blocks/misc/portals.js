@@ -16,13 +16,13 @@ Blocks.portal = class extends Block{
 		{
 			let d; down()
 			while(d = peek(), d == Blocks.portal)
-				d.destroy?.(), down()
+				d.destroy?.(), place(Blocks.air), down()
 		}
 		load(s)
 		{
 			let d; up()
 			while(d = peek(), d == Blocks.portal)
-				d.destroy?.(), up()
+				d.destroy?.(), place(Blocks.air), up()
 		}
 	}
 	unset(){

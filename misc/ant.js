@@ -44,7 +44,7 @@ export function update(a = 0){
 	if(b.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, a)
 }
 
-export const skyExposed = () => (chunk.exposure[pos&63]-(pos>>6|cy<<6)|0)<=0
+export const skyExposed = () => chunk?(chunk.exposure[pos&63]-(pos>>6|cy<<6)|0)<=0:true
 
 export function place(bl, safe = false){
 	const _chunk = chunk, _world = world, _cx = cx, _cy = cy, _pos = pos
@@ -87,7 +87,7 @@ export function place(bl, safe = false){
 		if(bl.savedata) tbuf.write(bl.savedata, bl)
 	}
 	if((pos & 63) === 0b111111){
-		const c = chunk.right
+		const c = _chunk.right
 		if(c){
 			const p = pos&0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
@@ -96,12 +96,12 @@ export function place(bl, safe = false){
 		}
 	}else{
 		const p = pos+1
-		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		const id = _chunk[p]; let b = id === 65535 ? _chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
 		if(b.update && !chunk.blockupdates.has(pos+1)) chunk.blockupdates.set(pos+1, 0)
 	}
 	if((pos & 63) === 0){
-		const c = chunk.left
+		const c = _chunk.left
 		if(c){
 			const p = pos|0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
@@ -110,12 +110,12 @@ export function place(bl, safe = false){
 		}
 	}else{
 		const p = pos-1
-		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		const id = _chunk[p]; let b = id === 65535 ? _chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
 		if(b.update && !chunk.blockupdates.has(pos-1)) chunk.blockupdates.set(pos-1, 0)
 	}
 	if((pos >> 6) === 0b111111){
-		const c = chunk.up
+		const c = _chunk.up
 		if(c){
 			const p = pos&0b000000111111
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
@@ -124,12 +124,12 @@ export function place(bl, safe = false){
 		}
 	}else{
 		const p = pos+64
-		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		const id = _chunk[p]; let b = id === 65535 ? _chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
 		if(b.update && !chunk.blockupdates.has(pos+64)) chunk.blockupdates.set(pos+64, 0)
 	}
 	if((pos >> 6) === 0){
-		const c = chunk.down
+		const c = _chunk.down
 		if(c){
 			const p = pos|0b111111000000
 			const id = c[p]; let b = id === 65535 ? c.tileData.get(p) : BlockIDs[id]
@@ -138,7 +138,7 @@ export function place(bl, safe = false){
 		}
 	}else{
 		const p = pos-64
-		const id = chunk[p]; let b = id === 65535 ? chunk.tileData.get(p) : BlockIDs[id]
+		const id = _chunk[p]; let b = id === 65535 ? _chunk.tileData.get(p) : BlockIDs[id]
 		if(b.variant){pos=p;b=b.variant()??b;pos=_pos;cx=_cx;cy=_cy;world=_world;chunk=_chunk;if(b.savedata)chunk[p]=65535,chunk.tileData.set(p,b=b===b.constructor?new b:b);else{if(chunk[p]==65535)chunk.tileData.delete(p);chunk[p]=b.id}}
 		if(b.update && !chunk.blockupdates.has(pos-64)) chunk.blockupdates.set(pos-64, 0)
 	}
@@ -190,19 +190,19 @@ export const peek = () => {const b=chunk?chunk[pos]:0;return b===65535?chunk.til
 
 export function left(){
 	if(pos & 0b000000111111){ pos--; return }
-	pos |= 0b000000111111; chunk = chunk.left; cx--
+	pos |= 0b000000111111; chunk = chunk?.left; cx--
 }
 export function right(){
 	if((pos & 0b000000111111) != 0b000000111111){ pos++; return }
-	pos &= 0b111111000000; chunk = chunk.right; cx++
+	pos &= 0b111111000000; chunk = chunk?.right; cx++
 }
 export function down(){
 	if(pos & 0b111111000000){ pos -= 64; return }
-	pos |= 0b111111000000; chunk = chunk.down; cy--
+	pos |= 0b111111000000; chunk = chunk?.down; cy--
 }
 export function up(){
 	if((pos & 0b111111000000) != 0b111111000000){ pos += 64; return }
-	pos &= 0b000000111111; chunk = chunk.up; cy++
+	pos &= 0b000000111111; chunk = chunk?.up; cy++
 }
 
 export function peekleft(){

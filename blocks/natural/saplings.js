@@ -9,7 +9,7 @@ class Sapling extends Block{
 	static targettable = true
 	static breaktime = 0
 	update(){
-		if(!peekdown().dirt) this.destroy()
+		if(!peekdown().dirt) this.destroy(), place(Blocks.air)
 	}
 	randomtick(){
 		if(random() < 1/3) this.placeTree?.()

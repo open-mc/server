@@ -103,7 +103,7 @@ function _snbt(s, i, t, T1, T2){
 export function parseCoords(x = '~', y = '~', d = '~', t){
 	const m = marks.get(t)
 	if(!m&&(x[0]=='!'||y[0]=='!'||d=='!')) throw 'No marker set'
-	let w = (d == '~' ? t && t.world : d == '!' ? m.world : typeof d == 'string' ? Dimensions[d] : d?.world) || Dimensions.overworld
+	let w = (d == '~' ? t && t.world : d == '!' ? m.world : typeof d == 'string' ? Dimensions[d] : d?.world)
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
 		if(!t) throw '\'^\' coordinate specifier unavailable'
@@ -154,41 +154,59 @@ export function serializeTypePretty(type){
 	return res += ' }'
 }
 function testSelector(entity, ref, fns){
+	if(!entity.world) return false
 	for(const f of fns) if(!f(entity,ref)) return false
 	return true
 }
-const comp = s => {
-	const F = s === '=' ? 2 : s === '!=' ? 5 : s === '>=' ? 6 : s === '<=' ? 3 : s === '>' ? 4 : s === '<' ? 1 : 2
-	return a => (F&(1<<sign(a)+1))!=0
-}
-const compstr = s => {
-	return s === '!=' ? (a,b) => a != b : s === '>=' ? (a,b) => a.startsWith(b) : s === '<=' ? (a,b) => b.startsWith(a) : s === '>' ? (a,b) => a.length>b.length&&a.startsWith(b) : s === '<' ? (a,b) => b.length>a.length&&b.startsWith(a) : (a,b) => a==b
+const comp = s => s === '=' ? a=>!a : s === '!=' ? a=>!!a : s === '>=' ? a=>a>=0 : s === '<=' ? a=>a<=0 : s === '>' ? a=>a>0 : s === '<' ? a=>a<0 : a=>false
+const compstr = s => s === '!=' ? (a,b) => a != b : s === '>=' ? (a,b) => a.startsWith(b) : s === '<=' ? (a,b) => b.startsWith(a) : s === '>' ? (a,b) => a.length>b.length&&a.startsWith(b) : s === '<' ? (a,b) => b.length>a.length&&b.startsWith(a) : (a,b) => a==b
+const flagSpecifiers = {
+
 }
 const specifiers = {
 	__proto__: null,
-	'type=': t => a => a.className === t,
-	'type!=': t => a => a.className !== t,
+	type(t, s){
+		if(s=='=') return a => a.className === t
+		else if(s=='!=') return a => a.className !== t
+		else throw 'type only supports = and !=, '+s+' invalid'
+	},
 	name: (t, s) => {
 		const f = compstr(s)
 		return a => f(a.name, t)
 	},
-	perms(t, s){
-		const p = PERMS[t]
-		if(p === undefined) return		
+	perms(t, s, w){
+		const p = t=='~' ? w&&w.sock ? w.sock.perms : undefined : PERMS[t]
+		if(p === undefined) return
 		const f = comp(s)
 		return e => f((e.sock?.perms??0)-p)
 	},
-	x(t, s){
-		const p = ifloat(+t)
-		if(!Number.isFinite(p)) return		
+	x(t, s, w){
+		const p = (t[0] == '~' ? w ? ifloat(w.x + +t.slice(1)) : NaN : ifloat(+t))
+		if(!Number.isFinite(p)) return
 		const f = comp(s)
 		return e => f(ifloat(e.x-p))
 	},
-	y(t, s){
-		const p = ifloat(+t)
-		if(!Number.isFinite(p)) return		
+	y(t, s, w){
+		const p = (t[0] == '~' ? w ? ifloat(w.y + +t.slice(1)) : NaN : ifloat(+t))
+		if(!Number.isFinite(p)) return
 		const f = comp(s)
 		return e => f(ifloat(e.y-p))
+	},
+	f(t, s, w){
+		if(s!='=') throw 'f only supports =, for a range use the format f=<degrees>+<tolerance>'
+		const {0:a,1:b,2:c} = t.split('+')
+		if(c!==undefined) return
+		const ang = abs((+b||30)*PI/90)
+		const p = (a[0] == '~' ? w ? (w.f + +a.slice(1))%PI2 : NaN : a%360)*PI/180 - ang*.5
+		if(!Number.isFinite(p)) return
+		return e => (e.f-p+PI2+PI2)%PI2<=ang
+	},
+	world(t, s, w){
+		t = t == '~' ? w ? w.world : undefined : t ? Dimensions[t] : null
+		if(t === undefined) throw 'Invalid world'
+		if(s=='=') return a => a.world === t
+		else if(s=='!=') return a => a.world !== t
+		else throw 'world only supports = and !=, '+s+' invalid'
 	},
 }
 export function selector(a, who){
@@ -205,16 +223,20 @@ export function selector(a, who){
 		return [e]
 	}
 	if(a[0] == '@'){
-		if(a.length > 2 && (a[2] !== '[' || a[a.length-1] !== ']')) throw 'Unable to parse selector: expected []'
+		if(a.length > 2 && (a[2] !== '[' || a[a.length-1] !== ']')) throw 'Unable to parse selector: expected ] for matching ['
 		const filters = []; let limit = Infinity
-		if(a.slice(3,-1).replace(/\s*(\w+)\s*(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*"))\s*(?:,|;|$)|\s*(\d+)\s*(?:,|;|$)/gy, (_, a, s, b, c='') => {
+		if(a.slice(3,-1).replace(/\s*(?:!?(\w+)\s*(?:(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*")))?|(\d+))\s*(?:,|;|$)/gy, (_, a, s, b, c='') => {
 			if(c) return void(limit = +c)
-			if(b[0]=='"') try{ b = JSON.parse(b) }catch(e){ throw 'Unable to parse selector: invalid string' }
-			const f = specifiers[a+s]?.(b) ?? specifiers[a]?.(b, s)
-			if(!f) throw 'Invalid/unknown filter: '+a+s+b
-			filters.push(f)
+			if(b[0]=='"') try{ b = JSON.parse(b) }catch(e){ throw 'Unable to parse selector filter: invalid string' }
+			const f = specifiers[a]
+			if(!f) throw 'Unknown filter: '+a
+			if(!s&&f.length>1)throw 'Incorrect filter usage: '+a
+			else if(s&&f.length<2)throw 'Incorrect filter usage: '+a+s
+			const v = f(b, s, who)
+			if(!v) throw 'Invalid filter: '+a+s+b
+			filters.push(v)
 			return ''
-		}).length > 3) throw 'Unable to parse selector: extra text inside []'
+		}).length > 3) throw 'Unable to parse selector filter: extra text inside []'
 		if(!limit) throw "No targets matched selector"
 		if(a[1] == 's'){
 			if(!(who instanceof Entity)) throw '@s unavailable'

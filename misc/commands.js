@@ -486,7 +486,7 @@ Object.assign(commands, {
 		delay *= 1000
 		if(!(delay >= 0)) throw 'Invalid delay'
 		setTimeout(process.emit.bind(process, 'SIGINT', 1), delay)
-		if(delay) chat('\\33[SERVER] Server restarting in '+Date.formatTime(delay))
+		if(delay) setTimeout(() => chat('\\33[SERVER] Server restarting in '+Date.formatTime(delay))), log(this, 'Initiated a server restart')
 	},
 	mode(a='1', sel='@s'){
 		a &= 255
@@ -501,7 +501,7 @@ Object.assign(commands, {
 			p.rubber(0)
 		}
 		if(players === 0) throw 'Selector found no players'
-		return `Set the mode of ${typeof players == 'string'?players:players+' players'} to ${(a==1?'creative':'survival')}`
+		return log(this, `Set the mode of ${typeof players == 'string'?players:players+' players'} to ${(a==1?'creative':'survival')}`)
 	}
 })
 

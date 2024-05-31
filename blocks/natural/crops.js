@@ -27,7 +27,7 @@ Blocks.sugar_cane = class extends Block{
 		up()
 		if(b === Blocks.sugar_cane) return
 		if(!b.solid | ((l.flows !== false | l.fluidType != 'water') & (r.flows !== false | r.fluidType != 'water')))
-			this.destroy()
+			this.destroy(), place(Blocks.air)
 	}
 	drops(){ return new Items.sugar_cane(1) }
 }
