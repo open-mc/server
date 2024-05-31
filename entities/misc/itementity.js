@@ -3,11 +3,11 @@ import { Entities, Entity } from '../entity.js'
 
 Entities.item = class ItemEntity extends Entity{
 	item = null
-	static width = 0.125
-	static height = 0.25
+	static width = 0.16
+	static height = 0.32
 	static collisionPaddingX = 1
 	static collisionPaddingY = 0.5
-	static head = 0.125
+	static head = 0.2
 	static savedata = {item: Item}
 	damage(){ this.remove() }
 	touch(e){

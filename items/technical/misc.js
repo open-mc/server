@@ -36,3 +36,8 @@ Items.command_block = class extends Item{
 	static forbidden = true
 	place(){ placeblock(Blocks.command_block); return 1 }
 }
+
+Items.barrier = class extends Item{
+	static forbidden = true
+	place(){ placeblock(Blocks.barrier); return 1 }
+}
