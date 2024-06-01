@@ -7,7 +7,7 @@ Items.gold = class Gold extends Item{
 
 }
 Items.coal = class Coal extends Item{
-	static burns = true
+	static canSmelt = 8
 }
 Items.iron = class Iron extends Item{
 

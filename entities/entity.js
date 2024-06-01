@@ -74,7 +74,7 @@ export class Entity{
 	kill(cause){
 		this.died(cause)
 		if(this.sock)
-			chatImport.chat((deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
+			chatImport.chat(cause instanceof Entity ? this.name+' was killed by '+cause.name : (deathMessages[cause]??'\0 was killed by an unknown force').replace('\0', this.name))
 		this.unlink()
 	}
 	died(){

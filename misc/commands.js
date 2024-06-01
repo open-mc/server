@@ -291,9 +291,14 @@ Object.assign(commands, {
 		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tick(tps=''){
+		if(tps[0] == '+'){
+			if((tickFlags&3)==3) throw 'All tick phases are already running. Use /tick freeze to disable them'
+			setTickFlags(tickFlags, min(10*currentTPS, max(1, +tps.slice(1)||1)))
+			return
+		}
 		const r = tpsRules[tps.toLowerCase()]
 		if(r>=0) setTickFlags(r)
-		const v = r >= 0 || !tps ? (tickFlags>1?tickFlags>2?'everything':'entities only':tickFlags>0?'blocks only':'nothing') : ''
+		const v = r >= 0 || !tps ? (tickFlags&2?tickFlags&1?'everything':'entities only':tickFlags&1?'blocks only':'nothing') : ''
 		if(r>=0) return log(this, 'Set the server to tick '+v)
 		if(!tps) return 'The TPS is '+currentTPS+' and the server is currently ticking '+v
 		setTPS(max(1, min((tps|0) || 20, 1000)))
@@ -307,7 +312,7 @@ Object.assign(commands, {
 			if(!CONFIG.permissions.suicide) throw 'This server does not permit suicide'
 			if(t != '@s' || cause != 'void') throw 'You do not have permission to use /kill that way'
 		}
-		const c = damageTypes[cause] || 0
+		const c = damageTypes[cause] || null
 		let i = 0
 		for(const e of selector(t, this)){
 			if(e.damage) e.damage(e.health, c)
@@ -566,7 +571,7 @@ export const anyone_help = {
 	reconn: '[player] (delay) -- Reconnect players',
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
-	tick: '[tps]|freeze|resume|entities|blocks|all|none -- Set server-side tick rate or tick rules',
+	tick: ['[tps] -- Set TPS', 'freeze|resume|entities|blocks|all|none -- Enable only certain tick phases', '+[amount] -- Step some ticks forward (for tick phases that are disabled)'],
 	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
 	perm: '[target] [int]|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',

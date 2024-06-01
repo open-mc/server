@@ -11,10 +11,12 @@ export const toUnlink = new Map()
 export let actualTPS = currentTPS
 
 export let tickFlags = 3
-export let setTickFlags = e => tickFlags = e
+export let setTickFlags = (e, d=0) => tickFlags = e&3|d<<2
 
 export function tick(){
-	if(tickFlags&1) for(const n in Dimensions){
+	let t = tickFlags
+	if(t>3) tickFlags-=4, t=3
+	if(t&1) for(const n in Dimensions){
 		const w = Dimensions[n]
 		w.tick++
 		for(const ch of w.values())
@@ -24,7 +26,7 @@ export function tick(){
 		const w = Dimensions[n]
 		for(const ch of w.values()) w.check(ch)
 	}
-	if(tickFlags&2) for(const e of entityMap.values()){
+	if(t&2) for(const e of entityMap.values()){
 		const {world, chunk, sock} = e
 		if(world && chunk && !sock){
 			if(floor(e.x)>>>5&1)

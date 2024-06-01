@@ -75,7 +75,7 @@ export function getOutput({0:a,1:b,2:c,3:d,4:e,5:f,6:g,7:h,8:i}){
 		case 2: match = oListToEntry([a.id,b?.id??65535], 1); break
 	}
 	if(match) return match
-	const l = size == 9 ? [a.id,0,0,0,0,0,0,0,0] : [a.id,0,0,0,0,0]; let j = 0
+	const l = size == 9 ? [a.id,0,0,0,0,0,0,0,0] : [a.id,0,0,0,0,0]; let j = 1
 	if(b&&(size%3>1)) l[j++] = b.id; if(c&&(size%3>2)) l[j++] = c.id
 	if(d&&size>3) l[j++] = d.id; if(e&&(size>4&&size!=7)) l[j++] = e.id
 	if(f&&(size==6||size==9)) l[j++] = f.id; if(g&&size>6) l[j++] = g.id

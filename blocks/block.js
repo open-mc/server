@@ -21,7 +21,7 @@ export class Block{
 			itm.item = drop
 			itm.dx = random() * 6 - 3
 			itm.dy = 6
-			itm.place(antWorld, getX(), getY())
+			itm.place(antWorld, getX()+0.5, getY()+0.375)
 		}else if(drop instanceof Array){
 			for(const d of drop){
 				if(!d) continue
@@ -29,7 +29,7 @@ export class Block{
 				itm.item = d
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
-				itm.place(antWorld, getX(), getY())
+				itm.place(antWorld, getX()+0.5, getY()+0.375)
 			}
 		}
 	}
