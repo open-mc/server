@@ -9,7 +9,7 @@ export class Block{
 	static breaktime = 3
 	static blast = 20
 	static solid = true
-	static targettable = true
+	static targettable = false
 	static replaceable = false
 	static mustBreak = false
 	static tool = ''

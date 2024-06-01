@@ -112,8 +112,8 @@ function playerMovePacket(player, buf){
 		let l = 0
 		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
 		a: while(d < reach){
-			const {solid, replaceable, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
-			if((solid && !replaceable) || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
+			const {solid, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
+			if(solid || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -149,25 +149,27 @@ function playerMovePacket(player, buf){
 			//failsafe
 			break top
 		}
+		let ax = l << 24 >> 24, ay = l << 16 >> 24
 		if(d >= reach){
-			const {solid, replaceable, targettable, flows} = peekat(l << 24 >> 24, l << 16 >> 24)
-			if(((!solid && !replaceable && targettable) || (interactFluid && flows === false))){
-				jump(l << 24 >> 24, l << 16 >> 24)
-				px -= l << 24 >> 24; py -= l << 16 >> 24
+			const {solid, targettable, flows} = peekat(l << 24 >> 24, l << 16 >> 24)
+			if(((targettable && !solid) || (interactFluid && flows === false))){
+				jump(ax, ay)
+				px -= ax; py -= ay
 				l >>>= 16
+				ax = l << 24 >> 24, ay = l << 16 >> 24
 				if(l == 1) px = 1
 				else if(l == 255) px = 0
 				else if(l == 256) py = 1
 				else if(l == 65280) py = 0
 			}else{
 				if(sel > 127) break top
-				px = (player.x + x) % 1; py = (player.y + player.head + y) % 1
+				px = ((player.x + x)%1+1)%1; py = ((player.y + player.head + y)%1+1)%1
 			}
-		}
-		px -= l << 24 >> 24; py -= l << 16 >> 24
+		}else px -= ax, py -= ay
+		
 		if(sel > 127){
 			const block = peek()
-			if((block.targettable??block.solid) | block.mustBreak){
+			if((block.targettable||block.solid) | block.mustBreak){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
 					if(player.breakGridEvent)
 						cancelgridevent(player.breakGridEvent)
@@ -189,7 +191,7 @@ function playerMovePacket(player, buf){
 		}
 		let b = peek()
 		plx = getX(); ply = getY()
-		if((b.targettable??b.solid) | (interactFluid && b.fluidLevel)){
+		if((b.targettable||b.solid) | (interactFluid && b.fluidLevel)){
 			b: if(item && item.interact){
 				const i2 = item.interact(b, player)
 				if(i2 === undefined) break b
@@ -213,16 +215,15 @@ function playerMovePacket(player, buf){
 			if(!l) break top
 		}
 		if(!item) break top
-		const ax = l << 24 >> 24, ay = l << 16 >> 24
 		jump(ax, ay); plx = plx+ax|0; ply = ply+ay|0
 		{
 			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
 			if(interactFluid){
 				if(up.flows === false && left.flows === false && down.flows === false && right.flows === false) break top
-			}else if(!(up.targettable??up.solid) && !(left.targettable??left.solid) && !(down.targettable??down.solid) && !(right.targettable??right.solid)) break top
+			}else if(!(up.targettable||up.solid) && !(left.targettable||left.solid) && !(down.targettable||down.solid) && !(right.targettable||right.solid)) break top
 		}
 		b = peek()
-		if(!b.replaceable && !(interactFluid && b.flows === false)) break top
+		if(interactFluid && b.flows === false) break top
 		if(false){
 			// TODO better entity check allowing for quasi-solid blocks like sugar_cane
 			if(plx < player.x + player.width && plx + 1 > player.x - player.width && ply < player.y + player.height && ply + 1 > player.y) break top

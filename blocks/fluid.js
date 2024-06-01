@@ -74,16 +74,20 @@ export const fluidify = (B, t, renewable = false) => {
 			if(!b.replaceable){
 				up(); right()
 				let b = peek()
-				let fillSource = renewable
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = false
-				else if(b.fluidType != t) this.combine?.(b), fillSource = false
-				else if(b.flows) fillSource = false
+				let fillSource = renewable<<2
+				if(!b.replaceable) fillSource-=2
+				else if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = 0
+				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
+				else if(b.flows) fillSource = 0
+				else fillSource--
 				left(); left()
 				b = peek()
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = false
-				else if(b.fluidType != t) this.combine?.(b), fillSource = false
-				else if(b.flows) fillSource = false
-				if(fillSource) right(), place(filled)
+				if(!b.replaceable) fillSource-=2
+				else if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = 0
+				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
+				else if(b.flows) fillSource = 0
+				else fillSource--
+				if(fillSource>=1) right(), place(filled)
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
 				else b.destroy?.(), place(flowing)
@@ -128,16 +132,20 @@ export const fluidify = (B, t, renewable = false) => {
 				if(L<0) L=0
 				up(); right()
 				let b = peek()
-				let fillSource = renewable
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = false
-				else if(b.fluidType != t) this.combine?.(b), fillSource = false
-				else if(b.flows) fillSource = false
+				let fillSource = renewable<<2
+				if(!b.replaceable) fillSource-=2
+				else if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = 0
+				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
+				else if(b.flows) fillSource = 0
+				else fillSource--
 				left(); left()
 				b = peek()
-				if(b.replaceable) if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = false
-				else if(b.fluidType != t) this.combine?.(b), fillSource = false
-				else if(b.flows) fillSource = false
-				if(fillSource) right(), place(filled)
+				if(!b.replaceable) fillSource-=2
+				else if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = 0
+				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
+				else if(b.flows) fillSource = 0
+				else fillSource--
+				if(fillSource>=1) right(), place(filled)
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
 				else place(flowing)
