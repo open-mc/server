@@ -240,7 +240,7 @@ function playerMovePacket(player, buf){
 		}
 	}
 	if(plx < 2147483648) player.state |= 8
-	else player.state &= 9
+	else player.state &= -9
 	if(prx < 2147483648 && prx != plx || pry != ply){
 		goto(player.world, prx, pry)
 		if(antChunk.sockets.includes(player.sock)){
