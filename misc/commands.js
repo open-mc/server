@@ -60,6 +60,17 @@ Object.assign(commands, {
 		}
 		return log(this, `Kicked ${kicked} player(s)`)
 	},
+	reconn(a, t=0){
+		t = max(0, min(999, t*100 || 0))
+		const targets = selector(a, this)
+		let count = 0
+		for(const pl of targets){
+			if(!pl.sock) continue
+			pl.sock.end(3000+t, 'Reconnecting shortly...')
+			count++
+		}
+		return log(this, `Reconnnecting ${count} player(s)`)
+	},
 	give(sel, item, amount = '1', dat = '{}'){
 		let itm = Items[item], c = max(amount | 0, 1)
 		if(!itm) throw 'No such item: '+item
@@ -552,6 +563,7 @@ export const anyone_help = {
 	where: '[player] -- Where is a specific player?'
 }, help = {
 	...mod_help,
+	reconn: '[player] (delay) -- Reconnect players',
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
 	tick: '[tps]|freeze|resume|entities|blocks|all|none -- Set server-side tick rate or tick rules',
