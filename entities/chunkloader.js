@@ -1,7 +1,7 @@
 import { DataWriter } from '../modules/dataproto.js'
 
 export const ChunkLoader = T => class extends T{
-	radius = CONFIG.world.chunk_loading_range
+	radius = max(2, CONFIG.world.chunk_loading_range+1)
 	moved(){
 		const {world, _world, radius, sock} = this
 		if((!_world && !world) || !sock) return

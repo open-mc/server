@@ -33,9 +33,9 @@ world:
   seed: 1234
   # 8 in traditional minecraft; 16 here. 123 blocks in the nether corresponds to (123 * nether_scale) blocks in the overworld
   nether_scale: 16
-  # Radius around players where chunks are loaded. Recommended: 3
-  # 3 = 5x5 square = 25 chunks loaded. 4 = 7x7 = 49 chunks loaded. 5 = 9x9 = 81 chunks etc...
-  chunk_loading_range: 3
+  # Radius around players where chunks are loaded. Recommended: 2
+  # 2 = 5x5 square = 25 chunks loaded. 3 = 7x7 = 49 chunks loaded. 4 = 9x9 = 81 chunks etc...
+  chunk_loading_range: 2
 
 # Client components/mods. 
 components:
