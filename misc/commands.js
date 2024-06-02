@@ -50,7 +50,7 @@ Object.assign(commands, {
 	kick(a, ...r){
 		const reason = r.join(' ')
 		const targets = selector(a, this)
-		if(targets.length > 1 && this && this.sock.perms < OP) throw 'Moderators may not kick more than 1 person at a time'
+		if(targets.length > 1 && this?.sock?.perms < OP) throw 'Moderators may not kick more than 1 person at a time'
 		stat('misc', 'player_kicks', targets.length)
 		let kicked = 0
 		for(const pl of targets){
@@ -308,7 +308,7 @@ Object.assign(commands, {
 		return log(this, 'Set the TPS to '+currentTPS)
 	},
 	kill(t = '@s', cause = 'void'){
-		if(this && this.sock.perms < MOD){
+		if(this?.sock?.perms < MOD){
 			if(!CONFIG.permissions.suicide) throw 'This server does not permit suicide'
 			if(t != '@s' || cause != 'void') throw 'You do not have permission to use /kill that way'
 		}
@@ -321,12 +321,24 @@ Object.assign(commands, {
 		}
 		return log(this, 'Killed '+i+' entities')
 	},
-	where(t = '@s'){
-		if(this && this.sock.perms < MOD) if(t != '@s') throw 'You do not have permission to use /where for other players'
-		const [p, e] = selector(t, this)
-		if(e) throw 'Selector found more than one target'
-		const w = `(x=${p.x.toFixed(3)}, y=${p.y.toFixed(3)}) `+(p.world?'in the '+p.world.id:'outside of the space-time continuum')
-		return t == '@s' ? `You are at ${w} and have ${p.health/2} heart(s)` : `${p.name} is at ${w} and has ${p.health/2} heart(s)`
+	where(t = ''){
+		if(this?.sock?.perms < MOD) if(t) throw 'You do not have permission to use /where for other players'
+		const f = selector(t, this)
+		if(f.length>1){
+			const histogram = new Map()
+			for(const e of f)
+				histogram.set(e.world, (histogram.get(e.world)||0)+1)
+			if(histogram.size == 1){
+				const w = histogram.keys().next().value
+				return `Selector found ${f.length} entities in ${w?'the '+w.id:'limbo'}`
+			}
+			const r = [`Selector found ${f.length} entities:`]
+			for(const {0: w, 1: c} of histogram) r.push(w ? `${c} in the ${w.id}` : `${c} in limbo`)
+			return r.join('\n')
+		}
+		const {x,y,world,health,sock} = f[0]
+		const w = `(x=${x.toFixed(3)}, y=${y.toFixed(3)}) `+(world?'in the '+world.id:'outside of the space-time continuum')
+		return !t&&sock ? `You are at ${w} and have ${health/2||0} heart(s)` : `${f[0].name||f[0].className} is at ${w} and has ${health/2||0} heart(s)`
 	},
 	hide(t = '@s'){
 		let i = 0
@@ -458,12 +470,18 @@ Object.assign(commands, {
 		return log(this, 'Unbanned '+u)
 	},
 	async as(t, c, ...a){
+		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		let k = 0
 		const end = []
 		for(const e of selector(t, this))
-			end.push(executeCommand(c, a, e, this?.sock?.perms??4), k++)
-		await Promise.all(end)
-		return 'Executed '+k+' commands successfully'
+			end.push(executeCommand(c, a, e, this?.sock?.perms??4)), k++
+		const res = []
+		for(const v of end){
+			const r = await v
+			if(r) res.push(r)
+		}
+		res.push('Executed '+k+' commands successfully')
+		return res.join('\n')
 	},
 	ping(){ return this?.sock?'Pong! '+(this.sock.pingTime)+'ms':'Pong!' },
 	async repeat(k, c='', ...a){

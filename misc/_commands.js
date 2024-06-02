@@ -208,9 +208,12 @@ const specifiers = {
 		else if(s=='!=') return a => a.world !== t
 		else throw 'world only supports = and !=, '+s+' invalid'
 	},
+	player: _ => e => !!e.sock,
+	'!player': _ => e => !e.sock
 }
 export function selector(a, who){
-	if(!a) throw 'Selector missing'
+	if(typeof a != 'string') throw 'Selector missing!'
+	if(!a){ if(!who) throw 'Self unavailable'; return [who] }
 	if(a == '!'){
 		const m = marks.get(who)
 		if(!m) throw 'No marker set'
@@ -225,14 +228,14 @@ export function selector(a, who){
 	if(a[0] == '@'){
 		if(a.length > 2 && (a[2] !== '[' || a[a.length-1] !== ']')) throw 'Unable to parse selector: expected ] for matching ['
 		const filters = []; let limit = Infinity
-		if(a.slice(3,-1).replace(/\s*(?:!?(\w+)\s*(?:(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*")))?|(\d+))\s*(?:,|;|$)/gy, (_, a, s, b, c='') => {
-			if(c) return void(limit = +c)
-			if(b[0]=='"') try{ b = JSON.parse(b) }catch(e){ throw 'Unable to parse selector filter: invalid string' }
+		if(a.slice(3,-1).replace(/\s*(?:(\d+)|(!?\w+)\s*(?:(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*")))?)\s*(?:,|;|$)/gy, (_, c, a, s, b) => {
+			if(c) return limit = +c, ''
+			if(b&&b[0]=='"') try{ b = JSON.parse(b) }catch(e){ throw 'Unable to parse selector filter: invalid string' }
 			const f = specifiers[a]
 			if(!f) throw 'Unknown filter: '+a
 			if(!s&&f.length>1)throw 'Incorrect filter usage: '+a
 			else if(s&&f.length<2)throw 'Incorrect filter usage: '+a+s
-			const v = f(b, s, who)
+			const v = s ? f(b, s, who) : f(who)
 			if(!v) throw 'Invalid filter: '+a+s+b
 			filters.push(v)
 			return ''

@@ -114,7 +114,7 @@ export function chat(msg, who = null){
 }
 export function printChat(msg){
 	style = 15
-	console.log(msg.replace(/[\x00-\x1f\x7f]|\\(\\|x[^][^]|u[^][^][^][^]|[^][^])/gi, ansiReplacer) + '\x1b[0m')
+	console.log(msg.replace(/[\x00-\x08\x10-\x1f\x7f]|\\(\\|x[^][^]|u[^][^][^][^]|[^][^])/gi, ansiReplacer) + '\x1b[0m')
 }
 
 // Every system has its flaws
