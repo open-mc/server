@@ -239,7 +239,7 @@ export function fastCollision(e, dt = 1 / currentTPS){
 			let touchingBottom = 1 - (e.y - y)
 			if(blockShape){
 				const bx0 = e.x - e.width - x, bx1 = e.x + e.width - x
-				const by0 = e.y - y, by1 = by0 + e.height
+				const by0 = e.y - y - ys, by1 = by0 + e.height
 				for(let i = 0; i < blockShape.length; i += 4){
 					const y = blockShape[i+3] - by0
 					if(y > touchingBottom) touchingBottom = y
