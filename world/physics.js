@@ -35,7 +35,7 @@ export function stepEntity(e, dt = 1 / currentTPS){
 	e.update?.()
 }
 
-const EPS = .00001
+const EPS = .000002
 
 export const COSMIC_SPEED_LIMIT = 32
 export function fastCollision(e, dt = 1 / currentTPS){

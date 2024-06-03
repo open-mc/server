@@ -176,6 +176,11 @@ export function summon(Fn){
 }
 
 export const peek = () => {const b=chunk?chunk[pos]:0;return b===65535?chunk.tileData.get(pos):BlockIDs[b]}
+export const solid = () => {
+	if(!chunk) return false
+	const b=chunk[pos]
+	return (b===65535?chunk.tileData.get(pos):BlockIDs[b]).solid||(chunk.flags&1)==1
+}
 
 
 export function left(){
@@ -200,20 +205,48 @@ export function peekleft(){
 	const l = chunk?.left, b = l?l[pos|63]:0
 	return b==65535?l.tileData.get(pos|63):BlockIDs[b]
 }
+export const solidleft = () => {
+	if(!chunk) return false
+	if(pos&63){const b=chunk[pos-1];return (b===65535?chunk.tileData.get(pos-1):BlockIDs[b]).solid||(chunk.flags&1)==1}
+	const l = chunk.left
+	if(!l) return false
+	const b=l[pos|63];return (b===65535?l.tileData.get(pos|63):BlockIDs[b]).solid||(l.flags&1)==1
+}
 export function peekright(){
-	if((pos & 63) != 63){const b=chunk?chunk[pos+1]:0;return b===65535?chunk.tileData.get(pos+1):BlockIDs[b]}
+	if((pos&63) != 63){const b=chunk?chunk[pos+1]:0;return b===65535?chunk.tileData.get(pos+1):BlockIDs[b]}
 	const r = chunk?.right, b = r?r[pos&4032]:0
 	return b==65535?r.tileData.get(pos&4032):BlockIDs[b]
+}
+export const solidright = () => {
+	if(!chunk) return false
+	if((pos&63) != 63){const b=chunk[pos+1];return (b===65535?chunk.tileData.get(pos+1):BlockIDs[b]).solid||(chunk.flags&1)==1}
+	const r = chunk.right
+	if(!r) return false
+	const b=r[pos&4032];return (b===65535?r.tileData.get(pos&4032):BlockIDs[b]).solid||(r.flags&1)==1
 }
 export function peekdown(){
 	if(pos & 4032){const b=chunk?chunk[pos-64]:0;return b===65535?chunk.tileData.get(pos-64):BlockIDs[b]}
 	const d = chunk?.down, b = d?d[pos|4032]:0
 	return b==65535?d.tileData.get(pos|4032):BlockIDs[b]
 }
+export const soliddown = () => {
+	if(!chunk) return false
+	if(pos&4032){const b=chunk[pos-64];return (b===65535?chunk.tileData.get(pos-64):BlockIDs[b]).solid||(chunk.flags&1)==1}
+	const d = chunk.down
+	if(!d) return false
+	const b=d[pos|4032];return (b===65535?d.tileData.get(pos|4032):BlockIDs[b]).solid||(d.flags&1)==1
+}
 export function peekup(){
 	if((pos & 4032) != 4032){const b=chunk?chunk[pos+64]:0;return b===65535?chunk.tileData.get(pos+64):BlockIDs[b]}
 	const u = chunk?.up, b = u?u[pos&63]:0
 	return b==65535?u.tileData.get(pos&63):BlockIDs[b]
+}
+export const solidup = () => {
+	if(!chunk) return false
+	if(pos&4032){const b=chunk[pos+64];return (b===65535?chunk.tileData.get(pos+64):BlockIDs[b]).solid||(chunk.flags&1)==1}
+	const u = chunk.up
+	if(!u) return false
+	const b=u[pos&63];return (b===65535?u.tileData.get(pos&63):BlockIDs[b]).solid||(u.flags&1)==1
 }
 
 export function jump(dx, dy){
