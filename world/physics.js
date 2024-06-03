@@ -106,7 +106,8 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		e.y += dy
 	}
 	const ny0 = floor(e.y)>>>6
-	if(ny0!=y0>>>6) ch = ny0==y0-64>>>6?ch.down:ny0==y0+64>>>6?ch.up:e.world.get((x0>>>6)+ny0*0x4000000); y0 = ny0<<6
+	if(!ch) ch = e.world.get((x0>>>6)+ny0*0x4000000)
+	else if(ny0!=y0>>>6) ch = ny0==y0-64>>>6?ch.down:ny0==y0+64>>>6?ch.up:e.world.get((x0>>>6)+ny0*0x4000000); y0 = ny0<<6
 	let ys = floor(e.y + EPS), yh = ceil(e.y + e.height - EPS)-ys
 	let ey0v = e.y + EPS - ys + 1, ey1v = e.y + e.height - ys - EPS + 1
 	x: if(dx > 0){
