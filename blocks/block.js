@@ -1,6 +1,6 @@
 import { Entities } from '../entities/entity.js'
 import { Item } from '../items/item.js'
-import { getX, getY, place, antWorld, gridevent, antChunk } from '../misc/ant.js'
+import { getX, getY, gridevent, antChunk } from '../misc/ant.js'
 import { EphemeralInterface } from '../misc/ephemeralinterface.js'
 
 export class Block{
@@ -21,7 +21,7 @@ export class Block{
 			itm.item = drop
 			itm.dx = random() * 6 - 3
 			itm.dy = 6
-			itm.place(antWorld, getX()+0.5, getY()+0.375)
+			itm.place(antChunk.world, getX()+0.5, getY()+0.375)
 		}else if(drop instanceof Array){
 			for(const d of drop){
 				if(!d) continue
@@ -29,7 +29,7 @@ export class Block{
 				itm.item = d
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
-				itm.place(antWorld, getX()+0.5, getY()+0.375)
+				itm.place(antChunk.world, getX()+0.5, getY()+0.375)
 			}
 		}
 	}

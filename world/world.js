@@ -4,7 +4,6 @@ import { generator } from './gendelegator.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from './tick.js'
 import { Dimensions } from './index.js'
-import { _invalidateCache, antWorld } from '../misc/ant.js'
 import { BlockIDs } from '../blocks/block.js'
 
 const dimLevel = DB.sublevel('dimensions')
@@ -131,7 +130,6 @@ export class World extends Map{
 		this.level.put(''+k, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
 			super.delete(k) //Completely unloaded with no re-loads, delete chunk
-			if(antWorld == this) _invalidateCache(chx, chy)
 			let c = super.get((chx-1&0x3FFFFFF)+chy*0x4000000)
 			if(c) c.loadedAround &= ~4, c.right=null
 			c = super.get((chx+1&0x3FFFFFF)+chy*0x4000000)

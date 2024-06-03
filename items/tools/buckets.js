@@ -1,5 +1,5 @@
 import { Blocks } from '../../blocks/block.js'
-import { antWorld, blockevent, peek, place } from '../../misc/ant.js'
+import { antChunk, blockevent, peek, place } from '../../misc/ant.js'
 import { Dimensions } from '../../world/index.js'
 import { Item, Items } from '../item.js'
 
@@ -27,7 +27,7 @@ Items.bucket = class extends Item{
 
 Items.bucket_of_water = class extends Item{
 	place(){
-		if(antWorld == Dimensions.nether){
+		if(antChunk.world == Dimensions.nether){
 			const b = peek()
 			place(Blocks.water)
 			blockevent(32)

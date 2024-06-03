@@ -1,4 +1,4 @@
-import { antWorld, getX, getY } from "../../misc/ant.js"
+import { antChunk, getX, getY } from "../../misc/ant.js"
 import { executeCommand } from "../../misc/_commands.js"
 import { Block, Blocks } from "../block.js"
 
@@ -20,7 +20,7 @@ Blocks.command_block = class CommandBlock extends Block{
 	static blast = 2147483647
 	update(a){
 		if(this.type == 2){
-			const ctx = {x: getX()+.5, y: getY(), world: antWorld, name: '!', sock: {perms: 4}}
+			const ctx = {x: getX()+.5, y: getY(), world: antChunk.world, name: '!', sock: {perms: 4}}
 			for(const group of this.commands) execGroup(group, ctx).catch(e => null)
 			return a
 		}

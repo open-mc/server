@@ -1,4 +1,4 @@
-import { down, getX, getY, left, peek, peekdown, peekleft, peekright, peekup, place, right, up } from "../misc/ant.js"
+import { down, left, peek, peekdown, peekleft, peekright, peekup, place, right, up } from "../misc/ant.js"
 import { GAMERULES } from "../world/index.js"
 import { Blocks } from "./block.js"
 import { BlockShape } from "./blockshapes.js"

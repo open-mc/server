@@ -1,7 +1,7 @@
 import { chat } from './chat.js'
 import { err, executeCommand } from './_commands.js'
 import { Entities } from '../entities/entity.js'
-import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, peekat, antChunk } from './ant.js'
+import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, antChunk } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
 import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
@@ -112,6 +112,7 @@ function playerMovePacket(player, buf){
 		let l = 0
 		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
 		a: while(d < reach){
+			if(!antChunk||antChunk.flags&1) break top
 			const {solid, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
 			if(solid || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
 				for(let i = 0; i < blockShape.length; i += 4){
@@ -151,7 +152,7 @@ function playerMovePacket(player, buf){
 		}
 		let ax = l << 24 >> 24, ay = l << 16 >> 24
 		if(d >= reach){
-			const {solid, targettable, flows} = peekat(l << 24 >> 24, l << 16 >> 24)
+			const {solid, targettable, flows} = ax?ax<0?peekleft():peekright():ay<0?peekdown():peekup()
 			if(((targettable && !solid) || (interactFluid && flows === false))){
 				jump(ax, ay)
 				px -= ax; py -= ay
@@ -168,6 +169,7 @@ function playerMovePacket(player, buf){
 		}else px -= ax, py -= ay
 		
 		if(sel > 127){
+			if(!antChunk||antChunk.flags&1) break top
 			const block = peek()
 			if((block.targettable||block.solid) | block.mustBreak){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){

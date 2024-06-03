@@ -1,7 +1,7 @@
 import { BlockIDs } from '../blocks/block.js'
 import { GAMERULES, players, stat } from './index.js'
 import { Entities, EntityIDs } from '../entities/entity.js'
-import { _newChunk, antWorld, down, gotopos, peek, peekpos, summon, up } from '../misc/ant.js'
+import { gotopos, peekpos, summon } from '../misc/ant.js'
 
 export class Chunk extends Uint16Array{
 	static PM
@@ -17,7 +17,6 @@ export class Chunk extends Uint16Array{
 		this.up = this.left = this.right = this.down = this.exposure = null
 	}
 	parse(buf){
-		if(this.world == antWorld) _newChunk(this)
 		//read buf palette
 		const Schema = Chunk.savedatahistory[buf.flint()] || Chunk.savedata
 		let updates = buf.short()
@@ -232,7 +231,7 @@ export class Chunk extends Uint16Array{
 
 		if(this.loadedAround != 511) return
 
-		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunk_loading_range-1)*sqrt(this.sockets.length/players.size)){
+		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunk_loading_range)*sqrt(this.sockets.length/players.size)){
 			const p = floor(random() * 64)
 			const highest = this.exposure[p]-(this.y<<6)
 			if(highest >= 0 && highest < 64){
@@ -243,9 +242,18 @@ export class Chunk extends Uint16Array{
 		}
 	}
 
-	static savedata = {portals: [Uint16]}
+	static savedata = {portals: [Uint16], flags: Uint8}
 	
+	flags = 0
 	portals = []
+
+	setFlags(f){
+		this.flags = f &= 255
+		const d = new DataWriter()
+		d.byte(18); d.int(this.x); d.int(this.y); d.short(f)
+		const b = d.build()
+		for(const s of this.sockets) s.send(b)
+	}
 }
 
 Function.optimizeImmediately(Chunk, Chunk.prototype.parse, Chunk.prototype.toBuf, Chunk.prototype.tick, Chunk.diskBufToPacket)

@@ -496,6 +496,10 @@ Object.assign(commands, {
 		try{ return await executeCommand(c, a, this, this?.sock?.perms??4) }
 		catch(e){ return 'Command did not succeed: \\+9'+e }
 	},
+	async defer(c='', ...a){
+		if(!c) throw 'No command specified! (Do not include the / in the command name)'
+		executeCommand(c, a, this, this?.sock?.perms??4)
+	},
 	async fail(c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
 		let r
@@ -540,6 +544,17 @@ Object.assign(commands, {
 		}
 		if(players === 0) throw 'Selector found no players'
 		return log(this, `Set the mode of ${typeof players == 'string'?players:players+' players'} to ${(a==1?'creative':'survival')}`)
+	},
+	chunk(f='', _x='~', _y='~', d='~', v=''){
+		const {x, y, w} = parseCoords(_x, _y, d, this)
+		const ch = w.get((floor(x)>>>6)+(floor(y)>>>6)*0x4000000)
+		if(!(ch?.loadedAround&0x100)) throw 'Chunk not loaded'
+		switch(f=f.toLowerCase()){
+			case 'border':
+			ch.setFlags(v = v=='1'?1:v=='0'?0:~ch.flags&1)
+			return 'Set border flag to '+v
+			default: throw 'Unknown chunk option: '+f
+		}
 	}
 })
 
@@ -597,10 +612,11 @@ export const anyone_help = {
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',
+	chunk: 'border [x] [y] [1|0] -- Set chunk border flag to 1 or 0',
 	repeat: '[count] [...command] -- Execute a command multiple times',
 	delay: '[time_seconds] [...command] -- Execute a command after a delay',
 	restart: '(delay=0) -- Restart the server after delay',
-	bell: '-- @everyone'
+	bell: '-- @here'
 }, cheats = ['give', 'summon', 'setblock', 'fill', 'mutate', 'time']
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)

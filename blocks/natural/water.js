@@ -1,5 +1,5 @@
 import { damageTypes } from '../../entities/deathmessages.js'
-import { antWorld, blockevent, place } from '../../misc/ant.js'
+import { antChunk, blockevent, place } from '../../misc/ant.js'
 import { Dimensions } from '../../world/index.js'
 import { Block, Blocks } from '../block.js'
 import { fluidify } from '../fluid.js'
@@ -25,7 +25,7 @@ void({
 
 class Lava extends Water{
 	static viscosity = 0.5
-	static get delay(){return antWorld == Dimensions.nether ? 5 : 20}
+	static get delay(){return antChunk.world == Dimensions.nether ? 5 : 20}
 	static combine(fluid){
 		if(fluid.fluidType == 'water')
 			blockevent(32), place(fluid.flows ? Blocks.cobblestone : Blocks.stone)

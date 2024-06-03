@@ -1,6 +1,6 @@
 import { Enchantments } from '../../items/enchantments.js'
 import { Items } from '../../items/item.js'
-import { down, getX, getY, jump, peekleft, peekright, peekup, place, up } from '../../misc/ant.js'
+import { down, jump, peekleft, peekright, peekup, place, up } from '../../misc/ant.js'
 import { Block, Blocks } from '../block.js'
 
 class Grass extends Block{

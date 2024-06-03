@@ -102,7 +102,7 @@ if(secure && cert){
 	wsHost = 'wss://' + host; httpHost = 'https://' + host
 	sock.destroy()
 }else if(secure){
-	wsHost = host = 'localhost:' + PORT
+	wsHost = host = 'local.blobk.at:' + PORT
 	httpHost = 'https://' + host
 } // Else it's inferred from the first connection to the server (not safe, but then neither is http)
 
