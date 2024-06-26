@@ -51,7 +51,7 @@ const endpoints = {
 	},
 	play(res){
 		res.writeStatus('301')
-		res.writeHeader('Location', 'https://openmc.pages.dev/?' + wsHost)
+		res.writeHeader('Location', 'https://openmc.pages.dev/#' + wsHost)
 		res.end('')
 	},
 	static(res, url=''){
