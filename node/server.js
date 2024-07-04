@@ -51,7 +51,7 @@ const endpoints = {
 	},
 	play(res){
 		res.writeStatus('301')
-		res.writeHeader('Location', 'https://openmc.pages.dev/#' + wsHost)
+		res.writeHeader('Location', 'https://openmc.pages.dev/#' + host)
 		res.end('')
 	},
 	static(res, url=''){
@@ -77,12 +77,23 @@ const endpoints = {
 	'info.json'(res){
 		res.writeHeader('content-type', 'application/json')
 		res.end(JSON.stringify(genInfo()))
+	},
+	'preview'(res){
+		res.writeHeader('content-type', 'application/octet-stream')
+		res.writeHeader('Access-Control-Allow-Origin', '*')
+		const d = new DataWriter()
+		d.string(CONFIG.name)
+		d.string(CONFIG.icon)
+		d.string(CONFIG.banner)
+		d.string(CONFIG.motd[floor(random() * CONFIG.motd.length)])
+		d.double(Date.now())
+		d.uint8array(indexCompressed)
+		res.end(d.build())
 	}
 }
 Object.setPrototypeOf(endpoints, null)
 const {0:statsHtml0, 1:statsHtml1} = (await fs.readFile(PATH+'node/index.html')).toString().split('[[SERVER_INSERT]]')
 const PORT = argv.port || CONFIG.port || 27277
-let wsHost = ''
 const {key, cert} = CONFIG
 const secure = !(key==null || cert==null)
 const certPath = secure ? cert ? cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert : PATH+'node/default.crt':null
@@ -99,21 +110,11 @@ if(secure && cert){
 	host = CONFIG.host ?? CN.split(',').find(a=>!a.includes('*'))
 	if(!host) throw "Unable to determine host name, which is required for secure servers. Specify one via -host=<host> as a command line argument, or add a property 'host' in properties.yaml\n"
 	host += ':' + PORT
-	wsHost = 'wss://' + host; httpHost = 'https://' + host
 	sock.destroy()
-}else if(secure){
-	wsHost = host = 'local.blobk.at:' + PORT
-	httpHost = 'https://' + host
-} // Else it's inferred from the first connection to the server (not safe, but then neither is http)
+}else if(secure) host = 'local.blobk.at:' + PORT
 
 server.any('/*', (res, req) => {
 	res.onAborted(() => res.aborted = true)
-	if(!wsHost){
-		// Insecure / development only
-		host = req.getHeader('host')
-		wsHost = 'ws://' + host
-		httpHost = 'http://' + host
-	}
 	const {1:endpoint,2:i} = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){
 		res.write(statsHtml0)
@@ -133,52 +134,20 @@ server.any('/*', (res, req) => {
 
 const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + (CONFIG.components||['/vanilla/index.js']).map(a=>'\0'+a).join(''))))
 const clients = new Set
-const rand = new Uint8Array(32)
 let patchWs = function(sock){patchWs = null; const p = Object.getPrototypeOf(sock); p._send = p.send; p.send = function(a){if(this.state) this._send(a,typeof a!='string')}}
 server.ws('/*', {
 	sendPingsAutomatically: false, maxBackpressure: (CONFIG.socket.backpressure)*1048576,
 	maxPayloadLength: 1048576, closeOnBackpressureLimit: true,
 	upgrade(res, req, ctx){
-		const h = req.getHeader('host')
-		if(!wsHost){
-			// Insecure / development only
-			wsHost = 'ws://' + h
-			httpHost = 'http://' + h
-			host = h
-		}
 		if(exiting) return void res.end(undefined, true)
-		const {1:username,2:pubKey,3:authSig} = req.getUrl().split('/').map(decodeURIComponent)
-		if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, Buffer.from(authSig||'', 'base64'))){
-			res.end(undefined, true)
-			if(argv.log) throw 'Invalid public key signature'
-			return
-		}
-		crypto.getRandomValues(rand)
-		res.upgrade({
-			username, skin: null, pubKey, pingTime: 0, lastPing: 0,
-			challenge: Buffer.concat([encoder.encode(h+'\0'), rand]),
-			entity: null,
-		},
+		res.upgrade({ username: '', state: 0, skin: null, pingTime: 0, lastPing: 0, entity: null },
 			req.getHeader('sec-websocket-key'),
 			req.getHeader('sec-websocket-protocol'),
 			req.getHeader('sec-websocket-extensions'),
 			ctx
 		)
 	},
-	open(sock){
-		patchWs?.(sock)
-		sock.state = 1
-		clients.add(sock)
-		const data = sock.getUserData()
-		const buf = new DataWriter()
-		buf.string(CONFIG.name || '')
-		buf.string(CONFIG.motd[floor(random() * CONFIG.motd.length)] || '')
-		buf.string(CONFIG.icon || '')
-		buf.string(CONFIG.banner || '')
-		buf.uint8array(indexCompressed)
-		buf.uint8array(data.challenge)
-		sock.send(buf.build())
-	},
+	open(sock){ patchWs?.(sock); clients.add(sock) },
 	pong(sock){
 		sock.pingTime = Date.now() - sock.lastPing
 		sock.lastPing = 0
@@ -187,28 +156,31 @@ server.ws('/*', {
 		if(exiting) return
 		const buf = new DataReader(a)
 		try{
-			if(sock.challenge){
-				if(buf.byteLength <= 1010 || !isBinary) return
-				const challenge = sock.challenge; sock.challenge = null
-				const cli_ver = buf.short(), skin = new Uint8Array(a.slice(2, 1010))
-				if(crypto.verify('SHA256', challenge, '-----BEGIN RSA PUBLIC KEY-----\n' + sock.pubKey + '\n-----END RSA PUBLIC KEY-----', new Uint8Array(a, 1010, a.byteLength - 1010))){
-					if(cli_ver < PROTOCOL_VERSION)
-						return void sock.end(1000, '\\2fOutdated client! Please update your client.\n(Client v'+cli_ver+' < Server v'+PROTOCOL_VERSION+')')
-					else if(cli_ver > PROTOCOL_VERSION)
-						return void sock.end(1000, '\\2fOutdated server! Contact server owner.\n(Client v'+cli_ver+' > Server v'+PROTOCOL_VERSION+')')
-					sock.skin = skin
-					open.call(sock)
-				}else{
-					sock.end(1000, '\\19Invalid signature')
-					throw 'Invalid signature'
-				}
+			if(sock.state){
+				if(!isBinary) return void onstring.call(sock, sock.entity, decoder.decode(a))
+				const code = buf.byte()
+				codes[code]?.call(sock, sock.entity, buf)
 				return
 			}
-			if(!isBinary) return void onstring.call(sock, sock.entity, decoder.decode(a))
-			const code = buf.byte()
-			if(!codes[code]) return
-			codes[code].call(sock, sock.entity, buf)
-		}catch(e){ if(argv.log) throw decoder.decode(sock.getRemoteAddressAsText()) + ' made a malicious packet: ' + (e?.stack??e?.message??e) }
+			const cli_ver = buf.short(), username = sock.username = buf.string()
+			const pubKey = buf.string(), authSig = buf.uint8array()
+			const t = buf.double(), signature = buf.uint8array()
+			sock.skin = buf.uint8array(1008).slice()
+			if(!crypto.verify('SHA256', Buffer.from(username + '\n' + pubKey), PUBLICKEY, authSig))
+				throw 'Invalid public key signature'
+			if(t*1000<Date.now()||!crypto.verify('SHA256', host+'/'+t, '-----BEGIN RSA PUBLIC KEY-----\n' + pubKey + '\n-----END RSA PUBLIC KEY-----', signature))
+				throw 'Invalid session signature'
+			if(cli_ver < PROTOCOL_VERSION)
+				return void sock.end(1000, '\\2fOutdated client! Please update your client.\n(Client v'+cli_ver+' < Server v'+PROTOCOL_VERSION+')')
+			else if(cli_ver > PROTOCOL_VERSION)
+				return void sock.end(1000, '\\2fOutdated server! Contact server owner.\n(Client v'+cli_ver+' > Server v'+PROTOCOL_VERSION+')')
+			open.call(sock)
+			return
+		}catch(e){
+			let err = argv.log && 'Malicious packet from ' + decoder.decode(sock.getRemoteAddressAsText()) + ':\n' + (e?.stack??e?.message??e)
+			sock.end(1000, typeof e == 'string' ? '\\19'+e : 'Malicious packet')
+			if(err) throw err
+		}
 	},
 	close(sock){ const os = sock.state; sock.state = 0; if(clients.delete(sock)) close.call(sock, os) }
 })

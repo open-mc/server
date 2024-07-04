@@ -106,7 +106,7 @@ export function chat(msg, who = null){
 		fetch(CONFIG.webhook, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
 			content: (wpf ? safeMsg.replace(/<\w+\\> ?/y,'') : safeMsg),
 			username: wpf ? who.getName() : CONFIG.name,
-			avatar_url: wpf && httpHost ? httpHost + '/avatar/' + who.name + (who.sock ? '?t=' + who.sock.joinedAt : '') : CONFIG.icon,
+			avatar_url: wpf && host ? 'https://' + host + '/avatar/' + who.name + (who.sock ? '?t=' + who.sock.joinedAt : '') : CONFIG.icon,
 			allowed_mentions: { parse: [] }, flags: 4
 		})}).catch(e => null)
 	}

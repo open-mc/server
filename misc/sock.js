@@ -13,7 +13,7 @@ import { actualTPS, currentTPS } from '../world/tick.js'
 function sendTabMenu(encodePlayers = false){
 	const buf = new DataWriter()
 	buf.byte(4)
-	buf.string('\\1fYou are playing on '+host)
+	buf.string('\\1fYou are playing on '+(host||'localhost'))
 	buf.string(`\\0${actualTPS>=currentTPS*0.8?'a':actualTPS>=currentTPS/2?'b':'9'}TPS: ${actualTPS.toFixed(2)}`)
 	if(encodePlayers){
 		buf.flint(players.size)
