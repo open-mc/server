@@ -104,6 +104,8 @@ permissions:
 
 # Server port. By default the client connects on 27277, so it makes sense to set this to 27277
 port: 27277
+# Server host, what your users will connect to. Not required if it can be extracted from the SSL certificate
+host:
 # Key and certificate files for encrypted server (recommended). Paths are relative to parent of server folder
 # Empty values will attempt to use a self signed certificate that only works for localhost
 key: ""

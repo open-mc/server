@@ -1,11 +1,11 @@
 import { Dimensions, players, PERMISSIONS, GAMERULES, stat } from '../world/index.js'
-import { chat, YELLOW } from './chat.js'
-import { DataReader, DataWriter } from '../modules/dataproto.js'
-import { playerLeft, playerLeftQueue, queue } from './queue.js'
-/*import { entityindex } from '../entities/index.js'
+import { chat } from './chat.js'
+import { entityindex } from '../entities/index.js'
 import { itemindex } from '../items/index.js'
 import { blockindex } from '../blocks/index.js'
-import { index } from './miscdefs.js'*/
+import { index } from '../misc/miscdefs.js'
+import { DataReader, DataWriter } from '../modules/dataproto.js'
+import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import { Entities, EntityIDs, newId } from '../entities/entity.js'
 import { Items } from '../items/item.js'
 import { actualTPS, currentTPS } from '../world/tick.js'
@@ -35,7 +35,7 @@ setInterval(sendTabMenu, 2000)
 
 export const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
 export const playersConnecting = new Set
-
+const indexCompressed = deflate(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + '\0' + (CONFIG.components||['/vanilla/index.js']).join('\0'))
 export async function open(){
 	this.state = 2
 	if(playersConnecting.has(this.username)){
@@ -46,7 +46,7 @@ export async function open(){
 		if(await queue(this)) return
 		if(!this.state) return
 	}
-	this.state = 1; this.send('')
+	this.state = 1; this.send(indexCompressed)
 	let perms = PERMISSIONS[this.username] ?? CONFIG.permissions.default
 	if(perms*1000 > Date.now()){
 		this.end(1000, perms >= 2147483647 ? '\\19You are permanently banned from this server':'\\19You are banned from this server for '

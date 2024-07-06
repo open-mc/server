@@ -2,6 +2,8 @@ import { promises as fs, exists, createReadStream, createWriteStream } from 'nod
 import { Worker, parentPort } from 'node:worker_threads'
 import { PNG } from 'pngjs'
 import fetch from 'node-fetch'
+import { deflateSync, inflateSync } from 'node:zlib'
+
 globalThis.fetch = fetch
 
 globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*\/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
@@ -219,4 +221,13 @@ globalThis.PNG = {
 		p.pack().on('data', res.push.bind(res)).on('end', ()=>r(Buffer.concat(res)))
 		return pr
 	}
+}
+
+globalThis.deflate = str => {
+	const b = deflateSync(typeof str == 'string' ? Buffer.from(str) : str)
+	return new Uint8Array(b.buffer, b.byteOffset, b.byteLength)
+}
+globalThis.inflate = str => {
+	const b = inflateSync(typeof str == 'string' ? Buffer.from(str) : str)
+	return new Uint8Array(b.buffer, b.byteOffset, b.byteLength)
 }

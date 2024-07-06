@@ -2,23 +2,18 @@ import { argv } from './internals.js'
 import fs from 'fs/promises'
 import { DataReader, DataWriter, decoder, encoder } from '../modules/dataproto.js'
 import crypto from 'node:crypto'
-import { deflateSync } from 'node:zlib'
 import { TLSSocket } from 'node:tls'
 import util from 'node:util'
 import { contentType } from 'mime-types'
 import { input, repl } from 'basic-repl'
 import { App, SSLApp, us_listen_socket_close } from 'uWebSockets.js'
-import { entityindex } from '../entities/index.js'
-import { itemindex } from '../items/index.js'
-import { blockindex } from '../blocks/index.js'
-import { index } from '../misc/miscdefs.js'
 import { open, close } from '../misc/sock.js'
 import { players, STATS, DEFAULT_TPS, stat, saveAll, saving } from '../world/index.js'
 import { codes, onstring } from '../misc/incomingPacket.js'
 import { PROTOCOL_VERSION } from '../version.js'
 import { Dimensions } from '../world/index.js'
-import { entityMap, setTPS } from '../world/tick.js'
-import { chat, LIGHT_GREY, ITALIC, printChat } from '../misc/chat.js'
+import { setTPS } from '../world/tick.js'
+import { chat, printChat } from '../misc/chat.js'
 import { commands, err, executeCommand } from '../misc/_commands.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'
 import { ItemIDs, Items } from '../items/item.js'
@@ -82,12 +77,11 @@ const endpoints = {
 		res.writeHeader('content-type', 'application/octet-stream')
 		res.writeHeader('Access-Control-Allow-Origin', '*')
 		const d = new DataWriter()
-		d.string(CONFIG.name)
-		d.string(CONFIG.icon)
-		d.string(CONFIG.banner)
-		d.string(CONFIG.motd[floor(random() * CONFIG.motd.length)])
+		d.string(CONFIG.name??'')
+		d.string(CONFIG.icon??'')
+		d.string(CONFIG.banner??'')
+		d.string(CONFIG.motd[floor(random() * CONFIG.motd.length)]??'')
 		d.double(Date.now())
-		d.uint8array(indexCompressed)
 		res.end(d.build())
 	}
 }
@@ -131,8 +125,6 @@ server.any('/*', (res, req) => {
 	}
 	return res.writeStatus('404'), res.end('404')
 })
-
-const indexCompressed = (b => new Uint8Array(b.buffer, b.byteOffset, b.byteLength))(deflateSync(Buffer.from(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + (CONFIG.components||['/vanilla/index.js']).map(a=>'\0'+a).join(''))))
 const clients = new Set
 let patchWs = function(sock){patchWs = null; const p = Object.getPrototypeOf(sock); p._send = p.send; p.send = function(a){if(this.state) this._send(a,typeof a!='string')}}
 server.ws('/*', {

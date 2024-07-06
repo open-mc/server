@@ -5,7 +5,7 @@ import { entityindex } from '../entities/index.js'
 import { stat } from './index.js'
 
 const loaded = task('Loading WorldGen process...')
-const gen = new Worker(PATH + 'worldgen/genprocess.js')
+const gen = new Worker('./worldgen/genprocess.js')
 
 const waiting = new Map()
 let key = 0

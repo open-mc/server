@@ -13,7 +13,7 @@ const REACH = 10
 function validateMove(sock, player, buf){
 	// where the player wants to be
 	const x = buf.double() || 0, y = buf.double() || 0
-	player.state = player.state & 0xFFFF8000 | buf.short()&0x7fff; let rubber = false
+	player.state = player.state & 0xFFFF0000 | buf.short(); let rubber = false
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
 

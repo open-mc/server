@@ -1,8 +1,8 @@
 import fs from 'fs/promises'
 import { argv } from './internals.js'
 import { parse } from 'yaml'
-import lvl, { ClassicLevel } from 'classic-level'
-const Level = lvl.ClassicLevel
+import { ClassicLevel } from 'classic-level'
+
 globalThis.CONFIG = null
 globalThis.configLoaded = fn => configLoaded.listeners.push(fn)
 configLoaded.listeners = []
@@ -30,11 +30,11 @@ function fallback(o, f){
 	return o
 }
 const resolve = (f, p) => !p || p[0] == '/' || p[0] == '~' ? p : f + p
-async function loadConfigs(i){
+async function loadConfigs(){
 	const p = CONFIG && CONFIG.path
 	const promises = []
 	for(let i = 0; i < argv.length; i++){
-		const p = argv[i]// = resolve(PATH, argv[i])
+		const p = argv[i]
 		const f = p.slice(0, p.lastIndexOf('/')+1)
 		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => {
 			const v = parse(a.toString())
@@ -53,34 +53,29 @@ async function loadConfigs(i){
 }
 for(let i = 0; i < argv.length; i++){
 	const w2 = fs.watch(argv[i])[Symbol.asyncIterator]()
-	w2.next().then(function S(){ loadConfigs(true); w2.next().then(S) }).catch(e=>null)
+	w2.next().then(function S(){ loadConfigs(); w2.next().then(S) }).catch(e=>null)
 }
 class VolatileLevel extends Map{
-	sublevels = new Map
-	sublevel(a){let s=this.sublevels.get(a);if(!s)this.sublevels.set(a,s=new VolatileLevel);return s}
+	prefix = ''
+	sublevel(a){const s=new VolatileLevel;s.prefix=this.prefix+'!'+a+'!';return s}
 	batch(a){
 		for(const {type, key, value} of a){
 			if(type == 'put') this.set(key, value)
 			else if(type == 'del') this.delete(key)
-			else throw "A batch operation must have a type property that is 'put' or 'del'"
+			else return Promise.reject("A batch operation must have a type property that is 'put' or 'del'")
 		}
 		return Promise.resolve()
 	}
 	get(a,cb){const v = super.get(a); if(v)return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
+	getMany(arr,cb){let nf=0;const v = arr.map(a=>super.get(a)??nf++); if(!nf)return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
 	put(a,b,cb){this.set(a,b);return cb?void cb():Promise.resolve()}
 	del(a,cb){this.delete(a);return cb?void cb():Promise.resolve()}
-	open(cb){return cb?void cb():Promise.resolve()}
-	close(cb){console.warn('Temporary map, deleting all '+this.totalSize+' saved entries');return cb?void cb():Promise.resolve()}
-	get totalSize(){
-		let t = this.size
-		for(const s of this.sublevels.values()) t += s.totalSize
-		return t
-	}
+	close(cb){console.warn('Temporary map, deleting all '+this.size+' saved entries');return cb?void cb():Promise.resolve()}
 }
-await loadConfigs(false).then(() => {
+await loadConfigs().then(() => {
 	globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()
 	if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
-	return DB.open()
+	return DB.open?.()
 })
 
 import { ready } from './internals.js'
