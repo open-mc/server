@@ -2,7 +2,6 @@ import { players, MOD, NORMAL } from '../world/index.js'
 import { Dimensions, GAMERULES } from '../world/index.js'
 import { chat } from './chat.js'
 import { Entity } from '../entities/entity.js'
-import '../node/internals.js'
 import { entityMap } from '../world/tick.js'
 
 export const marks = new WeakMap
@@ -280,7 +279,7 @@ export function selector(a, who){
 			return arr
 		}else if(a[1] == 'p'){
 			if(!(who instanceof Entity)) throw "@p unavailable"
-			const closest = [...players.values()].winner(a => {
+			const closest = [...players.values()].best(a => {
 				if(!testSelector(a, who, filters) || a.world != who.world) return NaN
 				const dx = a.x - who.x, dy = a.y - who.y
 				return -(dx * dx + dy * dy)

@@ -1,6 +1,6 @@
 import { players, stat, statAvg } from '../world/index.js'
 import { DataWriter } from '../modules/dataproto.js'
-import { Chunk, updateStats } from './chunk.js'
+import { updateStats } from './chunk.js'
 import { Dimensions } from './index.js'
 import { fastCollision, stepEntity } from './physics.js'
 import { encodeDelete, mirrorEntity, mirrorEntitySelf } from './encodemove.js'
@@ -82,7 +82,6 @@ export function setTPS(a){
 	clearInterval(timer)
 	timer = setInterval(everySecond, 1000)
 }
-globalThis.exiting = false
 let lastTick = performance.now()
 setInterval(function s(){
 	const mspt = 1000 / currentTPS

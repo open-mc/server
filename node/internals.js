@@ -5,24 +5,21 @@ import fetch from 'node-fetch'
 import { deflateSync, inflateSync } from 'node:zlib'
 
 globalThis.fetch = fetch
-
-globalThis.PATH = decodeURI(import.meta.url).replace(/[^\/]*\/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
-globalThis.loadFile = (i, f) => f ? fs.readFile(decodeURI(i.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/') + f) : f => fs.readFile(decodeURI(i.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/') + f)
+export const PATH = decodeURI(import.meta.url).replace(/[^\/]*\/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')
+globalThis.PATH = PATH
+globalThis.loadFile = (i, f) => (i=decodeURI(i.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/'), f ? fs.readFile(i + f) : f => fs.readFile(i + f))
 
 globalThis.AsyncFunction = (async()=>{}).constructor
 
 Object.defineProperties(Array.prototype, {
-	winner: {enumerable: false, value(pred, best = -Infinity){
-		let winner = undefined
+	best: {enumerable: false, value(pred, best = -Infinity){
+		let el = undefined
 		const length = this.length
 		for(let i = 0; i < length; i++){
 			const a = this[i], score = pred(a, i, this)
-			if(score >= best){
-				best = score
-				winner = a
-			}
+			if(score >= best) best = score, el = a
 		}
-		return winner
+		return el
 	}},
 	remove: {enumerable: false, value(a){
 		let i = 0, j = 0
@@ -57,17 +54,6 @@ Array.null = len => {
 	return a
 }
 
-Array.range = (...a) => {
-	const res = []
-	let step = 1
-	if(a.length%2) step = a.pop()
-	for(let i = 0; i < a.length; i+=2){
-		const end = a[i+1]
-		for(let j = a[i]; j < end; j+=step) res.push(j)
-	}
-	return res
-}
-
 Date.formatTime = function(t){
 	t /= 1000
 	if(t < 3600){
@@ -87,7 +73,7 @@ globalThis.PI2 = PI*2
 fs.exists = a => new Promise(r => exists(a, (a,b=a)=>r(b)))
 fs.createReadStream = createReadStream
 fs.createWriteStream = createWriteStream
-globalThis.Worker = Worker
+globalThis.Worker = function(src){return new Worker(PATH+'node/internals.js', {argv: [src]})}
 globalThis.parentPort = parentPort
 
 import { getHeapStatistics } from 'node:v8'
@@ -203,18 +189,20 @@ globalThis.started = 0
 globalThis.host = ''
 
 globalThis.PNG = {
+	from: (i, src) => {
+		const p = new PNG()
+		fs.createReadStream(decodeURI(i.url).replace(/[^\/]*$/,"").replace(/file:\/\/\/?(\w+:\/)?/y,'/')+src).pipe(p)
+		return new Promise((r,c)=>{p.once('parsed', ()=>r(p.data)); p.once('error', c)})
+	},
 	read: buf => {
 		const p = new PNG()
 		p.write(buf)
 		p.end()
-		let r
-		const pr = new Promise(_r=>r=_r)
-		p.on('parsed', ()=>r(p.data))
-		return pr
+		return new Promise((r,c)=>{p.once('parsed', ()=>r(p.data)); p.once('error', c)})
 	},
 	write: (data, w, h) => {
 		const p = new PNG({width: w, height: h})
-		if(p.data.byteLength != data.byteLength) throw 'PNG width * height is not equal to typed array length'
+		if(p.data.byteLength != data.byteLength) throw 'PNG width * height * 4 is not equal to typed array length'
 		p.data = data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 		let r
 		const res = [], pr = new Promise(_r=>r=_r)
@@ -231,3 +219,5 @@ globalThis.inflate = str => {
 	const b = inflateSync(typeof str == 'string' ? Buffer.from(str) : str)
 	return new Uint8Array(b.buffer, b.byteOffset, b.byteLength)
 }
+
+if(parentPort) import('../'+process.argv[2])

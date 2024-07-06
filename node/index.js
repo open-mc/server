@@ -1,5 +1,5 @@
 import fs from 'fs/promises'
-import { argv } from './internals.js'
+import { argv, ready } from './internals.js'
 import { parse } from 'yaml'
 import { ClassicLevel } from 'classic-level'
 
@@ -78,7 +78,6 @@ await loadConfigs().then(() => {
 	return DB.open?.()
 })
 
-import { ready } from './internals.js'
 const {default: openServer} = await import('./server.js')
 await ready
 task.done('Modules loaded')

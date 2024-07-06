@@ -76,3 +76,6 @@ export function saveAll(){
 	saving = Promise.all(promises)
 	return saving
 }
+globalThis.exiting = false
+void function timeout(){if(exiting) return; setTimeout(() => saveAll().then(timeout), 300e3)}()
+stat('misc', 'restarts')

@@ -1,4 +1,3 @@
-import '../node/internals.js'
 import { gotopos } from '../misc/ant.js'
 import { currentTPS } from './tick.js'
 import { BlockIDs } from '../blocks/block.js'

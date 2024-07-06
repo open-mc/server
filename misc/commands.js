@@ -2,7 +2,6 @@ import { players, MOD, OP, PERMISSIONS, savePermissions, NORMAL } from '../world
 import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat } from './chat.js'
 import { DXDY, Entities, EntityIDs } from '../entities/entity.js'
-import '../node/internals.js'
 import { ItemIDs, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
 import { BlockIDs, Blocks } from '../blocks/block.js'

@@ -1,4 +1,4 @@
-import { argv } from './internals.js'
+import { argv, PATH } from './internals.js'
 import fs from 'fs/promises'
 import { DataReader, DataWriter, decoder, encoder } from '../modules/dataproto.js'
 import crypto from 'node:crypto'
@@ -207,7 +207,6 @@ process.on('SIGINT', code => {
 		Promise.all(pr).then(() => DB.close(() => process.exit(code)))
 	})
 })
-void function timeout(){if(exiting) return; setTimeout(() => saveAll().then(timeout), 300e3)}()
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 const serverObject = {
 	sock: {perms: 4},
@@ -223,7 +222,6 @@ export default function openServer(){
 		clear()
 		serverLoaded(`Everything Loaded. \x1b[1;33mServer listening on port ${PORT+(secure?' (secure)':'')}\x1b[m\nType /help for a list of commands, or hit tab to switch to JS repl`)
 		setTPS(DEFAULT_TPS)
-		stat('misc', 'restarts')
 		repl('[server] ', async text => {
 			if(text == 'clear') return clear()
 			if(text[0] == '/'){

@@ -1,6 +1,5 @@
 import { BlockIDs } from '../blocks/block.js'
 import { Entity } from '../entities/entity.js'
-import '../node/internals.js'
 
 let pos = 0, chunk = null
 export {pos as chunkTileIndex, chunk as antChunk}

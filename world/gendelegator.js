@@ -1,4 +1,3 @@
-import '../node/internals.js'
 import { blockindex } from '../blocks/index.js'
 import { itemindex } from '../items/index.js'
 import { entityindex } from '../entities/index.js'

@@ -1,5 +1,4 @@
 import { imxs32 } from './random.js'
-import '../../node/internals.js'
 import { Biomes, chunkBiomes } from '../vars.js'
 import '../biomes/desert.js'
 import '../biomes/nether.js'
@@ -13,7 +12,7 @@ import '../biomes/void.js'
 import '../biomes/end.js'
 
 const biomemap = []
-biomemap.buffer = new DataView((await PNG.read(await loadFile(import.meta, './biomes.png'))).buffer)
+biomemap.buffer = new DataView((await PNG.from(import.meta, './biomes.png')).buffer)
 const biomeconvert = {
 	0x2eb300: Biomes.plains,
 	0x0048b3: Biomes.ocean,

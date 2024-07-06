@@ -1,11 +1,9 @@
-import '../node/internals.js'
 import { jsonToType } from '../modules/dataproto.js'
 import { air, Blocks, chunk, chunkBiomes, empty, Items, Entities, setSeed } from './vars.js'
 
 parentPort.postMessage({key:-3})
-const indexes = await new Promise(r => parentPort.once('message', r))
-
-parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'}){
+parentPort.addEventListener('message', async ({data: indexes}) => {
+parentPort.onmessage = async function({key, x, y, d, seed, name = 'default'}){
 	if(name=='void'){
 		air()
 		parentPort.postMessage({key, buf: buildBuffer()})
@@ -25,7 +23,8 @@ parentPort?.on('message', async function({key, x, y, d, seed, name = 'default'})
 		if(pr && pr.then) pr.then(() => parentPort.postMessage({key, buf: buildBuffer()}))
 		else parentPort.postMessage({key, buf: buildBuffer()})
 	}
-})
+}
+
 
 let blockCount = 0, itemCount = 0, entityCount = 0
 let i = 0
@@ -61,7 +60,7 @@ const GENERATORS = await import('./dimensions/index.js')
 
 empty.fill(Blocks.air)
 air()
-parentPort?.postMessage({key:-1})
+parentPort.postMessage({key:-1})
 const PM = new Uint16Array(blockCount).fill(0x0100)
 const IDs = new Uint16Array(4096)
 function buildBuffer(){
@@ -148,11 +147,15 @@ function buildBuffer(){
 	return final
 }
 
-let idle2 = performance.nodeTiming.idleTime
-let time2 = performance.now()
-export let threadUsage = 0
-setInterval(() => {
-	const f = (idle2 - (idle2 = performance.nodeTiming.idleTime)) / (time2 - (time2 = performance.now()))
-	threadUsage -= (threadUsage + f - 1) / 20
-	parentPort.postMessage({key:-2, elu: threadUsage, mem: process.memoryUsage().heapTotal})
-}, 500)
+})
+
+if(performance.nodeTiming){
+	let idle2 = performance.nodeTiming.idleTime
+	let time2 = performance.now()
+	let threadUsage = 0
+	setInterval(() => {
+		const f = (idle2 - (idle2 = performance.nodeTiming.idleTime)) / (time2 - (time2 = performance.now()))
+		threadUsage -= (threadUsage + f - 1) / 20
+		parentPort.postMessage({key:-2, elu: threadUsage, mem: process.memoryUsage().heapTotal})
+	}, 500)
+}

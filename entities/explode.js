@@ -1,5 +1,4 @@
 import { stat } from '../world/index.js'
-import '../node/internals.js'
 import { getX, getY, up, jump, peek, right, select, goto, place } from '../misc/ant.js'
 import { Blocks } from '../blocks/block.js'
 import { damageTypes } from './deathmessages.js'
