@@ -9,7 +9,7 @@ export const marks = new WeakMap
 const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
 const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
 
-export const snbt = (s, t, T1, T2) => {try{return _snbt(s,0,t,T1,T2)}catch(e){throw 'invalid syntax in snbt'}}
+export const snbt = (s, t, T1, T2) => {try{return _snbt(s,0,t,T1,T2)}catch{throw 'invalid syntax in snbt'}}
 
 function _snbt(s, i, t, T1, T2){
 	if(typeof t == 'object'){
@@ -229,11 +229,11 @@ export function selector(a, who){
 		const filters = []; let limit = Infinity
 		if(a.slice(3,-1).replace(/\s*(?:(\d+)|(!?\w+)\s*(?:(=|>=|<=|!=|>|<)\s*([^=,;"\s\]]*|(?:"(?:[^"]|\\.)*")))?)\s*(?:,|;|$)/gy, (_, c, a, s, b) => {
 			if(c) return limit = +c, ''
-			if(b&&b[0]=='"') try{ b = JSON.parse(b) }catch(e){ throw 'Unable to parse selector filter: invalid string' }
+			if(b&&b[0]=='"') try{ b = JSON.parse(b) }catch{ throw 'Unable to parse selector filter: invalid string' }
 			const f = specifiers[a]
 			if(!f) throw 'Unknown filter: '+a
-			if(!s&&f.length>1)throw 'Incorrect filter usage: '+a
-			else if(s&&f.length<2)throw 'Incorrect filter usage: '+a+s
+			if(!s&&f.length>1) throw 'Incorrect filter usage: '+a
+			else if(s&&f.length<2) throw 'Incorrect filter usage: '+a+s
 			const v = s ? f(b, s, who) : f(who)
 			if(!v) throw 'Invalid filter: '+a+s+b
 			filters.push(v)

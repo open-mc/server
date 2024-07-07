@@ -7,7 +7,7 @@ Entities.tnt = class extends Entity{
 	update(){
 		super.update()
 		if(this.age == 1) this.event(1)
-		if(this.age == 75)this.event(2)
+		if(this.age == 75) this.event(2)
 		else if(this.age >= 80){
 			this.event(3)
 			explode(this, 100)

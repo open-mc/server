@@ -2,15 +2,16 @@ import { jsonToType } from '../modules/dataproto.js'
 import { air, Blocks, chunk, chunkBiomes, empty, Items, Entities, setSeed } from './vars.js'
 
 parentPort.postMessage({key:-3})
+const Dnull = Object.create(null)
 parentPort.addEventListener('message', async ({data: indexes}) => {
-parentPort.onmessage = async function({key, x, y, d, seed, name = 'default'}){
+parentPort.onmessage = function({data: {key, x, y, d, seed, name = 'default'}}){
 	if(name=='void'){
 		air()
 		parentPort.postMessage({key, buf: buildBuffer()})
 		return
 	}
 	let D = GENERATORS[d]
-	if(!D) D = GENERATORS[d] = Object.create(null), console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mNo such dimension: "'+d+'"!')
+	if(!D) D = Dnull, console.warn('\x1b[35mWorldGen\x1b[m >> \x1b[33mNo such dimension: "'+d+'"!')
 	let gen = D[name]
 	if(!gen){
 		D[name] = air
@@ -131,7 +132,7 @@ function buildBuffer(){
 		for(let i = 0; i < 4096; i++){
 			if(PM[IDs[i]] === lastId) bdata.short(IDs[i])
 			const b = chunk[i]
-			if(!b.savedata)continue
+			if(!b.savedata) continue
 			bdata.flint(b.savedatahistory.length)
 			bdata.write(b.savedata, b)
 		}
@@ -147,7 +148,7 @@ function buildBuffer(){
 	return final
 }
 
-})
+},{once:true})
 
 if(performance.nodeTiming){
 	let idle2 = performance.nodeTiming.idleTime

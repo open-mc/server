@@ -78,7 +78,7 @@ export class World extends Map{
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				if(!super.has(k)) return
-				try{ch.parse(buf)}catch(e){if(CONFIG.log)console.warn(e)}
+				try{ch.parse(buf)}catch(e){if(CONFIG.log) console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
 				for(const sock of ch.sockets)
@@ -97,7 +97,7 @@ export class World extends Map{
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				if(!super.has(k)) return
-				try{ch.parse(buf)}catch(e){if(CONFIG.log)console.warn(e)}
+				try{ch.parse(buf)}catch(e){if(CONFIG.log) console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
 				for(const sock of ch.sockets)

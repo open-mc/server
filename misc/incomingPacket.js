@@ -18,8 +18,8 @@ function validateMove(sock, player, buf){
 	const {x: ox, y: oy, dx, dy} = player
 
 	let mx = ifloat(x - ox), my = ifloat(y - oy)
-	if(CONFIG.socket.movementchecks){
-		const {movementcheckmercy: mercy} = CONFIG.socket
+	if(CONFIG.socket.movement_checks){
+		const {movement_check_mercy: mercy} = CONFIG.socket
 		if(mx >= 0){
 			const excess = mx - max(9, dx) / currentTPS
 			sock.rx -= excess
@@ -328,7 +328,7 @@ function closeInterfacePacket(player, _){
 
 export function voiceChat(player, buf){
 	if(buf.left < 2) return
-	const r = CONFIG.proximitychat || 0
+	const r = CONFIG.proximity_chat || 0
 	if(!r || !player.linked) return
 	const packet = new DataView(new ArrayBuffer(buf.left + 7))
 	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
@@ -403,7 +403,7 @@ export function onstring(player, text){
 			const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g) || ['help']
 			for(let i = 0; i < match.length; i++){
 				const a = match[i]
-				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
+				try{match[i] = a[0]=='"'?JSON.parse(a):a}catch{throw 'Failed parsing argument '+i}
 			}
 			stat('misc', 'commands_used')
 			const res = executeCommand(match[0], match.slice(1), player, this.perms)
@@ -415,7 +415,7 @@ export function onstring(player, text){
 		stat('misc', 'chat_messages')
 		if(text.includes(CONFIG.magic_word)) stat('misc', 'magic_word')
 		text = text.replaceAll('\\','\\\\')
-		if(text[0]=='>'&&CONFIG.permissions.greentext) text = `<${player.name}> \\+a${text}`
+		if(text[0]=='>'&&CONFIG.permissions.green_text) text = `<${player.name}> \\+a${text}`
 		else text = `<${player.name}> ${text}`
 		chat(text, player)
 	}

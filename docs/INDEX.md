@@ -72,7 +72,7 @@ function  test( b ,x= 1 ) {
     {
       return true;
     }
-    if(reallyLongLineThatIsHardToRead(0 & also(painful.to(lookAt)))){thisLineIsGoingPast() & wrappedAround & isDefinitelyLongerThan(100*characters) => thisIsBad, DontDoThis()}
+    if(reallyLongLineThatIsHardToRead(0 & also(painful.to(lookAt)))){thisLineIsGoingPast() & wrappedAround & isDefinitelyLongerThan(100*characters) ?? thisIsBad, DontDoThis()}
 }
 //DO DO:
 //1 space after every comma, e.g: a, b
@@ -86,7 +86,7 @@ function test(b, x = 1){
 	let count = 1
 	if(count == x) return true
 	if(easyToRead(0 & also(nice.to(lookAt))))
-		thisIsFine() & wrapped & notLongerThan(100*chars) => code.shouldBe(likeThis)
+		thisIsFine() & wrapped & notLongerThan(100*chars) ?? code.shouldBe(likeThis)
 }
 ```
 

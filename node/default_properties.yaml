@@ -79,7 +79,7 @@ permissions:
   chat: true
 
   # Allow green text in chat by prefixing your messages with >
-  greentext: true
+  green_text: true
 
   # Allow moderators to use /give, /setblock, etc...
   mod_cheat: true
@@ -117,9 +117,9 @@ cert: ""
 # Do not set to a large value, instead if you want dimension-wide chat use "world"
 # Or if you want server-wide use "server"
 # Nonsensical values like 99999 will degrade server performance
-proximitychat: 32
+proximity_chat: 32
 # Show everyone's health on the TAB menu and server page
-showhealth: true
+show_health: true
 # Webhook url for discord chat integration (optional)
 webhook:
 # Display a different discord avatar and username for each player when chatting
@@ -137,10 +137,10 @@ socket:
   # Recommended: true
   # false will allow any player to move at any speed and teleport anywhere without creative or operator
   # which may allow any player to load an excessive amount of chunks and crash the server
-  movementchecks: true
+  movement_checks: true
 
   # Blocks player can stray before being rubberbanded. Recommended: 10
-  movementcheckmercy: 10
+  movement_check_mercy: 10
 
   # Maximum queued data on a single socket in MB. 0 = no limit (dangerous). Recommended: 16
   backpressure: 16

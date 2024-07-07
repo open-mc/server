@@ -50,9 +50,9 @@ const ansiReplacer = a => {
 	if(style&131072) style = style&-131088|s&15
 	if(style&2097152) style = style&-2097393|s&240
 	if(style>65535){ style = s; return '' }
-	if(style&16)e+='1;'
-	if(style&32)e+='3;'
-	if(style&64)e+='4;'
+	if(style&16) e+='1;'
+	if(style&32) e+='3;'
+	if(style&64) e+='4;'
 	e += (style & 8 ? 82 : 30) + (style & 15) + 'm' //30-37, 90-97
 	return e
 }
@@ -78,15 +78,15 @@ const discordReplacer = a => {
 	if(style&2097152) style = style&-2097393|s&240
 	if(style>65535){ style = s; return '\0' }
 	if(style != s){
-		if(s&128)e+='~~'
-		if(s&64)e+='__'
-		if(s&32)e+='*'
-		if(s&16|(~s&15))e+='**'
+		if(s&128) e+='~~'
+		if(s&64) e+='__'
+		if(s&32) e+='*'
+		if(s&16|(~s&15)) e+='**'
 		e += '\0'
-		if(style&16|(~style&15))e+='**'
-		if(style&32)e+='*'
-		if(style&64)e+='__'
-		if(style&128)e+='~~'
+		if(style&16|(~style&15)) e+='**'
+		if(style&32) e+='*'
+		if(style&64) e+='__'
+		if(style&128) e+='~~'
 	}
 	return e
 }

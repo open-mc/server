@@ -71,7 +71,7 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface
 	makeVector(16, g = imxs32_2(cx + 1, cy))
 	for(let i = 33; i < 288; i+=17) makeVector(i, g=imxs32(g,1975484815))
 	makeVector(288, g = imxs32_2(cx + 1, cy + 1))
-	for(let i = 0, px = .0078125, py = 0; i < 4160; i++,px+=.015625){if(px>=1)px=.0078125,py+=.015625
+	for(let i = 0, px = .0078125, py = 0; i < 4160; i++,px+=.015625){if(px>=1) px=.0078125, py+=.015625
 		let x = px, y = py
 		let F = 4.849660523763336
 		let l = 0, h = 0, s = 0

@@ -1,13 +1,10 @@
-//import all block files
-import fs from 'fs/promises'
 import { jsonToType, typeToJson } from '../modules/dataproto.js'
 import { Chunk } from '../world/chunk.js'
 import { BlockIDs, Blocks, Block } from './block.js'
 
 const loaded = task('Loading blocks...')
 
-// Monstrosity for importing all ./*/*.js
-await Promise.all((await fs.readdir(PATH + 'blocks/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'blocks/' + name).then(a => Promise.all(a.map(file => import('./' + name + '/' + file))))))
+await import('./imports.js')
 
 Blocks.air.id = 0
 Blocks.air.className = 'air'

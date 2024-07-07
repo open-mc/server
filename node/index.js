@@ -66,8 +66,8 @@ class VolatileLevel extends Map{
 		}
 		return Promise.resolve()
 	}
-	get(a,cb){const v = super.get(a); if(v)return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
-	getMany(arr,cb){let nf=0;const v = arr.map(a=>super.get(a)??nf++); if(!nf)return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
+	get(a,cb){const v = super.get(a); if(v) return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
+	getMany(arr,cb){let nf=0;const v = arr.map(a=>super.get(a)??nf++); if(!nf) return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
 	put(a,b,cb){this.set(a,b);return cb?void cb():Promise.resolve()}
 	del(a,cb){this.delete(a);return cb?void cb():Promise.resolve()}
 	close(cb){console.warn('Temporary map, deleting all '+this.size+' saved entries');return cb?void cb():Promise.resolve()}

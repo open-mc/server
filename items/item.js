@@ -28,7 +28,7 @@ export class Item{
 		buf.flint2(v.count)
 		buf.cur.setUint16(buf.i, v.id); buf.i += 2
 		buf.string(v.name)
-		if(v.savedata)buf.flint(v.savedatahistory.length), buf.write(v.savedata, v)
+		if(v.savedata) buf.flint(v.savedatahistory.length), buf.write(v.savedata, v)
 	}
 }
 registerTypes({Item})

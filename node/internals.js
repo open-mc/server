@@ -24,8 +24,8 @@ Object.defineProperties(Array.prototype, {
 	remove: {enumerable: false, value(a){
 		let i = 0, j = 0
 		for(; j < this.length; j++){
-			if(j > i)this[i] = this[j]
-			if(this[i] != a)i++
+			if(j > i) this[i] = this[j]
+			if(this[i] != a) i++
 		}
 		return this.length = i
 	}},
@@ -73,12 +73,48 @@ globalThis.PI2 = PI*2
 fs.exists = a => new Promise(r => exists(a, (a,b=a)=>r(b)))
 fs.createReadStream = createReadStream
 fs.createWriteStream = createWriteStream
-globalThis.Worker = function(src){return new Worker(PATH+'node/internals.js', {argv: [src]})}
+const wFns = new WeakMap
+const msgEv = new Event('message')
+globalThis.Worker = class extends Worker{
+	constructor(src){
+		super(PATH+'node/internals.js', {argv: [src]})
+		this._onmsg = null; this._oncl = null
+		this.once('exit', err => this.emit('close', new CloseEvent('close', {reason: err})))
+	}
+	get onmessage(){return this._onmsg}
+	get onclose(){return this._oncl}
+	set onmessage(fn){
+		if(this._onmsg) this.removeListener('message', wFns.get(this._onmsg))
+		if(this._onmsg=fn){
+			let f = wFns.get(fn)
+			if(!f) wFns.set(fn, f=data=>(msgEv.data=data,fn(msgEv)))
+			this.on('message', f)
+		}
+	}
+	set onclose(fn){
+		if(this._oncl) this.removeListener('close', this._oncl)
+		if(this._oncl=fn) this.on('close', fn)
+	}
+	addEventListener(ev, fn){
+		if(ev == 'message'){
+			let f = wFns.get(fn)
+			if(!f) wFns.set(fn, f=data=>(msgEv.data=data,fn(msgEv)))
+			this.on('message', f)
+		}else this.on(ev, fn)
+	}
+	removeEventListener(ev, fn){
+		if(ev == 'message'){
+			this.removeListener('message', wFns.get(fn))
+		}else this.removeListener(ev, fn)
+	}
+}
+Worker.prototype.addEventListener = Worker.prototype.addListener
+Worker.prototype.removeEventListener = Worker.prototype.removeListener
 globalThis.parentPort = parentPort
 
 import { getHeapStatistics } from 'node:v8'
 Function.optimizeImmediately = Function.prototype
-try{ Function.optimizeImmediately = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)') }catch(e){}
+try{ Function.optimizeImmediately = new Function('...fns', 'for(const f of fns)%OptimizeFunctionOnNextCall(f)') }catch{}
 
 export const argv = []
 Object.setPrototypeOf(argv, null)
@@ -122,7 +158,7 @@ function composeStat(a, v){
 	for(let a of v){
 		val += a/v.length
 		let repeat = -(rval - (rval = min(COLS,round(val * COLS))))
-		if(!repeat)continue
+		if(!repeat) continue
 		bar += '\x1b['+(i=!i?'10':'4')+col+'m'+' '.repeat(repeat)
 	}
 	bar += '\x1b[100m'+' '.repeat(COLS-rval)
@@ -176,7 +212,7 @@ globalThis.task = function(desc = ''){
 		called = true
 		loaded++
 		print(d)
-		if(total == loaded && resolvePromise)resolvePromise(), resolvePromise = null
+		if(total == loaded && resolvePromise) resolvePromise(), resolvePromise = null
 	}
 }
 task.done = desc => {
@@ -219,5 +255,7 @@ globalThis.inflate = str => {
 	const b = inflateSync(typeof str == 'string' ? Buffer.from(str) : str)
 	return new Uint8Array(b.buffer, b.byteOffset, b.byteLength)
 }
+
+globalThis.close = () => process.exit(0)
 
 if(parentPort) import('../'+process.argv[2])

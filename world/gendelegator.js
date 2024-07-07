@@ -8,8 +8,7 @@ const gen = new Worker('./worldgen/genprocess.js')
 
 const waiting = new Map()
 let key = 0
-
-gen.on('message', function(a){
+gen.onmessage = function({data: a}){
 	if(typeof a == 'string') throw '(from gen child process)\n'+a
 	const {key, buf} = a
 	if(key == -1) return loaded('WorldGen process loaded')
@@ -19,8 +18,8 @@ gen.on('message', function(a){
 	stat('world', 'chunk_revisits', -1)
 	waiting.get(key)(buf)
 	waiting.delete(key)
-})
-gen.on('exit', () => process.exit(1))
+}
+gen.onclose = close
 
 export const generator = (x, y, gend, genn) => new Promise(r => {
 	x = x << 6 >> 6; y = y << 6 >> 6

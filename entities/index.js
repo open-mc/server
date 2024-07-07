@@ -1,11 +1,10 @@
-import fs from 'fs/promises'
 import { jsonToType, typeToJson } from '../modules/dataproto.js'
 import { Entities, Entity, EntityIDs } from './entity.js'
 
 const loaded = task('Loading entities...')
 
-// Monstrosity for importing all ./*/*.js
-await Promise.all((await fs.readdir(PATH + 'entities/', {withFileTypes: true})).filter(a=>a.isDirectory()).map(({name}) => fs.readdir(PATH + 'entities/' + name).then(a => Promise.all(a.map(file => import('./' + name + '/' + file))))))
+await import('./imports.js')
+
 let modified = false
 export let entityindex
 for(const a of await DB.get('entityindex').catch(e=>'player {}').then(a=>(entityindex = ''+a).split('\n'))){

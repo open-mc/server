@@ -23,7 +23,7 @@ const biomeconvert = {
 }
 for(let i = 0; i < biomemap.buffer.byteLength; i+=4){
 	const b = biomeconvert[biomemap.buffer.getUint32(i) >>> 8]
-	if(!b)console.error('\x1b[31mMissing biome mapping for color 0x'+(biomemap.buffer.getUint32(i)>>>8).toString(16).padStart(6,'0')),process.exit(1)
+	if(!b) console.error('\x1b[31mMissing biome mapping for color 0x'+(biomemap.buffer.getUint32(i)>>>8).toString(16).padStart(6,'0')),process.exit(1)
 	biomemap.push(b)
 }
 const maps = new Map()
@@ -68,7 +68,7 @@ export function biomesheet(x){
 	}for(j=0;i<258;i++,j=(j+0.0625)%1){
 		sheet[i] += (j * (1-j) * (1-j) * t[(i + 15) >> 4] - (1-j) * j * j * t[(i + 31) >> 4]) * 256
 	}
-	if(maps.size>50)for(const k of maps.keys()){maps.delete(k);break}
+	if(maps.size>50) for(const k of maps.keys()){maps.delete(k);break}
 	/*for(let i = 0; i <= 128; i++){
 		s.push(biomemap[(sheet[i] * 15.99 + 15.99 << 5) | (sheet[i+129] * 15.99 + 15.99 << 0)])
 	}*/

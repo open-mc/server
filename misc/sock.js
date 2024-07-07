@@ -83,7 +83,7 @@ export async function open(){
 		player.f = player.f = buf.float(); player.age = buf.double()
 		buf.read(player.savedatahistory[buf.flint()] || player.savedata, player)
 		if(buf.left) this.mode = buf.byte()
-	}catch(e){
+	}catch{
 		player = new Entities.player()
 		player.x = GAMERULES.spawnx; player.y = GAMERULES.spawny
 		player.world = Dimensions[GAMERULES.spawnworld]
@@ -111,8 +111,8 @@ export async function open(){
 	this.movePacketCd = now / 1000 - 1
 	this.joinedAt = now
 	this.r = 255
-	this.rx = CONFIG.socket.movementcheckmercy
-	this.ry = CONFIG.socket.movementcheckmercy
+	this.rx = CONFIG.socket.movement_check_mercy
+	this.ry = CONFIG.socket.movement_check_mercy
 	this.entity = player
 	this.netId = player.netId
 	this.packets = []
@@ -136,7 +136,8 @@ export async function open(){
 	}
 }
 
-export async function close(state){
+export async function close(){
+	const state = this.state; this.state = 0
 	if(state == 2) return playerLeftQueue(this)
 	const {entity} = this
 	if(!entity) return
@@ -167,7 +168,7 @@ export async function close(state){
 
 function configPacket(d = new DataWriter()){
 	d.byte(5)
-	d.float(typeof CONFIG.proximitychat != 'number' ? Infinity : CONFIG.proximitychat)
+	d.float(typeof CONFIG.proximity_chat != 'number' ? Infinity : CONFIG.proximity_chat)
 	return d.build()
 }
 

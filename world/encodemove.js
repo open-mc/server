@@ -119,7 +119,7 @@ export function mirrorEntity(e){
 		encodeMove(e, sock, 127)
 	}
 	if(_chunk) for(const sock of _chunk.sockets){
-		if(chunk.sockets.includes(sock))continue
+		if(chunk.sockets.includes(sock)) continue
 		sock.ebuf.byte(0), sock.ebuf.uint32(e.netId), sock.ebuf.uint16(e.netId / 4294967296 | 0)
 	}
 	e.pendingEvents.length = 0

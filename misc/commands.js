@@ -17,7 +17,7 @@ import { VERSION } from '../version.js'
 Object.assign(commands, {
 	list(){
 		let a = "Online players"
-		for(let pl of players.values())a += '\n' + pl.name + ' ('+pl.health+')'
+		for(let pl of players.values()) a += '\n' + pl.name + ' ('+pl.health+')'
 		return a
 	},
 	say(...s){ chat(s.join(' ')) },
@@ -26,7 +26,7 @@ Object.assign(commands, {
 		for(const p of players.values()) p.sock?.send('')
 	},
 	tpe(a='@s', b){
-		if(!b)b = a, a = '@s'
+		if(!b) b = a, a = '@s'
 		const targets = selector(a, this)
 		const [target, _] = selector(b, this)
 		if(_ || !target) throw 'Selector must return exactly 1 target'
@@ -37,8 +37,8 @@ Object.assign(commands, {
 		else return log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
 	tp(a='@s', _x, _y, d = '~'){
-		if(!_y)d=_y||'~',_y=_x||'~',_x=a=='@s'?'~':a,a='@s'
-		else if(!_x)_x='~'
+		if(!_y) d=_y||'~',_y=_x||'~',_x=a=='@s'?'~':a,a='@s'
+		else if(!_x) _x='~'
 		const targets = selector(a, this)
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
@@ -138,7 +138,7 @@ Object.assign(commands, {
 		if(count > CONFIG.permissions.max_fill) throw 'Cannot /fill more than '+CONFIG.permissions.max_fill+' blocks'
 		for(y = 0; y != y2+1; y=(y+1)|0){
 			for(x = 0; x != x2+1; x=(x+1)|0){
-				if(peek()==b)count--
+				if(peek()==b) count--
 				place(b)
 				right()
 			}
@@ -238,7 +238,7 @@ Object.assign(commands, {
 				throw "'invalid option: '"+time+"'"
 			}
 			t = (d.tick - t) % 24000
-			if(t >= 12000)d.tick += (24000 - t)
+			if(t >= 12000) d.tick += (24000 - t)
 			else d.tick -= t
 		}
 		return log(this, 'Set the '+d.id+' time to '+d.tick)
@@ -362,7 +362,7 @@ Object.assign(commands, {
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
 		x = floor(x) >>> 6; y = floor(y) >>> 6
 		let {0:a, 1:b} = type ? type.split('/',2) : [w.gend,w.genn]
-		if(!b)b=a,a=w.id
+		if(!b) b=a,a=w.id
 		const chunk = w.chunk(x, y)
 		if(!chunk) throw 'Chunk not loaded'
 		chunk.t = 2147483647

@@ -36,7 +36,7 @@ export class Chunk extends Uint16Array{
 			e.dy = e._dy = buf.float()
 			e.f = e._f = buf.float()
 			e.age = buf.double()
-			if(e.savedata)buf.read(e.savedatahistory[buf.flint()] || e.savedata, e)
+			if(e.savedata) buf.read(e.savedatahistory[buf.flint()] || e.savedata, e)
 		}
 		this.biomes[0] = buf.byte(); this.biomes[1] = buf.byte()
 		this.biomes[2] = buf.byte(); this.biomes[3] = buf.byte()
@@ -46,7 +46,7 @@ export class Chunk extends Uint16Array{
 		let palette = []
 		for(let i=0;i<palettelen;i++) palette.push(buf.short())
 		let j = 0
-		if(palettelen == 1) for(;j<4096;j++)this[j] = palette[0]
+		if(palettelen == 1) for(;j<4096;j++) this[j] = palette[0]
 		else if(palettelen == 2){
 			const u8 = buf.uint8array(512)
 			for(;j<4096;j+=8){
@@ -84,7 +84,7 @@ export class Chunk extends Uint16Array{
 		for(j=0;j<4096;j++){
 			if(this[j] == 65535) this[j] = buf.short()
 			const block = BlockIDs[this[j]]
-			if(!block.savedata)continue
+			if(!block.savedata) continue
 			this[j] = 65535
 			this.tileData.set(j, buf.read(block.savedatahistory[buf.flint()] || block.savedata, new block))
 		}
@@ -125,7 +125,7 @@ export class Chunk extends Uint16Array{
 			buf.byte(palette.length - 1)
 
 			for(const e of this.entities){
-				if(e.sock && !packet)continue
+				if(e.sock && !packet) continue
 				buf.short(e.id)
 				buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
 				buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
@@ -181,7 +181,7 @@ export class Chunk extends Uint16Array{
 			//save block entities
 			for(let i = 0; i < 4096; i++){
 				if(PM[IDs[i]] === lastId) buf.short(IDs[i])
-				if(this[i] != 65535)continue
+				if(this[i] != 65535) continue
 				const tile = this.tileData.get(i)
 				buf.flint(tile.savedatahistory.length)
 				buf.write(tile.savedata, tile)

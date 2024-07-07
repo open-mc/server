@@ -30,7 +30,7 @@ KOp/re6t/rgyqmjdxEWoXXptl9pjeVnJbwIDAQAB
 -----END RSA PUBLIC KEY-----`
 
 const genInfo = () => {
-	const ps = [], playerData = CONFIG.showhealth ? [] : undefined
+	const ps = [], playerData = CONFIG.show_health ? [] : undefined
 	for(const p of players.values()) ps.push(p.name), playerData?.push(p.health)
 	return {players: ps, playerData, magic_word: CONFIG.magic_word, name: CONFIG.name, icon: CONFIG.icon, banner: CONFIG.banner, motd: CONFIG.motd[floor(random() * CONFIG.motd.length)], stats: STATS}
 }
@@ -120,8 +120,7 @@ server.any('/*', (res, req) => {
 	try{
 		if(endpoint in endpoints) return endpoints[endpoint](res, i, req)
 	}catch(e){
-		if(CONFIG.log)
-			console.warn(e)
+		if(CONFIG.log) console.warn(e)
 	}
 	return res.writeStatus('404'), res.end('404')
 })
@@ -174,7 +173,7 @@ server.ws('/*', {
 			if(err) throw err
 		}
 	},
-	close(sock){ const os = sock.state; sock.state = 0; if(clients.delete(sock)) close.call(sock, os) }
+	close(sock){ if(clients.delete(sock)) close.call(sock); else sock.state = 0 }
 })
 setInterval(() => {
 	for(const u of clients){
@@ -229,12 +228,12 @@ export default function openServer(){
 					const match = text.slice(1).match(/"(?:[^\\"]|\\.)*"|[^"\s]\S*|"/g) || ['help']
 					for(let i = 0; i < match.length; i++){
 						const a = match[i]
-						try{match[i] = a[0]=='"'?JSON.parse(a):a}catch(e){throw 'Failed parsing argument '+i}
+						try{match[i] = a[0]=='"'?JSON.parse(a):a}catch{throw 'Failed parsing argument '+i}
 					}
 					if(!(match[0] in commands)) throw 'No such command: /'+match[0]
 					stat('misc', 'commands_used')
 					const res = await executeCommand(match[0], match.slice(1), serverObject, 4)
-					if(res)printChat(res)
+					if(res) printChat(res)
 				}catch(e){ printChat(err(e)); return}
 			}else{
 				process.stdout.write('\x1b[A')

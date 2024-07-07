@@ -2,7 +2,7 @@
 
 This is an example for defining a cheese block:
 ```js
-Blocks.cheese_block = class extends Item{
+Blocks.cheese_block = class extends Block{
 	//behaviour properties
 	static breaktime = 0.5
 	static tool = 'sword'
@@ -33,13 +33,15 @@ Savedata can apply to blocks (for example, chests), items and entities (for exam
 Example for using our cheese block and item from earlier:
 ```js
 //Blocks:
-//Block.<name>
-const blockToPlace = Blocks.cheese_block
+//Blocks.<name> (OR new Blocks.<name>() for tile data)
+const blockToPlace = isMelty ? new Blocks.furnace() : Blocks.cheese_block
+place(blockToPlace)
 //Items:
-//Item.<name>(count)
+//new Items.<name>(count)
 player.give(new Items.cheese_pickaxe(1))
 //Entities:
-//Entity.<name>(x, y)
+//new Entities.<name>(x, y)
+summon(new Entities.tnt())
 
 ```
 

@@ -12,7 +12,7 @@ const generation = (filler) => (cx, cy) => {
 	if(cy == -33554432){
 		for(let y = 5; y >= 0; y--){
 			for(let x = 0; x < 64; x++){
-				if(Math.random() * 6 > y)chunk[x + y * 64] = Blocks.bedrock
+				if(Math.random() * 6 > y) chunk[x + y * 64] = Blocks.bedrock
 			}
 		}
 	}
@@ -23,17 +23,17 @@ export function superflat(_,cy){
 	else chunk.fill(Blocks.stone)
 	if(cy==-1){
 		let i = 3840
-		while(i<4032)chunk[i++]=Blocks.dirt
-		while(i<4096)chunk[i++]=Blocks.grass
+		while(i<4032) chunk[i++]=Blocks.dirt
+		while(i<4096) chunk[i++]=Blocks.grass
 	}
 }
 
 export function classic_superflat(_,cy){
 	if(cy) return void chunk.fill(Blocks.air)
 	let i = 256
-	while(--i>=192)chunk[i]=Blocks.grass
-	while(--i>=64)chunk[i]=Blocks.dirt
-	while(--i>=0)chunk[i]=Blocks.bedrock
+	while(--i>=192) chunk[i]=Blocks.grass
+	while(--i>=64) chunk[i]=Blocks.dirt
+	while(--i>=0) chunk[i]=Blocks.bedrock
 }
 
 export const fill = generation(() => void(chunk.fill(Blocks.stone)))
