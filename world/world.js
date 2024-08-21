@@ -16,6 +16,7 @@ export class World extends Map{
 		this.gy = -32
 		this.tick = 0
 		this.level = dimLevel.sublevel(id, {valueEncoding: 'binary'})
+		this.pinned = new Set
 		const {0:a,1:b} = (CONFIG.generators[this.id]??'default').split('/', 2)
 		if(!b) this.gend = this.id, this.genn = a
 		else this.gend = a, this.genn = b
@@ -112,19 +113,17 @@ export class World extends Map{
 		ch.sockets.remove(sock)
 		const {ebuf} = sock
 		for(let e of ch.entities){
-			//if(e.sock == sock) continue
 			ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
 		}
 		return true
 	}
 	check(ch){
 		//Timer so that chunk unloads after 20 ticks of no players being in it, but may "cancel" unloading if players go back in during unloading process
-		if(ch.sockets.length){
+		if(ch.sockets.length || (ch.loadedAround&512)){
 			if(ch.t <= 0) return ch.t = -1, false //-1 == chunk has had a player loading it and the chunk will need saving again
 			else return ch.t = 20, true //Reset the timer
 		}
-		if(ch.t <= 0) return false
-		if(--ch.t) return false//Count down timer
+		if(ch.t <= 0 || --ch.t) return false //Count down timer
 		const {x: chx, y: chy} = ch, k = chx+chy*0x4000000
 		const b = ch.toBuf(new DataWriter()).build()
 		this.level.put(''+k, b).then(() => {
@@ -177,13 +176,26 @@ export class World extends Map{
 		return false
 	}
 	save(ch){
-		if(ch instanceof Promise) return
 		//Save a chunk to disk, but don't unload it
 		if(ch.t <= 0) return //Already saving
 		ch.t = 0 //Whoops, chunk timer "ended"
 		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter()).build()
 		this.level.put(''+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
+	}
+	pin(cx, cy){
+		const ch = cx instanceof Chunk ? cx : this.load(cx, cy)
+		if(ch.loadedAround&512) return false
+		this.pinned.add(ch)
+		ch.loadedAround |= 512
+		return true
+	}
+	unpin(cx, cy){
+		const ch = cx instanceof Chunk ? cx : super.get((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000)
+		if(!ch || !(ch.loadedAround&512)) return false
+		this.pinned.delete(ch)
+		ch.loadedAround &= ~512
+		return true
 	}
 	chunk(x, y){ return super.get((x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000) }
 	[Symbol.for('nodejs.util.inspect.custom')](){return 'Dimensions.'+this.id+' { tick: \x1b[33m'+this.tick+'\x1b[m, chunks: '+(this.size?'(\x1b[33m'+this.size+'\x1b[m) [ ... ]':'[]')+' }'}
@@ -229,7 +241,10 @@ for(let i in Dimensions){
 	let d = Dimensions[i]
 	dimCreate.push(d.level.get('meta').then(a => {
 		const buf = new DataReader(a)
-		return buf.read(d.constructor.savedatahistory[buf.flint()] || d.constructor.savedata, d)
+		buf.read(d.constructor.savedatahistory[buf.flint()] || d.constructor.savedata, d)
+		if(!buf.left) return
+		let s = buf.flint()
+		while(s--) d.pin(buf.int32(), buf.int32())
 	}).catch(e => null))
 }
 await Promise.all(dimCreate)

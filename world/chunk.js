@@ -229,7 +229,7 @@ export class Chunk extends Uint16Array{
 		}
 		if(s.size) s.clear()
 
-		if(this.loadedAround != 511) return
+		if((this.loadedAround&511) != 511) return
 
 		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunk_loading_range)*sqrt(this.sockets.length/players.size)){
 			const p = floor(random() * 64)

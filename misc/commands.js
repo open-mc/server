@@ -552,6 +552,10 @@ Object.assign(commands, {
 			case 'border':
 			ch.setFlags(v = v=='1'?1:v=='0'?0:~ch.flags&1)
 			return 'Set border flag to '+v
+			case 'pin':
+			return ch.world.pin(ch) ? 'Pinned chunk' : 'Chunk already pinned'
+			case 'unpin':
+			return ch.world.unpin(ch) ? 'Unpinned chunk' : 'Chunk already unpinned'
 			default: throw 'Unknown chunk option: '+f
 		}
 	}
@@ -611,11 +615,14 @@ export const anyone_help = {
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',
-	chunk: 'border [x] [y] [1|0] -- Set chunk border flag to 1 or 0',
+	chunk: [
+		'border (x=~) (y=~) (dimension=~) (1|0) -- Toggle or set chunk border flag',
+		'pin (x=~) (y=~) (dimension=~) -- Pin chunk'
+	],
 	repeat: '[count] [...command] -- Execute a command multiple times',
 	delay: '[time_seconds] [...command] -- Execute a command after a delay',
 	restart: '(delay=0) -- Restart the server after delay',
-	bell: '-- @here'
+	bell: '-- @here',
 }, cheats = ['give', 'summon', 'setblock', 'fill', 'mutate', 'time']
 Object.setPrototypeOf(anyone_help, null)
 Object.setPrototypeOf(mod_help, null)
