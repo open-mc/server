@@ -72,7 +72,7 @@ export function explode(entity, strength = 100, fire = false){
 			right(); x++
 		}
 	}
-	jump(-x,-y); x = getX(); y = getY()
+	jump(-x,-y); x = getX()+.5; y = getY()+.5
 	select(-LEFT, -LEFT, LEFT, LEFT, e => {
 		let dx = e.x - x, dy = e.y - y
 		const dmg = buffer[(floor(dx+LEFT)|0) + (floor(dy+LEFT)|0)*DIAMETER]

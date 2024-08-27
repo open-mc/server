@@ -336,8 +336,8 @@ export function voiceChat(player, buf){
 	const t = new Set
 	if(typeof r == 'number'){
 		packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
-		const cx0 = ifloor(player.x-r)>>>6, cx1 = ifloor(player.x+r)+64>>>6
-		const cy0 = ifloor(player.y-r)>>>6, cy1 = ifloor(player.y+r)+64>>>6
+		const cx0 = floor(player.x-r)>>>6, cx1 = floor(player.x+r)+64>>>6
+		const cy0 = floor(player.y-r)>>>6, cy1 = floor(player.y+r)+64>>>6
 		for(let x = cx0; x != cx1; x=x+1&0x3ffffff){
 			for(let y = cy0; y != cy1; y=y+1&0x3ffffff){
 				const ch = player.world.get(x+y*0x4000000)

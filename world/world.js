@@ -167,7 +167,7 @@ export class World extends Map{
 					}
 				}
 			}else{
-				const y = chy+1<<6
+				const y = chy+1<<6, exp = ch.exposure
 				for(let i = 0; i < 64; i++) if((exp[i]>>>6)==chy) exp[i] = y
 			}
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
