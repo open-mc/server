@@ -78,7 +78,7 @@ export class Entity{
 		this.unlink()
 	}
 	died(){
-		a: if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
+		if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
 			for(const id of this.allInterfaces??[]){
 				this.mapItems(id, itm => {
 					if(!itm) return

@@ -152,8 +152,7 @@ export class World extends Map{
 					while(u){u.exposure=expU;u=u.up}
 					for(let i = 0; i < 64; i++){
 						const v = exp[i]
-						if((v-y|0)>=64) expU[i] = v
-						else expU[i] = y+64|0
+						expU[i] = (v-y|0)>=64 ? v : y+64|0
 					}
 				}
 				for(let i = 0; i < 64; i++){

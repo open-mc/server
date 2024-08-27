@@ -262,8 +262,8 @@ export function select(x0, y0, x1, y1, cb){
 	const {x:cx,y:cy,world} = chunk
 	x0 += cx<<6|(pos&63); x1 += (cx<<6|(pos&63)) + 1
 	y0 += cy<<6|pos>>6; y1 += (cy<<6|pos>>6) + 1
-	const cx0 = floor(x0) >>> 6, cx1 = ceil(x1 / 64) & 0x3FFFFFF
-	const cy0 = floor(y0) >>> 6, cy1 = ceil(y1 / 64) & 0x3FFFFFF
+	const cx0 = floor(x0) >>> 6, cx1 = -(floor(-x1) >> 6) & 0x3FFFFFF
+	const cy0 = floor(y0) >>> 6, cy1 = -(floor(-y1) >> 6) & 0x3FFFFFF
 	let c1 = 257, c2 = 17, cxa = cx0
 	let ch = (cx0 === cx & cy0 === cy) && chunk || world.get(cx0+cy0*0x4000000)
 	while(true){

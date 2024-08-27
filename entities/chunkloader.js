@@ -24,10 +24,10 @@ export const ChunkLoader = T => class extends T{
 		let ty = cy + ocy
 		let y0 = ocy + radius
 		let y1 = cy + radius
-		if(y0>y1)[y0, y1] = [y1-radius-radius+1,y0-radius-radius+1]
+		if(y0>y1){let a=y0; y0=y1-radius-radius+1; y1=a-radius-radius+1}
 		let x0 = ocx + radius
 		let x1 = cx + radius
-		if(x0>x1)[x0, x1] = [x1-radius-radius+1,x0-radius-radius+1]
+		if(x0>x1){let a=x0; x0=x1-radius-radius+1; x1=a-radius-radius+1}
 		let XT = cx + radius
 		let YT = min(cy,ocy)+radius
 		const trashed = new DataWriter()

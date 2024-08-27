@@ -15,8 +15,8 @@ export function stepEntity(e, dt = 1 / currentTPS){
 	// Entity collision
 	const x0 = e.x - e.width - e.collisionPaddingX, x1 = e.x + e.width + e.collisionPaddingX
 	const y0 = e.y - e.collisionPaddingY, y1 = e.y + e.height + e.collisionPaddingY
-	const cx0 = floor(x0 - 16) >>> 6, cx1 = ceil((x1 + 16) / 64) & 0x3FFFFFF
-	const cy0 = floor(y0) >>> 6, cy1 = ceil((y1 + 32) / 64) & 0x3FFFFFF
+	const cx0 = floor(x0 - 16) >>> 6, cx1 = -(floor(-x1 - 16) >> 6) & 0x3FFFFFF
+	const cy0 = floor(y0) >>> 6, cy1 = -(floor(-y1 - 16) >> 6) & 0x3FFFFFF
 	for(let cx = cx0; cx != cx1; cx = cx + 1 & 0x3FFFFFF){
 		for(let cy = cy0; cy != cy1; cy = cy + 1 & 0x3FFFFFF){
 			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world?.get(cx+cy*0x4000000)
