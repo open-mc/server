@@ -78,6 +78,15 @@ export class DataReader extends DataView{
 		else this.i++
 		return n
 	}
+	bigint(){
+		let n = 0n, i = 0n, v = 0
+		do{
+			v = this.getUint8(this.i++)
+			n |= BigInt(v&127)<<i; i+=7n
+		}while(v >= 128)
+		if(v>63) n |= -1n<<i
+		return n
+	}
 	uint8array(len = -1){
 		let i = this.i
 		if(len < 0){
@@ -188,6 +197,13 @@ export class DataWriter extends Array{
 			if(n > 0x7FFF) throw new RangeError('n > 32767')
 			else this.cur.setUint16((this.i += 2) - 2, n | 0x8000)
 		}else this.cur.setUint8(this.i++, n)
+	}
+	bigint(n = 0n){
+		if(n<0n){
+			while(n<-64n){ if(this.i == this.cur.byteLength) this.allocnew(); this.cur.setUint8(this.i++, Number(n&127n)|128); n >>= 7n }
+		}else while(n >= 64n){ if(this.i == this.cur.byteLength) this.allocnew(); this.cur.setUint8(this.i++, Number(n&127n)|128); n >>= 7n }
+		if(this.i == this.cur.byteLength) this.allocnew()
+		this.cur.setUint8(this.i++, Number(n&127n))
 	}
 	uint8array(v, len = -1){
 		if(len < 0){

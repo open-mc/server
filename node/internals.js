@@ -36,14 +36,7 @@ Object.defineProperties(Array.prototype, {
 		return this
 	}}
 })
-
-Math.ifloat = x => {
-	const f = Math.floor(x)
-	return (f | 0) + (x - f)
-}
 Math.randint = () => Math.random() * 4294967296 | 0
-Math.ifloor = x => Math.floor(x) | 0
-Math.iceil = x => Math.ceil(x) | 0
 
 // Blazingly fast!!
 const nul = new Array(100).fill(null)

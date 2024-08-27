@@ -180,16 +180,16 @@ const specifiers = {
 		return e => f((e.sock?.perms??0)-p)
 	},
 	x(t, s, w){
-		const p = (t[0] == '~' ? w ? ifloat(w.x + +t.slice(1)) : NaN : ifloat(+t))
+		const p = (t[0] == '~' ? w ? w.x + +t.slice(1) : NaN : +t)
 		if(!Number.isFinite(p)) return
 		const f = comp(s)
-		return e => f(ifloat(e.x-p))
+		return e => f(e.x-p)
 	},
 	y(t, s, w){
-		const p = (t[0] == '~' ? w ? ifloat(w.y + +t.slice(1)) : NaN : ifloat(+t))
+		const p = (t[0] == '~' ? w ? w.y + +t.slice(1) : NaN : +t)
 		if(!Number.isFinite(p)) return
 		const f = comp(s)
-		return e => f(ifloat(e.y-p))
+		return e => f(e.y-p)
 	},
 	f(t, s, w){
 		if(s!='=') throw 'f only supports =, for a range use the format f=<degrees>+<tolerance>'

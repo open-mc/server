@@ -31,7 +31,7 @@ export class Entity{
 		this.pendingEvents = []
 	}
 	place(world, x, y){
-		this.x = this._x = x = ifloat(x); this.y = this._y = y = ifloat(y)
+		this.x = this._x = x = x; this.y = this._y = y = y
 		this.world = world
 		if(this.netId < 0){
 			if(this.netId == -2) entityMap.set(this.netId = toUnlink.get(this), this), toUnlink.delete(this)
@@ -78,7 +78,7 @@ export class Entity{
 		this.unlink()
 	}
 	died(){
-		a: if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
+		if(this.sock ? !GAMERULES.keepinventory : GAMERULES.mobloot){
 			for(const id of this.allInterfaces??[]){
 				this.mapItems(id, itm => {
 					if(!itm) return
@@ -123,8 +123,8 @@ export class Entity{
 		const res = new DataWriter()
 		if(e.isBlock){
 			res.byte(14)
-			res.int(getX())
-			res.int(getY())
+			res.bigint(getX())
+			res.bigint(getY())
 			res.byte(this.sock.interfaceId = id&255)
 		}else if(e instanceof Entity){
 			res.byte(13)
@@ -240,7 +240,7 @@ export class Entity{
 		else this.flags &= -2
 	}
 	peek(x, y){
-		let ch = this.world.get((x>>>6)+(y>>>6)*0x4000000)
+		let ch = this.world.get(BigInt(x)>>6n, BigInt(y)>>6n)
 		if(!ch || (this.sock && !ch.sockets.includes(this.sock))) return Blocks.air
 		const i = (x & 63) + ((y & 63) << 6)
 		return ch[i] == 65535 ? ch.tileData.get(i) : BlockIDs[ch[i]]

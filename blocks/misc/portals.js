@@ -40,10 +40,10 @@ Blocks.portal = class extends Block{
 		const targetX = floor(dim == Dimensions.nether ? getX() / CONFIG.world.nether_scale : getX() * CONFIG.world.nether_scale) | 0
 		const targetY = floor(dim == Dimensions.nether ? getY() / CONFIG.world.nether_scale : getY() * CONFIG.world.nether_scale) | 0
 		const chs = [
-			dim.load(targetX - 32 >>> 6, targetY - 32 >>> 6),
-			dim.load(targetX + 32 >>> 6, targetY - 32 >>> 6),
-			dim.load(targetX - 32 >>> 6, targetY + 32 >>> 6),
-			dim.load(targetX + 32 >>> 6, targetY + 32 >>> 6)
+			dim.load(BigInt(targetX - 32) >> 6n, BigInt(targetY - 32) >> 6n),
+			dim.load(BigInt(targetX + 32) >> 6n, BigInt(targetY - 32) >> 6n),
+			dim.load(BigInt(targetX - 32) >> 6n, BigInt(targetY + 32) >> 6n),
+			dim.load(BigInt(targetX + 32) >> 6n, BigInt(targetY + 32) >> 6n)
 		]
 		if(chs[0].t<0 | chs[1].t<0 | chs[2].t<0 | chs[3].t<0)
 			return void(e.portalTimeout = 1)
@@ -52,8 +52,8 @@ Blocks.portal = class extends Block{
 		let closestDx = 0, closestDy = 0, closestDist = 2e9
 		for(const ch of chs){
 			for(const p of ch.portals){
-				const dx = ifloat((p & 63 | ch.x<<6) - targetX),
-						dy = ifloat((p>>6 | ch.y<<6) - targetY),
+				const dx = ((p & 63) + Number(ch.x)*64) - targetX,
+						dy = ((p>>6) + Number(ch.y)*64) - targetY,
 						dist = dx * dx + dy * dy
 				if(dist < closestDist){ closestDist = dist; closestDx = dx; closestDy = dy }
 			}
@@ -95,7 +95,7 @@ Blocks.end_portal = class extends Block{
 		if(e.flags & 3) return void(e.flags |= 1)
 		e.flags |= 1
 		if(e.world != Dimensions.end){
-			if(Dimensions.end.load(1,0).t<0) return void(e.flags&=-2)
+			if(Dimensions.end.load(1n,0n).t<0) return void(e.flags&=-2)
 			e.worldEvent(50)
 			e.world = Dimensions.end
 			e.x = 100.5

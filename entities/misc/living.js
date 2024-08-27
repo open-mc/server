@@ -27,7 +27,7 @@ export class LivingEntity extends Entity{
 	update(){
 		if(this.world.tick%10==0){
 			let x = floor(this.x), y = floor(this.y + this.head)
-			const {solid, transparent = !solid, blockShape} = this.peek(x|0, y|0)
+			const {solid, transparent = !solid, blockShape} = this.peek(x, y)
 			y = this.y + this.head - y; x = this.x - x
 			a: if(!transparent){
 				if(blockShape){

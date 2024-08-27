@@ -5,10 +5,11 @@ import { DataWriter } from '../modules/dataproto.js'
 import { currentTPS, entityMap } from './tick.js'
 import { Dimensions } from './index.js'
 import { BlockIDs } from '../blocks/block.js'
+import '../modules/2keys.js'
 
 const dimLevel = DB.sublevel('dimensions')
 
-export class World extends Map{
+export class World extends Map2{
 	constructor(id, u = null){
 		super()
 		this.id = id
@@ -29,14 +30,14 @@ export class World extends Map{
 		const {x: cx, y: cy} = ch
 		ch.loadedAround |= 0x100
 		const
-			l = super.get((cx-1&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000),
-			r = super.get((cx+1&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000),
-			u = super.get((cx&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
-			d = super.get((cx&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000),
-			ul = super.get((cx-1&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
-			ur = super.get((cx+1&0x3FFFFFF)+(cy+1&0x3FFFFFF)*0x4000000),
-			dl = super.get((cx-1&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000),
-			dr = super.get((cx+1&0x3FFFFFF)+(cy-1&0x3FFFFFF)*0x4000000)
+			l = super.get(cx-1n, cy),
+			r = super.get(cx+1n, cy),
+			u = super.get(cx, cy+1n),
+			d = super.get(cx, cy-1n),
+			ul = super.get(cx-1n, cy+1n),
+			ur = super.get(cx+1n, cy+1n),
+			dl = super.get(cx-1n, cy-1n),
+			dr = super.get(cx+1n, cy-1n)
 		let expU = null, expD = null
 		if(u?.loadedAround&0x100) expU = u.exposure, ch.loadedAround |= 1, u.loadedAround |= 16,ch.up=u,u.down=ch
 		if(ur?.loadedAround&0x100) ch.loadedAround |= 2, ur.loadedAround |= 32
@@ -47,13 +48,13 @@ export class World extends Map{
 		if(l?.loadedAround&0x100) ch.loadedAround |= 64, l.loadedAround |= 4,ch.left=l,l.right=ch
 		if(ul?.loadedAround&0x100) ch.loadedAround |= 128, ul.loadedAround |= 8
 		if(expU){
-			let ty = cy+1<<6
+			let ty = cy+1n<<6n
 			for(let i = 0; i < 64; i++) if(expU[i]==ty){
 				let y=64
 				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?b.tileData.get(j):BlockIDs[b]).solid) break }
-				expU[i] = y+ty-63|0
+				expU[i] = ty+BigInt(y-63)
 			}
-			ty = ty-64|0
+			ty -= 64n
 			if(expD){
 				for(let i = 0; i < 64; i++) if(expU[i]==ty) expU[i]=expD[i]
 				let c = d
@@ -61,24 +62,23 @@ export class World extends Map{
 			}
 			ch.exposure = expU
 		}else if(expD){
-			const ty = cy<<6|1
+			const ty = cy<<6n|1n
 			for(let i = 0; i < 64; i++){
 				let y=64
-				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?ch.tileData.get(j):BlockIDs[b]).solid){ expD[i] = y+ty|0; break } }
+				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?ch.tileData.get(j):BlockIDs[b]).solid){ expD[i] = ty+BigInt(y); break } }
 			}
 			ch.exposure = expD
-		}else ch.exposure = new Int32Array(64).fill(cy+1<<6)
+		}else ch.exposure = new Array(64).fill(cy+1n<<6n)
 	}
 	load(cx, cy){
-		const k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
-		let ch = super.get(k)
+		let ch = super.get(cx, cy)
 		if(!ch){
 			ch = new Chunk(cx, cy, this)
-			super.set(k, ch)
-			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			super.set(cx, cy, ch)
+			this.level.get(cx+'/'+cy).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
-				if(!super.has(k)) return
+				if(!super.has(cx, cy)) return
 				try{ch.parse(buf)}catch(e){if(CONFIG.log) console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
@@ -89,15 +89,14 @@ export class World extends Map{
 		return ch
 	}
 	link(cx, cy, sock){
-		const k = (cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000
-		let ch = super.get(k)
+		let ch = super.get(cx, cy)
 		if(!ch){
 			ch = new Chunk(cx, cy, this)
-			super.set(k, ch)
-			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			super.set(cx, cy, ch)
+			this.level.get(cx+'/'+cy).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
-				if(!super.has(k)) return
+				if(!super.has(cx, cy)) return
 				try{ch.parse(buf)}catch(e){if(CONFIG.log) console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
@@ -108,7 +107,7 @@ export class World extends Map{
 		ch.sockets.push(sock)
 	}
 	unlink(cx, cy, sock){
-		let ch = super.get((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000)
+		let ch = super.get(cx, cy)
 		if(!ch) return false
 		ch.sockets.remove(sock)
 		const {ebuf} = sock
@@ -124,52 +123,52 @@ export class World extends Map{
 			else return ch.t = 20, true //Reset the timer
 		}
 		if(ch.t <= 0 || --ch.t) return false //Count down timer
-		const {x: chx, y: chy} = ch, k = chx+chy*0x4000000
+		const {x: chx, y: chy} = ch
 		const b = ch.toBuf(new DataWriter()).build()
-		this.level.put(''+k, b).then(() => {
+		this.level.put(chx+'/'+chy, b).then(() => {
 			if(ch.t == -1) return void(ch.t = 5) //If player has been in chunk, re-save chunk in 5 ticks
-			super.delete(k) //Completely unloaded with no re-loads, delete chunk
-			let c = super.get((chx-1&0x3FFFFFF)+chy*0x4000000)
+			super.delete(chx, chy) //Completely unloaded with no re-loads, delete chunk
+			let c = super.get(chx-1n, chy)
 			if(c) c.loadedAround &= ~4, c.right=null
-			c = super.get((chx+1&0x3FFFFFF)+chy*0x4000000)
+			c = super.get(chx+1n, chy)
 			if(c) c.loadedAround &= ~64, c.left=null
-			c = super.get((chx-1&0x3FFFFFF)+(chy+1&0x3FFFFFF)*0x4000000)
+			c = super.get(chx-1n, chy+1n)
 			if(c) c.loadedAround &= ~8
-			c = super.get((chx+1&0x3FFFFFF)+(chy+1&0x3FFFFFF)*0x4000000)
+			c = super.get(chx+1n, chy+1n)
 			if(c) c.loadedAround &= ~32
-			c = super.get((chx-1&0x3FFFFFF)+(chy-1&0x3FFFFFF)*0x4000000)
+			c = super.get(chx-1n, chy-1n)
 			if(c) c.loadedAround &= ~2
-			c = super.get((chx+1&0x3FFFFFF)+(chy-1&0x3FFFFFF)*0x4000000)
+			c = super.get(chx+1n, chy-1n)
 			if(c) c.loadedAround &= ~128
-			let u = super.get(chx+(chy+1&0x3FFFFFF)*0x4000000)
+			let u = super.get(chx, chy+1n)
 			if(u) u.loadedAround &= ~16, u.down=null
-			c = super.get(chx+(chy-1&0x3FFFFFF)*0x4000000)
+			c = super.get(chx, chy-1n)
 			if(c){
 				c.loadedAround &= ~1, c.up=null
-				const exp = c.exposure, y = chy<<6
+				const exp = c.exposure, y = chy<<6n
 				if(u){
-					const expU = new Int32Array(64)
+					const expU = new Array(64).fill(0n)
 					while(u){u.exposure=expU;u=u.up}
 					for(let i = 0; i < 64; i++){
 						const v = exp[i]
-						if((v-y|0)>=64) expU[i] = v
-						else expU[i] = y+64|0
+						if(v-y>=64n) expU[i] = v
+						else expU[i] = y+64n
 					}
 				}
 				for(let i = 0; i < 64; i++){
-					if((exp[i]-y|0)>0){
-						let y2 = y-1|0, c2 = c
+					if(exp[i]>y){
+						let y2 = y-1n, c2 = c
 						while(c2){
-							const j=i|y2<<6&4032,b=c2[j]
+							const j=i|Number(y2&63n)<<6,b=c2[j]
 							if((b==65535?c2.tileData.get(j):BlockIDs[b]).solid) break
-							if(!(--y2&63)) c2 = c2.down
+							if(!(--y2&63n)) c2 = c2.down
 						}
-						exp[i] = y2+1|0
+						exp[i] = y2+1n
 					}
 				}
 			}else{
-				const y = chy+1<<6
-				for(let i = 0; i < 64; i++) if((exp[i]>>>6)==chy) exp[i] = y
+				const y = chy+1n<<6n, exp = ch.exposure
+				for(let i = 0; i < 64; i++) if((exp[i]>>6n)==chy) exp[i] = y
 			}
 			for(const e of ch.entities) if(!e.sock) entityMap.delete(e.netId)
 		})
@@ -179,9 +178,8 @@ export class World extends Map{
 		//Save a chunk to disk, but don't unload it
 		if(ch.t <= 0) return //Already saving
 		ch.t = 0 //Whoops, chunk timer "ended"
-		let k = ch.x+ch.y*0x4000000
 		const b = ch.toBuf(new DataWriter()).build()
-		this.level.put(''+k, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
+		this.level.put(ch.x+'/'+ch.y, b).then(() => ch.t = 20) //Once saved, set timer back so it doesn't unload
 	}
 	pin(cx, cy){
 		const ch = cx instanceof Chunk ? cx : this.load(cx, cy)
@@ -191,13 +189,13 @@ export class World extends Map{
 		return true
 	}
 	unpin(cx, cy){
-		const ch = cx instanceof Chunk ? cx : super.get((cx&0x3FFFFFF)+(cy&0x3FFFFFF)*0x4000000)
+		const ch = cx instanceof Chunk ? cx : super.get(cx, cy)
 		if(!ch || !(ch.loadedAround&512)) return false
 		this.pinned.delete(ch)
 		ch.loadedAround &= ~512
 		return true
 	}
-	chunk(x, y){ return super.get((x&0x3FFFFFF)+(y&0x3FFFFFF)*0x4000000) }
+	chunk(x, y){ return super.get(x, y) }
 	[Symbol.for('nodejs.util.inspect.custom')](){return 'Dimensions.'+this.id+' { tick: \x1b[33m'+this.tick+'\x1b[m, chunks: '+(this.size?'(\x1b[33m'+this.size+'\x1b[m) [ ... ]':'[]')+' }'}
 	static savedatahistory = []
 	toString(){return this.id}
@@ -244,7 +242,7 @@ for(let i in Dimensions){
 		buf.read(d.constructor.savedatahistory[buf.flint()] || d.constructor.savedata, d)
 		if(!buf.left) return
 		let s = buf.flint()
-		while(s--) d.pin(buf.int32(), buf.int32())
+		while(s--) d.pin(buf.bigint(), buf.bigint())
 	}).catch(e => null))
 }
 await Promise.all(dimCreate)

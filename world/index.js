@@ -69,7 +69,7 @@ export function saveAll(){
 		buf.flint(d.constructor.savedatahistory.length)
 		buf.write(d.constructor.savedata, d)
 		buf.flint(d.pinned.size)
-		for(const ch of d.pinned) buf.int32(ch.x), buf.int32(ch.y)
+		for(const ch of d.pinned) buf.bigint(ch.x), buf.bigint(ch.y)
 		promises.push(d.level.put('meta', buf.build()))
 		for (const ch of d.values()) d.save(ch)
 	}

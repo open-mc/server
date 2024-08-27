@@ -4,20 +4,25 @@ import { Entity } from '../entities/entity.js'
 let pos = 0, chunk = null
 export {pos as chunkTileIndex, chunk as antChunk}
 
-export const getX = () => (chunk?chunk.x<<6:0)|pos&63
-export const getY = () => (chunk?chunk.y<<6:0)|pos>>6
+export const getX = () => (chunk?chunk.x<<6n:0n)|BigInt(pos&63)
+export const getY = () => (chunk?chunk.y<<6n:0n)|BigInt(pos>>6)
 
 export const save = data => ({pos,chunk,data})
 export const load = o => ({pos,chunk} = o, o.data)
 
 export function goto(w, x=0, y=0){
-	if(w instanceof Entity){
-		x = floor(w.x+x)|0
-		y = floor(w.y+y)|0
-		w = w.world
+	if(typeof x == 'number'){
+		if(w instanceof Entity){
+			x = floor(w.x+x)
+			y = floor(w.y+y)
+			w = w.world
+		}
+		pos = (x & 63) | (y & 63) << 6
+		chunk = w.get(BigInt(x)>>6n, BigInt(y)>>6n)
+	}else{
+		pos = Number(x & 63n) | Number(y & 63n) << 6
+		chunk = w.get(x>>6n, y>>6n)
 	}
-	pos = (x & 63) | (y & 63) << 6
-	chunk = w.get((x>>>6)+(y>>>6)*0x4000000)
 }
 export const peekpos = (c,p) => {const b=(chunk=c)[pos=p];return b===65535?chunk.tileData.get(p):BlockIDs[b]}
 export const gotopos = (c,i) => {chunk=c;pos=i}
@@ -30,7 +35,7 @@ export function update(a = 0){
 	if(b.update && !chunk.blockupdates.has(pos)) chunk.blockupdates.set(pos, a)
 }
 
-export const skyExposed = () => chunk?(chunk.exposure[pos&63]-(pos>>6|chunk.y<<6)|0)<=0:true
+export const skyExposed = () => chunk?chunk.exposure[pos&63]<=BigInt(pos>>6)|chunk.y<<6n:true
 
 export function place(bl, safe = false){
 	const _chunk = chunk, _pos = pos
@@ -53,23 +58,23 @@ export function place(bl, safe = false){
 		bl.set()
 		chunk = _chunk; pos = _pos
 	}
-	const tx = _chunk.x<<6|_pos&63, ty = _chunk.y<<6|pos>>6
-	const {exposure} = _chunk, x = pos&63; let y = ty+1|0
+	const tx = _chunk.x<<6n|BigInt(_pos&63), ty = _chunk.y<<6n|BigInt(pos>>6)
+	const {exposure} = _chunk, x = pos&63; let y = ty+1n
 	if(bl.solid){if(!_b.solid){
-		if((exposure[x]-y|0)<0) exposure[x] = y
+		if(exposure[x]<y) exposure[x] = y
 	}}else if(_b.solid&&exposure[x]==y){
-		y-=2; while(chunk){
-			const i=x|y<<6&4032,b=chunk[i]
+		y-=2n; while(chunk){
+			const i=x|Number(y&63n)<<6,b=chunk[i]
 			if((b==65535?b.tileData.get(i):BlockIDs[b]).solid) break
-			if(!(--y&63)) chunk = chunk.down
+			if(!(--y&63n)) chunk = chunk.down
 		}
-		exposure[x] = y+1|0
+		exposure[x] = y+1n
 		chunk = _chunk
 	}
 	for(const {tbuf} of _chunk.sockets){
 		tbuf.byte(0)
-		tbuf.int(tx)
-		tbuf.int(ty)
+		tbuf.bigint(tx)
+		tbuf.bigint(ty)
 		tbuf.short(bl.id)
 		if(bl.savedata) tbuf.write(bl.savedata, bl)
 	}
@@ -138,23 +143,23 @@ export const placeblock = (b, e = 1) => void(place(b), gridevent(e))
 let gridEventId = 0
 export function blockevent(ev, fn){
 	if(!chunk || !ev) return
-	const tx = chunk.x<<6|pos&63, ty = chunk.y<<6|pos>>6
+	const tx = chunk.x<<6n|BigInt(pos&63), ty = chunk.y<<6|BigInt(pos>>6)
 	for(const {tbuf} of chunk.sockets){
 		tbuf.byte(ev)
 		if(ev === 255) tbuf.byte(0)
-		tbuf.int(tx)
-		tbuf.int(ty)
+		tbuf.bigint(tx)
+		tbuf.bigint(ty)
 		if(fn) fn(tbuf)
 	}
 }
 export function gridevent(ev, fn){
 	if(!chunk || !ev) return
 	const id = (gridEventId = gridEventId + 1 | 0) || (gridEventId = 1)
-	const tx = chunk.x<<6|pos&63, ty = chunk.y<<6|pos>>6
+	const tx = chunk.x<<6n|BigInt(pos&63), ty = chunk.y<<6n|BigInt(pos>>6)
 	for(const {tbuf} of chunk.sockets){
 		tbuf.short(0xFF00|ev)
-		tbuf.int(tx)
-		tbuf.int(ty)
+		tbuf.bigint(tx)
+		tbuf.bigint(ty)
 		tbuf.int(id)
 		if(fn) fn(tbuf)
 	}
@@ -170,7 +175,7 @@ export function cancelgridevent(id){
 
 export function summon(Fn){
 	const e = new Fn()
-	if(chunk) e.place(chunk.world, ((chunk.x << 6) | (pos & 63)) + .5, chunk.y << 6 | pos >> 6)
+	if(chunk) e.place(chunk.world, (Number(chunk.x) * 64 + (pos & 63)) + .5, Number(chunk.y) * 64 + (pos >> 6))
 	return e
 }
 
@@ -251,8 +256,8 @@ export const solidup = () => {
 export function jump(dx, dy){
 	if(!chunk) return
 	dx = (pos & 63) + dx | 0; dy = (pos >> 6) + dy | 0
-	if((dx | dy) >>> 6){
-		chunk = chunk.world.get((chunk.x+(dx>>>6)&0x3FFFFFF)+(chunk.y+(dy>>>6)&0x3FFFFFF)*0x4000000)
+	if((dx | dy)>>>6){
+		chunk = chunk.world.get(chunk.x+BigInt(dx>>6), chunk.y+BigInt(dy>>6))
 		pos = (dx & 63) | (dy & 63) << 6
 	}else pos = dx | dy << 6
 }
@@ -260,12 +265,12 @@ export function jump(dx, dy){
 export function select(x0, y0, x1, y1, cb){
 	if(!chunk) return
 	const {x:cx,y:cy,world} = chunk
-	x0 += cx<<6|(pos&63); x1 += (cx<<6|(pos&63)) + 1
-	y0 += cy<<6|pos>>6; y1 += (cy<<6|pos>>6) + 1
-	const cx0 = floor(x0) >>> 6, cx1 = ceil(x1 / 64) & 0x3FFFFFF
-	const cy0 = floor(y0) >>> 6, cy1 = ceil(y1 / 64) & 0x3FFFFFF
+	x0 += Number(cx)*64+(pos&63); x1 += Number(cx)*64+(pos&63) + 1
+	y0 += Number(cy)*64+(pos>>6); y1 += Number(cy)*64+(pos>>6) + 1
+	const cx0 = BigInt(floor(x0)) >> 6n, cx1 = -(BigInt(floor(-x1)) >> 6n)
+	const cy0 = BigInt(floor(y0)) >> 6n, cy1 = -(BigInt(floor(-y1)) >> 6n)
 	let c1 = 257, c2 = 17, cxa = cx0
-	let ch = (cx0 === cx & cy0 === cy) && chunk || world.get(cx0+cy0*0x4000000)
+	let ch = (cx0 === cx & cy0 === cy) && chunk || world.get(cx0, cy0)
 	while(true){
 		let c = ch, cya = cy0
 		while(true){
@@ -277,11 +282,11 @@ export function select(x0, y0, x1, y1, cb){
 					cb(e)
 				}
 			}
-			if((cya=cya+1&0x3FFFFFF) == cy1) break
-			c = c?.up ?? world.get(cxa+cya*0x4000000)
+			if(++cya == cy1) break
+			c = c?.up ?? world.get(cxa, cya)
 		}
-		if((cxa=cxa+1&0x3FFFFFF) == cx1) break
-		ch = ch?.right ?? world.get(cxa+cya*0x4000000)
+		if(++cxa == cx1) break
+		ch = ch?.right ?? world.get(cxa, cya)
 	}
 }
 

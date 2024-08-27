@@ -10,7 +10,7 @@ export class Chunk extends Uint16Array{
 		this.tileData = new Map
 		this.sockets = []
 		this.world = world
-		this.x = x & 0x3ffffff; this.y = y & 0x3ffffff
+		this.x = x; this.y = y
 		this.entities = []; this.t = -1
 		this.biomes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		this.loadedAround = 0b00000000
@@ -25,7 +25,7 @@ export class Chunk extends Uint16Array{
 		let id
 		while((id = buf.short()) != 65535){
 			const e = new EntityIDs[id]()
-			e.place(this.world, buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
+			e.place(this.world, buf.short() / 1024 + Number(this.x)*64, buf.short() / 1024 + Number(this.y)*64)
 			e.chunk = this
 			this.entities.push(e)
 			buf.setUint32(buf.i, e.netId)
@@ -113,8 +113,8 @@ export class Chunk extends Uint16Array{
 		try{
 			if(packet){
 				buf.byte(16)
-				buf.int(this.x)
-				buf.int(this.y)
+				buf.bigint(this.x)
+				buf.bigint(this.y)
 			}
 			buf.flint(Chunk.savedatahistory.length)
 			if(packet) buf.short(0)
@@ -127,8 +127,8 @@ export class Chunk extends Uint16Array{
 			for(const e of this.entities){
 				if(e.sock && !packet) continue
 				buf.short(e.id)
-				buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
-				buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
+				buf.short(max(0, min(floor((e.x-Number(this.x)*64)*1024), 65535)))
+				buf.short(max(0, min(floor((e.y-Number(this.y)*64)*1024), 65535)))
 				buf.int(e.netId | 0)
 				buf.short(e.netId / 4294967296 | 0)
 				buf.string(e.name)
@@ -194,14 +194,14 @@ export class Chunk extends Uint16Array{
 	}
 	static savedatahistory = [{}]
 	static diskBufToPacket(buf, x, y){
-		const buf2 = new Uint8Array(buf.byteLength + 9)
-		buf2[0] = 16
-		buf2[1] = x << 6 >>> 30; buf2[2] = x >> 16; buf2[3] = x >> 8; buf2[4] = x
-		buf2[5] = y << 6 >>> 30; buf2[6] = y >> 16; buf2[7] = y >> 8; buf2[8] = y
-		buf2.set(new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength), 9)
-		return buf2
+		const buf2 = new DataWriter()
+		buf2.byte(16)
+		buf2.bigint(x)
+		buf2.bigint(y)
+		buf2.uint8array(new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength), buf.byteLength)
+		return buf2.build()
 	}
-	[Symbol.for('nodejs.util.inspect.custom')](){return 'Chunk { x: \x1b[33m'+(this.x<<6>>6)+'\x1b[m, y: \x1b[33m'+(this.y<<6>>6)+'\x1b[m }'}
+	[Symbol.for('nodejs.util.inspect.custom')](){return 'Chunk { x: \x1b[33m'+this.x+'\x1b[m, y: \x1b[33m'+this.y+'\x1b[m }'}
 
 	blockupdates = new Map
 	blockupdates2 = new Map
@@ -233,7 +233,7 @@ export class Chunk extends Uint16Array{
 
 		if(this.world.weather > 0x10000000 && random() < .001/(CONFIG.world.chunk_loading_range)*sqrt(this.sockets.length/players.size)){
 			const p = floor(random() * 64)
-			const highest = this.exposure[p]-(this.y<<6)
+			const highest = Number(this.exposure[p]-(this.y<<6n))
 			if(highest >= 0 && highest < 64){
 				gotopos(this, p|highest<<6)
 				summon(Entities.lightning_bolt)
@@ -250,7 +250,7 @@ export class Chunk extends Uint16Array{
 	setFlags(f){
 		this.flags = f &= 255
 		const d = new DataWriter()
-		d.byte(18); d.int(this.x); d.int(this.y); d.short(f)
+		d.byte(18); d.bigint(this.x); d.bigint(this.y); d.short(f)
 		const b = d.build()
 		for(const s of this.sockets) s.send(b)
 	}

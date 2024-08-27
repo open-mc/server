@@ -21,7 +21,7 @@ export class Block{
 			itm.item = drop
 			itm.dx = random() * 6 - 3
 			itm.dy = 6
-			itm.place(antChunk.world, getX()+0.5, getY()+0.375)
+			itm.place(antChunk.world, Number(getX())+0.5, Number(getY())+0.375)
 		}else if(drop instanceof Array){
 			for(const d of drop){
 				if(!d) continue
@@ -29,7 +29,7 @@ export class Block{
 				itm.item = d
 				itm.dx = random() * 6 - 3
 				itm.dy = 6
-				itm.place(antChunk.world, getX()+0.5, getY()+0.375)
+				itm.place(antChunk.world, Number(getX())+0.5, Number(getY())+0.375)
 			}
 		}
 	}
@@ -46,7 +46,7 @@ export class Block{
 			const x = getX(), y = getY() - (id+1)*4294967296
 			if(ibufLastA != x || ibufLastB != y){
 				ibuf.byte(129)
-				ibuf.int(x); ibuf.int(y|0)
+				ibuf.bigint(x); ibuf.bigint(y)
 				ibuf.byte(id)
 				sock.ibufLastA = x
 				sock.ibufLastB = y

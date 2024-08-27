@@ -102,7 +102,7 @@ Object.assign(commands, {
 		return log(this, 'Successfully mutated '+i+' entities')
 	},
 	setblock(_x = '~', _y = '~', type, _d = '~', data = '{}'){
-		const {x, y, w} = parseCoords(_x, _y, _d, this)
+		let {x, y, w} = parseCoords(_x, _y, _d, this)
 		let b
 		if(type == (type & 65535)){
 			type = type & 65535
@@ -113,17 +113,17 @@ Object.assign(commands, {
 			b = Blocks[type]
 		}
 		snbt(data, b, b.savedata)
-		goto(w, floor(x), floor(y))
+		goto(w, x=floor(x), y=floor(y))
 		place(b)
-		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
+		return log(this, 'Set block at (x='+x+', y='+y+') to '+type+(data=='{}'?'':' (+data)'))
 	},
 	fill(_x, _y, _x2, _y2, type, d = '~'){
 		let n = performance.now()
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
-		x2=floor(x2-(x=floor(x)|0))|0;y2=floor(y2-(y=floor(y)|0))|0
-		if(x2 < 0) x=x+x2|0, x2=abs(x2)|0
-		if(y2 < 0) y=y+y2|0, y2=abs(y2)|0
+		x2 -= x; y2 -= y
+		if(x2 < 0) x=x+x2, x2=abs(x2)
+		if(y2 < 0) y=y+y2, y2=abs(y2)
 		goto(w, x, y)
 		let b
 		if(type == (type & 65535)){
@@ -136,8 +136,8 @@ Object.assign(commands, {
 		}
 		let count = x2*y2+x2+y2+1
 		if(count > CONFIG.permissions.max_fill) throw 'Cannot /fill more than '+CONFIG.permissions.max_fill+' blocks'
-		for(y = 0; y != y2+1; y=(y+1)|0){
-			for(x = 0; x != x2+1; x=(x+1)|0){
+		for(y = 0; y != y2+1; y++){
+			for(x = 0; x != x2+1; x++){
 				if(peek()==b) count--
 				place(b)
 				right()
@@ -360,7 +360,7 @@ Object.assign(commands, {
 	},
 	async regen(_x, _y, type, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
-		x = floor(x) >>> 6; y = floor(y) >>> 6
+		x = BigInt(floor(x)) >> 6n; y = BigInt(floor(y) >> 6n)
 		let {0:a, 1:b} = type ? type.split('/',2) : [w.gend,w.genn]
 		if(!b) b=a,a=w.id
 		const chunk = w.chunk(x, y)
@@ -369,7 +369,7 @@ Object.assign(commands, {
 		const buf = new DataReader(await generator(x, y, a, b))
 		chunk.parse(buf)
 		const delw = new DataWriter()
-		delw.byte(17), delw.int(x), delw.int(y)
+		delw.byte(17), delw.bigint(x), delw.bigint(y)
 		const del = delw.build()
 		for(const sock of chunk.sockets)
 			sock.send(del), sock.send(Chunk.diskBufToPacket(buf, x, y))
@@ -380,7 +380,7 @@ Object.assign(commands, {
 				this.y = floor(this.y) + 1, moved = true, up()
 			if(moved) this.rubber(Y)
 		}
-		return log(this, `Regenerated chunk located at (x=${x<<6}, y=${y<<6}) in the ${w.id}`)
+		return log(this, `Regenerated chunk located at (x=${x<<6n}, y=${y<<6n}) in the ${w.id}`)
 	},
 	perm(u, a){
 		if(!u || !a) throw 'Usage: /perm <player> <permission_level>'
@@ -518,7 +518,7 @@ Object.assign(commands, {
 	mark(e='@s',xo='0',yo='0'){
 		const [ent, ex] = selector(e, this)
 		if(ex) throw '/mark only accepts one entity'
-		const m = {x: ifloat(ent.x + (+xo||0)), y: ifloat(ent.y + (+yo||0)), world: ent.world, entity: ent}
+		const m = {x: ent.x + (+xo||0), y: ent.y + (+yo||0), world: ent.world, entity: ent}
 		marks.set(this, m)
 		return `Mark set at (x=${m.x.toFixed(3)}, y=${m.y.toFixed(3)}) in the ${m.world.id}`
 	},
@@ -546,7 +546,7 @@ Object.assign(commands, {
 	},
 	chunk(f='', _x='~', _y='~', d='~', v=''){
 		const {x, y, w} = parseCoords(_x, _y, d, this)
-		const ch = w.get((floor(x)>>>6)+(floor(y)>>>6)*0x4000000)
+		const ch = w.get(BigInt(floor(x))>>6n+BigInt(floor(y))>>6n)
 		if(!(ch?.loadedAround&0x100)) throw 'Chunk not loaded'
 		switch(f=f.toLowerCase()){
 			case 'border':

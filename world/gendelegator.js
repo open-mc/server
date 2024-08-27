@@ -22,8 +22,7 @@ gen.onmessage = function({data: a}){
 gen.onclose = close
 
 export const generator = (x, y, gend, genn) => new Promise(r => {
-	x = x << 6 >> 6; y = y << 6 >> 6
 	waiting.set(key, r)
-	gen.postMessage({x, y, d: gend, key, seed: CONFIG.world.seed, name: genn})
+	gen.postMessage({x: Number(x), y: Number(y), d: gend, key, seed: CONFIG.world.seed, name: genn})
 	key++
 })

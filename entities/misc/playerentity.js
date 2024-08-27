@@ -48,7 +48,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	skin = defaultSkin
 	breakGridEvent = 0
 	blockBreakLeft = -1
-	bx = 0; by = 0
+	bx = 0n; by = 0n
 	rubberMv = 0
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
@@ -70,7 +70,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 					itm.item = drop
 					itm.dx = random() * 6 - 3
 					itm.dy = 6
-					itm.place(this.world, this.bx + 0.5, this.by + 0.375)
+					itm.place(this.world, Number(this.bx) + 0.5, Number(this.by) + 0.375)
 				}else if(drop instanceof Array){
 					for(const d of drop){
 						if(!d) continue
@@ -78,7 +78,7 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 						itm.item = d
 						itm.dx = random() * 6 - 3
 						itm.dy = 6
-						itm.place(this.world, this.bx + 0.5, this.by + 0.375)
+						itm.place(this.world, Number(this.bx) + 0.5, Number(this.by) + 0.375)
 					}
 				}
 			}

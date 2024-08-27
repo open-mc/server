@@ -2,8 +2,8 @@ import { EVENTS } from '../entities/entity.js'
 
 export function calculateMv(e){
 	let mv = 0
-	if(e.x != e._x) e.x = ifloat(e.x), mv |= 1
-	if(e.y != e._y) e.y = ifloat(e.y), mv |= 2
+	if(e.x != e._x) mv |= 1
+	if(e.y != e._y) mv |= 2
 	if(e.dx != e._dx | e.dy != e._dy) e._dx = e.dx, e._dy = e.dy, mv |= 4
 	if(e.world != e._world){
 		if(e.sock){
@@ -88,10 +88,10 @@ export function mirrorEntity(e){
 	}
 	const {chunk: _chunk} = e
 	const mv = calculateMv(e)
-	const cx = floor(e.x)>>>6, cy = floor(e.y)>>>6
+	const cx = BigInt(floor(e.x))>>6n, cy = BigInt(floor(e.y))>>6n
 	let {chunk} = e
-	if(!chunk || (chunk.world!=e.world | cx^chunk.x | cy^chunk.y)){
-		const ch = e.world.get(cx+cy*0x4000000)
+	if(!chunk || (chunk.world!=e.world | cx!=chunk.x | cy!=chunk.y)){
+		const ch = e.world.get(cx, cy)
 		if(ch?.loadedAround&0x100){
 			if(chunk) chunk.entities.remove(e)
 			void (e.chunk = chunk = ch).entities.push(e)

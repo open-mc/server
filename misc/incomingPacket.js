@@ -17,7 +17,7 @@ function validateMove(sock, player, buf){
 	// where the player was
 	const {x: ox, y: oy, dx, dy} = player
 
-	let mx = ifloat(x - ox), my = ifloat(y - oy)
+	let mx = x - ox, my = y - oy
 	if(CONFIG.socket.movement_checks){
 		const {movement_check_mercy: mercy} = CONFIG.socket
 		if(mx >= 0){
@@ -78,7 +78,7 @@ function playerMovePacket(player, buf){
 	let t = Date.now() / 1000
 	if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
 	this.movePacketCd = t
-	let prx = 2147483648, pry = 0, plx = 2147483648, ply = 0
+	let prx = NaN, pry = 0, plx = NaN, ply = 0
 	top: {
 		validateMove(this, player, buf)
 		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
@@ -102,12 +102,12 @@ function playerMovePacket(player, buf){
 			}
 			break top
 		}
-		if(sel<128) prx = buf.int(), pry = buf.int()
+		if(sel<128) prx = buf.bigint(), pry = buf.bigint()
 		if(this.perms < 2) break top
-		let bx = floor(player.x) | 0, by = floor(player.y + player.head) | 0
+		let bx = floor(player.x), by = floor(player.y + player.head)
 		goto(player.world, bx, by)
 		const reach = min(hypot(x, y), 10)
-		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
+		let d = 0, px = player.x - bx, py = player.y + player.head - by
 		const dx = x / reach, dy = y / reach
 		let l = 0
 		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
@@ -217,7 +217,7 @@ function playerMovePacket(player, buf){
 			if(!l) break top
 		}
 		if(!item) break top
-		jump(ax, ay); plx = plx+ax|0; ply = ply+ay|0
+		jump(ax, ay); plx = plx+BigInt(ax); ply = ply+BigInt(ay)
 		{
 			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
 			if(interactFluid){
@@ -241,13 +241,13 @@ function playerMovePacket(player, buf){
 			stat('player', 'blocks_placed')
 		}
 	}
-	if(plx < 2147483648) player.state |= 8
+	if(plx == plx) player.state |= 8
 	else player.state &= -9
-	if(prx < 2147483648 && prx != plx || pry != ply){
+	if(prx == prx && prx != plx || pry != ply){
 		goto(player.world, prx, pry)
 		if(antChunk.sockets.includes(player.sock)){
 			const bl = peek(), {tbuf} = player.sock
-			tbuf.byte(0); tbuf.int(getX()); tbuf.int(getY())
+			tbuf.byte(0); tbuf.bigint(getX()); tbuf.bigint(getY())
 			tbuf.short(bl.id)
 			if(bl.savedata) tbuf.write(bl.savedata, bl)
 		}
@@ -336,11 +336,11 @@ export function voiceChat(player, buf){
 	const t = new Set
 	if(typeof r == 'number'){
 		packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
-		const cx0 = ifloor(player.x-r)>>>6, cx1 = ifloor(player.x+r)+64>>>6
-		const cy0 = ifloor(player.y-r)>>>6, cy1 = ifloor(player.y+r)+64>>>6
-		for(let x = cx0; x != cx1; x=x+1&0x3ffffff){
-			for(let y = cy0; y != cy1; y=y+1&0x3ffffff){
-				const ch = player.world.get(x+y*0x4000000)
+		const cx0 = BigInt(floor(player.x-r))>>6n, cx1 = BigInt(floor(player.x+r)+64)>>6n
+		const cy0 = BigInt(floor(player.y-r))>>6n, cy1 = BigInt(floor(player.y+r)+64)>>6n
+		for(let x = cx0; x != cx1; x++){
+			for(let y = cy0; y != cy1; y++){
+				const ch = player.world.get(x, y)
 				if(!ch) continue
 				for(const s of ch.sockets){
 					if(!s.entity || s.entity === player) continue
