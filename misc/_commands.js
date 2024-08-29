@@ -106,9 +106,10 @@ export function parseCoords(x = '~', y = '~', d = '~', t){
 	if(!w) throw 'No such dimension'
 	if(x[0] == "^" && y[0] == "^"){
 		if(!t) throw '\'^\' coordinate specifier unavailable'
-		x = (+x.slice(1))/180*PI - t.f
-		y = +y.slice(1);
-		[x, y] = [t.x - sin(x) * y, t.y + cos(x) * y]
+		x = t.f + (+x.slice(1))/180*PI
+		const r = +y.slice(1)
+		y = t.y + cos(x) * r
+		x = t.x + sin(x) * r
 	}else{
 		if(x[0] == "~"){
 			if(!t) throw '\'~\' coordinate specifier unavailable'
@@ -159,9 +160,7 @@ function testSelector(entity, ref, fns){
 }
 const comp = s => s === '=' ? a=>!a : s === '!=' ? a=>!!a : s === '>=' ? a=>a>=0 : s === '<=' ? a=>a<=0 : s === '>' ? a=>a>0 : s === '<' ? a=>a<0 : a=>false
 const compstr = s => s === '!=' ? (a,b) => a != b : s === '>=' ? (a,b) => a.startsWith(b) : s === '<=' ? (a,b) => b.startsWith(a) : s === '>' ? (a,b) => a.length>b.length&&a.startsWith(b) : s === '<' ? (a,b) => b.length>a.length&&b.startsWith(a) : (a,b) => a==b
-const flagSpecifiers = {
 
-}
 const specifiers = {
 	__proto__: null,
 	type(t, s){
@@ -174,7 +173,7 @@ const specifiers = {
 		return a => f(a.name, t)
 	},
 	perms(t, s, w){
-		const p = t=='~' ? w&&w.sock ? w.sock.perms : undefined : PERMS[t]
+		const p = t=='~' ? w&&w.sock ? w.sock.perms : undefined : PERMS[t.toLowerCase()]
 		if(p === undefined) return
 		const f = comp(s)
 		return e => f((e.sock?.perms??0)-p)
@@ -200,6 +199,11 @@ const specifiers = {
 		if(!Number.isFinite(p)) return
 		return e => (e.f-p+PI2+PI2)%PI2<=ang
 	},
+	r(t, s, w){
+		if(!Number.isFinite(t = +t)) return
+		const f = comp(s)
+		return e => f(hypot(ifloat(e.x-w.x), ifloat(e.y-w.y)))
+	},
 	world(t, s, w){
 		t = t == '~' ? w ? w.world : undefined : t ? Dimensions[t] : null
 		if(t === undefined) throw 'Invalid world'
@@ -224,6 +228,7 @@ export function selector(a, who){
 		if(!e) throw 'No such entity with ID '+id
 		return [e]
 	}
+	if(a[0] == '[') a = '@e'+a
 	if(a[0] == '@'){
 		if(a.length > 2 && (a[2] !== '[' || a[a.length-1] !== ']')) throw 'Unable to parse selector: expected ] for matching ['
 		const filters = []; let limit = Infinity
@@ -273,6 +278,14 @@ export function selector(a, who){
 			const arr = []
 			for(const e of players.values()){
 				if(testSelector(e, who, filters)) arr.push(e)
+				if(arr.length >= limit) break
+			}
+			if(!arr.length) throw "No targets matched selector"
+			return arr
+		}else if(a[1] == 'x'){
+			const arr = []
+			for(const e of players.values()){
+				if(e != who && testSelector(e, who, filters)) arr.push(e)
 				if(arr.length >= limit) break
 			}
 			if(!arr.length) throw "No targets matched selector"

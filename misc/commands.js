@@ -515,7 +515,8 @@ Object.assign(commands, {
 			return 'Command scheduled'
 		}else return new Promise(r => setTimeout(r, k*1000)).then(() => executeCommand(c, a, this, this.sock?.perms??4))
 	},
-	mark(e='@s',xo='0',yo='0'){
+	mark(e='@s',xo,yo){
+		if(!yo){ if(xo) yo=xo,xo=e,e='@s'; else xo=yo='0' }
 		const [ent, ex] = selector(e, this)
 		if(ex) throw '/mark only accepts one entity'
 		const m = {x: ifloat(ent.x + (+xo||0)), y: ifloat(ent.y + (+yo||0)), world: ent.world, entity: ent}
