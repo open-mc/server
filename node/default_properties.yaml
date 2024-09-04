@@ -39,7 +39,7 @@ world:
 
 # Client components/mods. 
 components:
-  - /vanilla/index.js
+  - vanilla
 
 # Terrain generators
 generators:
