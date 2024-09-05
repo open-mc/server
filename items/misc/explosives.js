@@ -9,9 +9,9 @@ Items.tnt = class extends Item{
 
 Items.end_crystal = class extends Item{
 	interact(b){
-		const pow = b == Blocks.glowing_obsidian ? 360 : b == Blocks.obsidian || b == Blocks.bedrock ? 180 : 0
+		const pow = b == Blocks.glowing_obsidian ? 400 : b == Blocks.obsidian || b == Blocks.bedrock ? 180 : 0
 		if(!pow) return 0
-		if(pow == 360) place(Blocks.obsidian)
+		if(pow == 400) place(Blocks.obsidian)
 		up()
 		if(peek().constructor != Blocks.air) return 0
 		summon(Entities.end_crystal).power = pow

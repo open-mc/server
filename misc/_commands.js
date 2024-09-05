@@ -202,7 +202,7 @@ const specifiers = {
 	r(t, s, w){
 		if(!Number.isFinite(t = +t)) return
 		const f = comp(s)
-		return e => f(hypot(ifloat(e.x-w.x), ifloat(e.y-w.y)))
+		return e => f(hypot(ifloat(e.x-w.x), ifloat(e.y-w.y))-t)
 	},
 	world(t, s, w){
 		t = t == '~' ? w ? w.world : undefined : t ? Dimensions[t] : null

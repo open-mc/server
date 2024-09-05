@@ -6,7 +6,7 @@ Entities.end_crystal = class extends Entity{
 	static height = 1.99
 	static gx = 0
 	static gy = 0
-	health = 1; power = 180
+	health = 1; power = 200
 	static savedata = {power: Short}
 	static maxHealth = 1
 	damage(a, _){

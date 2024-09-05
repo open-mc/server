@@ -27,7 +27,7 @@ Blocks.glowing_obsidian = class extends Blocks.obsidian{
 	static breaktime = 500
 	drops(){
 		gridevent(3)
-		explode(null, 180, true)
+		explode(null, 200, true)
 		return new Items.glowing_obsidian(1)
 	}
 }

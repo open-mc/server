@@ -11,6 +11,7 @@ let buffer
 let x = 0, y = 0
 const get = (xo=0,yo=0) => buffer[x+xo + LEFT + (y+yo + LEFT) * DIAMETER]
 const set = a => buffer[x + LEFT + (y + LEFT) * DIAMETER] = a
+
 export function explode(entity, strength = 100, fire = false){
 	stat('world', 'explosions')
 	if(strength>200) buffer = bufferL, DIAMETER = 73
@@ -18,6 +19,7 @@ export function explode(entity, strength = 100, fire = false){
 	else buffer = bufferS, DIAMETER = 23
 	LEFT = DIAMETER - 1 >>> 1
 	buffer.fill(0); x = y = 0
+	const variance = strength*.2
 	if(entity){
 		goto(entity)
 		entity.remove()
@@ -35,7 +37,7 @@ export function explode(entity, strength = 100, fire = false){
 			if(y == -i) v = get(-1,1)-bl.blast*(2-(i&1))
 			else if(y < i) v = get(-1,0)-bl.blast
 			else v = get(-1,-1)-bl.blast*(2-(i&1))
-			if(v > 0) bl.destroy?.(false), place(Blocks.air), set(v)
+			if(v > 0) v>random()*variance&&(bl.destroy?.(false), place(Blocks.air)), set(v)
 			up(); y++
 		}
 	}
@@ -48,7 +50,7 @@ export function explode(entity, strength = 100, fire = false){
 			if(y == -i) v = get(1,1)-bl.blast*(2-(i&1))
 			else if(y < i) v = get(1,0)-bl.blast
 			else v = get(1,-1)-bl.blast*(2-(i&1))
-			if(v > 0) bl.destroy?.(false), place(Blocks.air), set(v)
+			if(v > 0) v>random()*variance&&(bl.destroy?.(false), place(Blocks.air)), set(v)
 			up(); y++
 		}
 	}
@@ -58,7 +60,7 @@ export function explode(entity, strength = 100, fire = false){
 		while(x < i){
 			const bl = peek()
 			const v = get(0,-1)-bl.blast
-			if(v > 0) bl.destroy?.(false), place(Blocks.air), set(v)
+			if(v > 0) v>random()*variance&&(bl.destroy?.(false), place(Blocks.air)), set(v)
 			right(); x++
 		}
 	}
@@ -68,7 +70,7 @@ export function explode(entity, strength = 100, fire = false){
 		while(x < i){
 			const bl = peek()
 			const v = get(0,1)-bl.blast
-			if(v > 0) bl.destroy?.(false), place(Blocks.air), set(v)
+			if(v > 0) v>random()*variance&&(bl.destroy?.(false), place(Blocks.air)), set(v)
 			right(); x++
 		}
 	}
