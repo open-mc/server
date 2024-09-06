@@ -70,7 +70,7 @@ Object.assign(commands, {
 		}
 		return log(this, `Reconnnecting ${count} player(s)`)
 	},
-	give(sel, item, amount = '1', dat = '{}'){
+	give(sel, item = '', amount = '1', dat = '{}'){
 		let itm = Items[item], c = max(amount | 0, 1)
 		if(!itm) throw 'No such item: '+item
 		let count = ''
@@ -101,11 +101,12 @@ Object.assign(commands, {
 		}
 		return log(this, 'Successfully mutated '+i+' entities')
 	},
-	setblock(_x = '~', _y = '~', type, _d = '~', data = '{}'){
+	setblock(_x = '~', _y = '~', type = '', _d = '~', data = '{}'){
 		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		let b
-		if(type == (type & 65535)){
-			type = type & 65535
+		let id = type & 65535
+		if(type && type == id){
+			type = id
 			if(type >= BlockIDs.length) throw 'No such block ID: ' + type
 			b = BlockIDs[type]
 		}else{

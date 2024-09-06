@@ -112,7 +112,6 @@ function playerMovePacket(player, buf){
 		let l = 0
 		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
 		a: while(d < reach){
-			if(!antChunk||antChunk.flags&1) break top
 			const {solid, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
 			if(solid || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
 				for(let i = 0; i < blockShape.length; i += 4){
@@ -167,9 +166,8 @@ function playerMovePacket(player, buf){
 				px = ((player.x + x)%1+1)%1; py = ((player.y + player.head + y)%1+1)%1
 			}
 		}else px -= ax, py -= ay
-		
+		if(!antChunk||antChunk.flags&1) break top
 		if(sel > 127){
-			if(!antChunk||antChunk.flags&1) break top
 			const block = peek()
 			if((block.targettable||block.solid) | block.mustBreak){
 				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
