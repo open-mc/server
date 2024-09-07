@@ -37,9 +37,13 @@ world:
   # 2 = 5x5 square = 25 chunks loaded. 3 = 7x7 = 49 chunks loaded. 4 = 9x9 = 81 chunks etc...
   chunk_loading_range: 2
 
-# Client components/mods. 
+# Client components
 components:
   - vanilla
+
+# Client resource mappings
+resourcemaps:
+  # - <URL>
 
 # Terrain generators
 generators:

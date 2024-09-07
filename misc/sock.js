@@ -35,7 +35,7 @@ setInterval(sendTabMenu, 2000)
 
 export const playersLevel = DB.sublevel('players', {valueEncoding: 'binary'})
 export const playersConnecting = new Set
-const indexCompressed = deflate(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + '\0' + (CONFIG.components||['/vanilla/index.js']).join('\0'))
+const indexCompressed = deflate(blockindex + '\0' + itemindex + '\0' + entityindex + '\0' + index + '\0' + (CONFIG.components||['vanilla']).join('\n') + '\0' + (CONFIG.resourcemaps||[]).join('\n'))
 export async function open(){
 	this.state = 2
 	if(playersConnecting.has(this.username)){
