@@ -43,7 +43,7 @@ components:
 
 # Client resource mappings
 resourcemaps:
-  # - <URL>
+  # - <pack> <URL>
 
 # Terrain generators
 generators:
