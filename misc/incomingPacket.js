@@ -228,7 +228,7 @@ function playerMovePacket(player, buf){
 			// TODO better entity check allowing for quasi-solid blocks like sugar_cane
 			if(plx < player.x + player.width && plx + 1 > player.x - player.width && ply < player.y + player.height && ply + 1 > player.y) break top
 		}
-		if(item.place && !(item.forbidden&&this.perms<MOD)){
+		if(item.place && !(item.forbidden&&this.perms<MOD&&this.mode==0)){
 			player.state |= 8
 			const i2 = item.place(px, py, player)
 			if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
@@ -237,7 +237,7 @@ function playerMovePacket(player, buf){
 				player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 			}
 			stat('player', 'blocks_placed')
-		}
+		}else plx = 2147483648
 	}
 	if(plx < 2147483648) player.state |= 8
 	else player.state &= -9
