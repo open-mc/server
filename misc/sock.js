@@ -4,7 +4,7 @@ import { entityindex } from '../entities/index.js'
 import { itemindex } from '../items/index.js'
 import { blockindex } from '../blocks/index.js'
 import { index } from '../misc/miscdefs.js'
-import { DataReader, DataWriter } from '../modules/dataproto.js'
+import { DataReader, DataWriter, decoder } from '../modules/dataproto.js'
 import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import { Entities, EntityIDs, newId } from '../entities/entity.js'
 import { Items } from '../items/item.js'
@@ -134,6 +134,8 @@ export async function open(){
 		stat('misc', 'sessions')
 		chat('\\+b' + this.username + (other === null ? ' joined the game' : ' joined the server'))
 	}
+	const ip = decoder.decode(this.getRemoteAddressAsText())
+	if(ip) console.info('\x1b[90mIP: %s, Time: %s', ip, new Date().toISOString())
 }
 
 export async function close(){

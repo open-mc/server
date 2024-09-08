@@ -326,19 +326,21 @@ Object.assign(commands, {
 		const f = selector(t, this)
 		if(f.length>1){
 			const histogram = new Map()
+			let unlinked = 0
 			for(const e of f)
 				histogram.set(e.world, (histogram.get(e.world)||0)+1)
+				if(!e.linked) unlinked++
 			if(histogram.size == 1){
 				const w = histogram.keys().next().value
-				return `Selector found ${f.length} entities in ${w?'the '+w.id:'limbo'}`
+				return `Selector found ${f.length} entities in ${w?'the '+w.id:'limbo'}${unlinked?' (of which '+unlinked+' unlinked)':''}`
 			}
-			const r = [`Selector found ${f.length} entities:`]
+			const r = [`Selector found ${f.length} entities${unlinked?' (of which '+unlinked+' unlinked)':''}:`]
 			for(const {0: w, 1: c} of histogram) r.push(w ? `${c} in the ${w.id}` : `${c} in limbo`)
 			return r.join('\n')
 		}
-		const {x,y,world,health,sock} = f[0]
+		const {x,y,world,health,sock,linked} = f[0]
 		const w = `(x=${x.toFixed(3)}, y=${y.toFixed(3)}) `+(world?'in the '+world.id:'outside of the space-time continuum')
-		return !t&&sock ? `You are at ${w} and have ${health/2||0} heart(s)` : `${f[0].name||f[0].className} is at ${w} and has ${health/2||0} heart(s)`
+		return !t&&sock ? `You are${linked?'':' unlinked'} at ${w} and have ${health/2||0} heart(s)` : `${f[0].name||f[0].className} is${linked?'':' unlinked'} at ${w} and has ${health/2||0} heart(s)`
 	},
 	hide(t = '@s'){
 		let i = 0
