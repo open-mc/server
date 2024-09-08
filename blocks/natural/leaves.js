@@ -1,6 +1,7 @@
 import { Enchantments } from '../../items/enchantments.js'
 import { Items } from '../../items/item.js'
 import { Block, Blocks } from '../block.js'
+import './logs.js'
 
 class Leaves extends Block{
 	static breaktime = 0.5
