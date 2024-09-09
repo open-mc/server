@@ -135,7 +135,7 @@ export async function open(){
 		chat('\\+b' + this.username + (other === null ? ' joined the game' : ' joined the server'))
 	}
 	const ip = decoder.decode(this.getRemoteAddressAsText())
-	if(ip) console.info('@%s - \x1b[90mIP: %s, Time: %s', this.username, ip, new Date().toISOString())
+	if(ip) console.info('\x1b[90m@%s - IP: %s, Time: %s', this.username, ip, new Date().toISOString())
 }
 
 export async function close(){
