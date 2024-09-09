@@ -77,7 +77,6 @@ export function explode(entity, strength = 100, fire = false){
 	jump(-x,-y); x = getX(); y = getY()
 	select(-LEFT, -LEFT, LEFT, LEFT, e => {
 		let dx = e.x - x, dy = e.y - y
-		console.log(dy)
 		const dmg = buffer[(floor(dx+LEFT)|0) + (floor(dy+LEFT)|0)*DIAMETER]
 		const d = sqrt(dx * dx + dy * dy)
 		dx /= d; dy /= d
