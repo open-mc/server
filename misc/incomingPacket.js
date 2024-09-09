@@ -215,7 +215,7 @@ function playerMovePacket(player, buf){
 			if(!l) break top
 		}
 		if(!item) break top
-		jump(ax, ay); plx = plx+ax|0; ply = ply+ay|0
+		jump(ax, ay)
 		{
 			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
 			if(interactFluid){
@@ -223,7 +223,8 @@ function playerMovePacket(player, buf){
 			}else if(!(up.targettable||up.solid) && !(left.targettable||left.solid) && !(down.targettable||down.solid) && !(right.targettable||right.solid)) break top
 		}
 		b = peek()
-		if(interactFluid && b.flows === false) break top
+		if(!b.replaceable || (interactFluid && b.flows === false)) break top
+		plx = plx+ax|0; ply = ply+ay|0
 		if(false){
 			// TODO better entity check allowing for quasi-solid blocks like sugar_cane
 			if(plx < player.x + player.width && plx + 1 > player.x - player.width && ply < player.y + player.height && ply + 1 > player.y) break top
