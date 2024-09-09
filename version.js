@@ -3,13 +3,17 @@ export const VERSION = 'alpha 10'
 
 export const credit = `
 
-All graphical assets: Mojang AB
+All graphical assets: \\+9Mojang AB\\+f
+\\27(Available under applicable license)\\0f
 
-Music: C418
-Other sounds: C418, Mojang AB
+Music: \\+dC418\\+f
+Other sounds: \\+dC418\\+f, \\+9Mojang AB\\+f
+\\27(Available under applicable license)\\0f
 
-Client software: Open-MC organization (https://github.com/open-mc)
-Server software: Open-MC organization (https://github.com/open-mc)
-- @blobthekat
-- @zekiah-a
-`
+Client & server software: Open-MC organization (\\4chttps://github.com/open-mc\\0f)
+Free & open-source software available under \\5+GPLv3\\0+
+Contributors:
+- github.com/\\+3BlobTheKat\\+f
+- github.com/\\+3Zekiah-A\\+f
+
+`.trim()
