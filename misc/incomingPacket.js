@@ -181,7 +181,7 @@ function playerMovePacket(player, buf){
 			}
 			if(item && item.interact2){
 				const i2 = item.interact2(player)
-				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
+				if(typeof i2 == 'object' && this.mode!=1) player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
 				else if(i2 && this.mode!=1){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
@@ -194,9 +194,9 @@ function playerMovePacket(player, buf){
 		if((b.targettable||b.solid) | (interactFluid && b.fluidLevel)){
 			b: if(item && item.interact){
 				const i2 = item.interact(b, player)
-				if(i2 === undefined) break b
+				if(i2 === undefined || this.mode == 1) break b
 				if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
-				else if(i2 && this.mode!=1){
+				else if(i2){
 					if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 					player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
 				}
@@ -231,7 +231,7 @@ function playerMovePacket(player, buf){
 		if(item.place && !(item.forbidden&&this.perms<MOD&&this.mode==0)){
 			player.state |= 8
 			const i2 = item.place(px, py, player)
-			if(typeof i2 == 'object') player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
+			if(typeof i2 == 'object' && this.mode!=1) player.setItem(0, sel&127, i2), player.itemChanged(0, sel&127, i2)
 			else if(i2 && this.mode!=1){
 				if((item.count -= +i2) <= 0) player.setItem(0, sel&127, null)
 				player.itemChanged(0, sel&127, item.count <= 0 ? null : item)
