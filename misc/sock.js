@@ -65,7 +65,7 @@ export async function open(){
 		other.sock.end(1000, '\\19You are logged in from another session')
 		other.sock = null
 		other._world = null
-		perms = other.perms; this.mode = other.mode
+		perms = other.sock.perms; this.mode = other.sock.mode
 		player = other
 		playersConnecting.delete(this.username)
 	}else try{
@@ -135,7 +135,7 @@ export async function open(){
 		chat('\\+b' + this.username + (other === null ? ' joined the game' : ' joined the server'))
 	}
 	const ip = decoder.decode(this.getRemoteAddressAsText())
-	if(ip) console.info('\x1b[90mIP: %s, Time: %s', ip, new Date().toISOString())
+	if(ip) console.info('@%s - \x1b[90mIP: %s, Time: %s', this.username, ip, new Date().toISOString())
 }
 
 export async function close(){
