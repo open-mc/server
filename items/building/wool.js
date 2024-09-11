@@ -1,4 +1,5 @@
 import { Blocks } from "../../blocks/block.js"
+import "../../blocks/building/wool.js"
 import { itemify } from "../../blocks/blockshapes.js"
 import { Items } from "../item.js"
 
