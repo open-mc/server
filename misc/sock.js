@@ -63,9 +63,9 @@ export async function open(){
 		other.unlink()
 		other.sock.entity = null
 		other.sock.end(1000, '\\19You are logged in from another session')
+		perms = other.sock.perms; this.mode = other.sock.mode
 		other.sock = null
 		other._world = null
-		perms = other.sock.perms; this.mode = other.sock.mode
 		player = other
 		playersConnecting.delete(this.username)
 	}else try{
