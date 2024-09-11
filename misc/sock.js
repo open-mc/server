@@ -164,7 +164,7 @@ export async function close(){
 	await playersLevel.put(this.username, buf.build())
 	playersConnecting.delete(this.username)
 	if(entity.world) entity.remove()
-	sendTabMenu()
+	sendTabMenu(true)
 	playerLeft()
 }
 
