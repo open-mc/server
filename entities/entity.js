@@ -168,8 +168,22 @@ export class Entity{
 	static slotAltClicked = EphemeralInterface.prototype.slotAltClicked
 	static mapItems = EphemeralInterface.prototype.mapItems
 	itemChanged(id = 0, slot, item = this.getItem(id, slot)){
-		if(!this.linked || (!this.chunk&&!this.sock)) return
-		for(const sock of this.chunk ? this.chunk.sockets : [this.sock]){
+		if(!this.chunk){
+			const {sock} = this
+			if(!sock) return
+			let {ibuf, ibufLastB, ibufLastA} = sock
+			if(!sock.ibuf) (sock.ibuf = ibuf = new DataWriter()).byte(32)
+			if(ibufLastB != this.netId || ibufLastA != id){
+				ibuf.byte(131)
+				ibuf.byte(id)
+				sock.ibufLastA = id
+				sock.ibufLastB = Infinity
+			}
+			ibuf.byte(slot)
+			Item.encode(ibuf, item)
+			return
+		}
+		for(const sock of this.chunk.sockets){
 			let {ibuf, ibufLastB, ibufLastA} = sock
 			if(!sock.ibuf) (sock.ibuf = ibuf = new DataWriter()).byte(32)
 			if(ibufLastB != this.netId || ibufLastA != id){
