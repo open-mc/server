@@ -591,7 +591,7 @@ export const anyone_help = {
 	kill: '-- Suicide'
 }, mod_help = {
 	...anyone_help,
-	give: '[player] [item] (count=~) ',
+	give: '[player] [item] (count=1) ',
 	kick: '[player] -- Kick a player',
 	say: '[style] [...msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension=~) -- teleport someone to a dimension',
