@@ -327,9 +327,10 @@ Object.assign(commands, {
 		if(f.length>1){
 			const histogram = new Map()
 			let unlinked = 0
-			for(const e of f)
+			for(const e of f){
 				histogram.set(e.world, (histogram.get(e.world)||0)+1)
 				if(!e.linked) unlinked++
+			}
 			if(histogram.size == 1){
 				const w = histogram.keys().next().value
 				return `Selector found ${f.length} entities in ${w?'the '+w.id:'limbo'}${unlinked?' (of which '+unlinked+' unlinked)':''}`
