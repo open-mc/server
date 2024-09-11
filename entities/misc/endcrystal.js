@@ -10,7 +10,7 @@ Entities.end_crystal = class extends Entity{
 	static savedata = {power: Short}
 	static maxHealth = 1
 	damage(a, _){
-		if(a < 1) return
+		if(a < 0) return
 		this.event(3)
 		explode(this, this.power)
 	}

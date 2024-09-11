@@ -315,6 +315,7 @@ Object.assign(commands, {
 		const c = damageTypes[cause] || null
 		let i = 0
 		for(const e of selector(t, this)){
+			if(!e.linked) continue
 			if(e.damage) e.damage(e.health, c)
 			else e.kill(c)
 			i++
