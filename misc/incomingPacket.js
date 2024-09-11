@@ -7,6 +7,7 @@ import { fastCollision, stepEntity } from '../world/physics.js'
 import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
 import './commands.js'
 import { ItemIDs } from '../items/item.js'
+import { updatesock } from './sock.js'
 
 const REACH = 10
 
@@ -80,6 +81,7 @@ function playerMovePacket(player, buf){
 	this.movePacketCd = t
 	let prx = 2147483648, pry = 0, plx = 2147483648, ply = 0
 	top: {
+		updatesock.call(this)
 		validateMove(this, player, buf)
 		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
 		if(!player.world) break top
@@ -170,11 +172,12 @@ function playerMovePacket(player, buf){
 		if(sel > 127){
 			const block = peek()
 			if((block.targettable||block.solid) | block.mustBreak){
-				if(!player.breakGridEvent | player.bx != (player.bx = getX()) | player.by != (player.by = getY())){
-					if(player.breakGridEvent)
-						cancelgridevent(player.breakGridEvent)
-					player.blockBreakLeft = this.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
-					player.breakGridEvent = gridevent(4, buf => buf.float(player.blockBreakLeft))
+				if(!this.breakGridEvent | this.bx != (this.bx = getX()) | this.by != (this.by = getY())){
+					if(this.breakGridEvent)
+						cancelgridevent(this.breakGridEvent)
+					this.blockBreakLeft = this.mode == 1 ? 0 : round((item ? item.breaktime(block) : block.breaktime) * currentTPS)
+					this.breakGridEvent = gridevent(4, buf => buf.float(this.blockBreakLeft))
+					this.breakTool = item
 					player.state |= 8
 				}
 				return
@@ -251,10 +254,10 @@ function playerMovePacket(player, buf){
 			if(bl.savedata) tbuf.write(bl.savedata, bl)
 		}
 	}
-	if(player.breakGridEvent){
-		cancelgridevent(player.breakGridEvent)
-		player.breakGridEvent = 0
-		player.blockBreakLeft = -1
+	if(this.breakGridEvent){
+		cancelgridevent(this.breakGridEvent)
+		this.breakGridEvent = 0
+		this.blockBreakLeft = -1
 		player.state &= -9
 		stat('player', 'break_abandon')
 	}

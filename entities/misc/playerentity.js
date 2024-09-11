@@ -46,9 +46,6 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	static allInterfaces = [0, 1, 2]
 	selected = 0
 	skin = defaultSkin
-	breakGridEvent = 0
-	blockBreakLeft = -1
-	bx = 0; by = 0
 	rubberMv = 0
 	static width = 0.3
 	get height(){return this.state & 2 ? 1.5 : 1.8}
@@ -56,41 +53,6 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 	static portalWait = 80
 	toString(){
 		return `\x1b[33m${this.name}\x1b[m \x1b[31m${this.health/2} ♥\x1b[m`
-	}
-	updateControls(){
-		if(this.blockBreakLeft >= 0 && --this.blockBreakLeft == -1){
-			goto(this.world, this.bx, this.by)
-			const tile = peek()
-			gridevent(2)
-			place(tile.behind ?? Blocks.air)
-			if(this.sock?.mode < 1){
-				const drop = tile.drops?.(this.inv[this.selected])
-				if(drop instanceof Item){
-					const itm = new Entities.item()
-					itm.item = drop
-					itm.dx = random() * 6 - 3
-					itm.dy = 6
-					itm.place(this.world, this.bx + 0.5, this.by + 0.375)
-				}else if(drop instanceof Array){
-					for(const d of drop){
-						if(!d) continue
-						const itm = new Entities.item()
-						itm.item = d
-						itm.dx = random() * 6 - 3
-						itm.dy = 6
-						itm.place(this.world, this.bx + 0.5, this.by + 0.375)
-					}
-				}
-			}
-			stat('player', 'blocks_broken')
-			cancelgridevent(this.breakGridEvent)
-			this.breakGridEvent = 0
-			this.state &= -9
-		}
-	}
-	update(){
-		super.update()
-		this.updateControls()
 	}
 	static savedata = {
 		health: Byte,

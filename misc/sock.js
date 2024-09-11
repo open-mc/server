@@ -7,8 +7,10 @@ import { index } from '../misc/miscdefs.js'
 import { DataReader, DataWriter, decoder } from '../modules/dataproto.js'
 import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import { Entities, EntityIDs, newId } from '../entities/entity.js'
-import { Items } from '../items/item.js'
+import { Item, Items } from '../items/item.js'
 import { actualTPS, currentTPS } from '../world/tick.js'
+import { cancelgridevent, goto, gridevent, peek, place } from './ant.js'
+import { Blocks } from '../blocks/block.js'
 
 function sendTabMenu(encodePlayers = false){
 	const buf = new DataWriter()
@@ -61,9 +63,10 @@ export async function open(){
 	this.mode = 0
 	if(other){
 		other.unlink()
-		other.sock.entity = null
 		other.sock.end(1000, '\\19You are logged in from another session')
 		perms = other.sock.perms; this.mode = other.sock.mode
+		closesock.call(other.sock)
+		other.sock.entity = null
 		other.sock = null
 		other._world = null
 		player = other
@@ -118,6 +121,10 @@ export async function open(){
 	this.packets = []
 	this.interface = null; this.interfaceId = 0
 	this.interfaceD = null
+	this.breakGridEvent = 0
+	this.blockBreakLeft = -1
+	this.breakTool = null
+	this.bx = this.by = 0
 	this.send(configPacket())
 	if(link) player.link()
 	else this.netId = newId(), player.rubber(127)
@@ -138,12 +145,59 @@ export async function open(){
 	if(ip) console.info('\x1b[90m@%s - IP: %s, Time: %s', this.username, ip, new Date().toISOString())
 }
 
+export function updatesock(){
+	const {entity} = this
+	if(this.blockBreakLeft >= 0){
+		if(this.breakTool != entity.inv[entity.selected]){
+			cancelgridevent(this.breakGridEvent)
+			this.breakGridEvent = 0
+			entity.state &= -9
+			this.blockBreakLeft = 0
+			this.breakTool = null
+			stat('player', 'break_abandon')
+		}else if(--this.blockBreakLeft == -1){
+			goto(entity.world, this.bx, this.by)
+			const tile = peek()
+			gridevent(2)
+			place(tile.behind ?? Blocks.air)
+			if(this.mode < 1){
+				const drop = tile.drops?.(entity.inv[entity.selected])
+				if(drop instanceof Item){
+					const itm = new Entities.item()
+					itm.item = drop
+					itm.dx = random() * 6 - 3
+					itm.dy = 6
+					itm.place(entity.world, this.bx + 0.5, this.by + 0.375)
+				}else if(drop instanceof Array){
+					for(const d of drop){
+						if(!d) continue
+						const itm = new Entities.item()
+						itm.item = d
+						itm.dx = random() * 6 - 3
+						itm.dy = 6
+						itm.place(entity.world, this.bx + 0.5, this.by + 0.375)
+					}
+				}
+			}
+			stat('player', 'blocks_broken')
+			cancelgridevent(this.breakGridEvent)
+			this.breakGridEvent = 0
+			entity.state &= -9
+		}
+	}
+}
+function closesock(){
+	if(this.breakGridEvent) cancelgridevent(this.breakGridEvent)
+	this.breakTool = null
+	this.entity.closeInterface()
+}
+
 export async function close(){
 	const state = this.state; this.state = 0
 	if(state == 2) return playerLeftQueue(this)
 	const {entity} = this
 	if(!entity) return
-	entity.closeInterface()
+	closesock.call(this)
 	if(entity.sock && entity.sock != this) return
 	players.delete(this.username)
 	playersConnecting.add(this.username)
