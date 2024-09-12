@@ -28,8 +28,7 @@ export class Chunk extends Uint16Array{
 			e.place(this.world, buf.short() / 1024 + (this.x << 6), buf.short() / 1024 + (this.y << 6))
 			e.chunk = this
 			this.entities.push(e)
-			buf.setUint32(buf.i, e.netId)
-			buf.setUint16((buf.i += 6) - 2, e.netId / 4294967296)
+			buf.i += 6
 			e.name = e._name = buf.string()
 			e.state = e._state = buf.short()
 			e.dx = e._dx = buf.float()
@@ -129,8 +128,8 @@ export class Chunk extends Uint16Array{
 				buf.short(e.id)
 				buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
 				buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
-				buf.int(e.netId | 0)
-				buf.short(e.netId / 4294967296 | 0)
+				buf.int(0)
+				buf.short(0)
 				buf.string(e.name)
 				buf.short(e.state)
 				buf.float(e.dx)

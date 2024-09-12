@@ -129,7 +129,7 @@ export const fluidify = (B, t, renewable = false) => {
 			}
 			if(!b.replaceable){
 				let L = this.fluidLevel - 1 - (B.delay > 10)*2
-				if(L<0) L=0
+				if(L<=0) return
 				up(); right()
 				let b = peek()
 				let fillSource = renewable<<2

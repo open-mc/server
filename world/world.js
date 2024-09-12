@@ -82,8 +82,12 @@ export class World extends Map{
 				try{ch.parse(buf)}catch(e){if(CONFIG.log) console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
-				for(const sock of ch.sockets)
+				for(const sock of ch.sockets){
 					sock.send(buf)
+					const {ebuf} = sock
+					for(const e of ch.entities)
+						ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+				}
 			})
 		}else if(ch.t > -1) ch.t = 20
 		return ch
@@ -101,10 +105,19 @@ export class World extends Map{
 				try{ch.parse(buf)}catch(e){if(CONFIG.log) console.warn(e)}
 				buf = Chunk.diskBufToPacket(buf, cx, cy)
 				this._loaded(ch)
-				for(const sock of ch.sockets)
+				for(const sock of ch.sockets){
 					sock.send(buf)
+					const {ebuf} = sock
+					for(const e of ch.entities)
+						ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+				}
 			})
-		}else sock.send(ch.toBuf(new DataWriter(), true).build())
+		}else{
+			sock.send(ch.toBuf(new DataWriter(), true).build())
+			const {ebuf} = sock
+			for(const e of ch.entities)
+				ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+		}
 		ch.sockets.push(sock)
 	}
 	unlink(cx, cy, sock){
@@ -112,9 +125,8 @@ export class World extends Map{
 		if(!ch) return false
 		ch.sockets.remove(sock)
 		const {ebuf} = sock
-		for(let e of ch.entities){
+		for(let e of ch.entities)
 			ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
-		}
 		return true
 	}
 	check(ch){

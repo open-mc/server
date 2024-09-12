@@ -307,6 +307,16 @@ Object.assign(commands, {
 		}
 		return log(this, 'Set the TPS to '+currentTPS)
 	},
+	radius(r=-1){
+		if(!this?.sock) throw 'Not a player'
+		if(r < 0) return 'Loading radius is at r='+(this.radius-1)
+		r = min(129, max(2, +r + 1 | 0))
+		if(r == this.radius) return 'Loading radius unchanged (r='+(r-1)+')'
+		this.unload(this.chunk.x, this.chunk.y, this.world)
+		this.radius = r
+		this.load(this.chunk.x, this.chunk.y, this.world)
+		return 'Loading radius set to '+(r-1)
+	},
 	kill(t = '@s', cause = 'void'){
 		if(this?.sock?.perms < MOD){
 			if(!CONFIG.permissions.suicide) throw 'This server does not permit suicide'
