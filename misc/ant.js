@@ -1,5 +1,6 @@
 import { BlockIDs } from '../blocks/block.js'
-import { Entity } from '../entities/entity.js'
+import { Entities, Entity } from '../entities/entity.js'
+import { Item } from '../items/item.js'
 
 let pos = 0, chunk = null
 export {pos as chunkTileIndex, chunk as antChunk}
@@ -172,6 +173,26 @@ export function summon(Fn){
 	const e = new Fn()
 	if(chunk) e.place(chunk.world, ((chunk.x << 6) | (pos & 63)) + .5, chunk.y << 6 | pos >> 6)
 	return e
+}
+
+export function summonDrops(drop){
+	if(!chunk) return
+	if(drop instanceof Item){
+		const itm = new Entities.item()
+		itm.item = drop
+		itm.dx = random() * 6 - 3
+		itm.dy = 6
+		itm.place(chunk.world, (chunk.x<<6|pos&63)+0.5, (chunk.y<<6|pos>>6)+0.375)
+	}else if(drop instanceof Array){
+		for(const d of drop){
+			if(!d) continue
+			const itm = new Entities.item()
+			itm.item = d
+			itm.dx = random() * 6 - 3
+			itm.dy = 6
+			itm.place(chunk.world, (chunk.x<<6|pos&63)+0.5, (chunk.y<<6|pos>>6)+0.375)
+		}
+	}
 }
 
 export const peek = () => {const b=chunk?chunk[pos]:0;return b===65535?chunk.tileData.get(pos):BlockIDs[b]}

@@ -8,7 +8,7 @@ import { getX, getY, load, peek, save } from '../misc/ant.js'
 import { EphemeralInterface } from '../misc/ephemeralinterface.js'
 
 export const chatImport = {chat: null}
-
+export const Entities = Object.create(null)
 export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
 let i = -1
@@ -264,5 +264,4 @@ export class Entity{
 }
 
 Object.setPrototypeOf(Entity.prototype, null)
-export const Entities = Object.create(null)
 export const EntityIDs = []

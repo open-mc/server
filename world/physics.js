@@ -188,7 +188,7 @@ export function fastCollision(e, dt = 1 / currentTPS){
 			const tx = xf + x + e.width
 			if((x === ex + 1 ? tx <= e.x + dx - EPS : xf < 0) || tx > e.x + EPS) continue
 			a: if(climb > 0 && climb < Infinity){
-				const sx = (x === ex + 1 ? e.x - xf + dx - e.width : x) + EPS, sy = e.y + e.height + EPS, ex1 = xf + x + e.width + e.width - EPS, ey = e.y + e.height + climb - EPS, xa = floor(sx), ya = floor(sy)
+				const sx = (x === ex + 1 ? e.x + dx - e.width : x) + EPS, sy = e.y + e.height + EPS, ex1 = xf + x + e.width + e.width - EPS, ey = e.y + e.height + climb - EPS, xa = floor(sx), ya = floor(sy)
 				let c0 = xa<(x&-64)?c?.left:xa>=(x|63)?c?.right:c, i = xa&63|ya<<6&4032; c0 = ya<y0?c0?.down:ya>(y0|63)?c0?.up:c0
 				for(let y = ya; y < ey; y++, (i+=64)>=4096&&(i&=63,c0=c0.up)){
 					let j = i, c1 = c0

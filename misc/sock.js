@@ -9,7 +9,7 @@ import { playerLeft, playerLeftQueue, queue } from './queue.js'
 import { Entities, EntityIDs, newId } from '../entities/entity.js'
 import { Item, Items } from '../items/item.js'
 import { actualTPS, currentTPS } from '../world/tick.js'
-import { cancelgridevent, goto, gridevent, peek, place } from './ant.js'
+import { cancelgridevent, goto, gridevent, peek, place, summonDrops } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 
 function sendTabMenu(encodePlayers = false){
@@ -163,22 +163,7 @@ export function updatesock(){
 			place(tile.behind ?? Blocks.air)
 			if(this.mode < 1){
 				const drop = tile.drops?.(entity.inv[entity.selected])
-				if(drop instanceof Item){
-					const itm = new Entities.item()
-					itm.item = drop
-					itm.dx = random() * 6 - 3
-					itm.dy = 6
-					itm.place(entity.world, this.bx + 0.5, this.by + 0.375)
-				}else if(drop instanceof Array){
-					for(const d of drop){
-						if(!d) continue
-						const itm = new Entities.item()
-						itm.item = d
-						itm.dx = random() * 6 - 3
-						itm.dy = 6
-						itm.place(entity.world, this.bx + 0.5, this.by + 0.375)
-					}
-				}
+				summonDrops(drop)
 			}
 			stat('player', 'blocks_broken')
 			cancelgridevent(this.breakGridEvent)

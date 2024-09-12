@@ -1,6 +1,5 @@
-import { Entities } from '../entities/entity.js'
 import { Item } from '../items/item.js'
-import { getX, getY, gridevent, antChunk } from '../misc/ant.js'
+import { getX, getY, gridevent, antChunk, summonDrops } from '../misc/ant.js'
 import { EphemeralInterface } from '../misc/ephemeralinterface.js'
 
 export class Block{
@@ -14,24 +13,9 @@ export class Block{
 	static mustBreak = false
 	static tool = ''
 	static savedata = null
-	destroy(sound = true, drop = this.drops?.()){
+	destroy(sound = true){
 		if(sound) gridevent(2)
-		if(drop instanceof Item){
-			const itm = new Entities.item()
-			itm.item = drop
-			itm.dx = random() * 6 - 3
-			itm.dy = 6
-			itm.place(antChunk.world, getX()+0.5, getY()+0.375)
-		}else if(drop instanceof Array){
-			for(const d of drop){
-				if(!d) continue
-				const itm = new Entities.item()
-				itm.item = d
-				itm.dx = random() * 6 - 3
-				itm.dy = 6
-				itm.place(antChunk.world, getX()+0.5, getY()+0.375)
-			}
-		}
+		summonDrops(this.drops?.())
 	}
 	getItem(id, slot){}
 	setItem(id, slot, item){}

@@ -1,5 +1,5 @@
 import { BlockIDs, Blocks } from "../../blocks/block.js"
-import { goto, peek, place } from "../../misc/ant.js"
+import { goto, peek, place, summonDrops } from "../../misc/ant.js"
 import { Entities, Entity } from "../entity.js"
 
 Entities.falling_block = class extends Entity{
@@ -16,6 +16,9 @@ Entities.falling_block = class extends Entity{
 			if(bl.replaceable){
 				bl.destroy?.(false)
 				place(BlockIDs[this.block] ?? Blocks.air)
+				return void this.remove()
+			}else{
+				summonDrops((BlockIDs[this.block] ?? Blocks.air).drops?.())
 				return void this.remove()
 			}
 		}
