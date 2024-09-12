@@ -20,14 +20,14 @@ export const fluidify = (B, t, renewable = false) => {
 				else if(b.replaceable && b.fluidLevel < 7){
 					if(b.fluidType != t) this.combine?.(b)
 					else b.destroy?.(), place(levels[7])
-				}
+				}else if(b.replaceable && b.fluidType != t) this.combine?.(b)
 				left(); left()
 				b = peek()
 				if(b.replaceable && !b.fluidLevel) b.destroy?.(), place(levels[7])
 				else if(b.replaceable && b.fluidLevel < 7){
 					if(b.fluidType != t) this.combine?.(b)
 					else b.destroy?.(), place(levels[7])
-				}
+				}else if(b.replaceable && b.fluidType != t) this.combine?.(b)
 			}else if(b.fluidLevel){
 				if(b.fluidType != t) this.combine?.(b)
 				else b.destroy?.(), place(flowing)
