@@ -30,6 +30,8 @@ export class Entity{
 		this.age = 0
 		this.pendingEvents = []
 	}
+	get chunkX(){return Math.floor(this._x)>>>6}
+	get chunkY(){return Math.floor(this._y)>>>6}
 	place(world, x, y){
 		this.x = this._x = x = ifloat(x); this.y = this._y = y = ifloat(y)
 		this.world = world
