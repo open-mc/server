@@ -85,7 +85,7 @@ Blocks.crafting_table = class extends Planks{
 	static breaktime = 3
 	drops(){ return new Items.crafting_table(1) }
 	interact(_, player){
-		player.openInterface(new CraftingInterface, 0)
+		player.openInterface(new CraftingInterface, 0, this)
 		return 0
 	}
 }
