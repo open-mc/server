@@ -140,7 +140,7 @@ export class Entity{
 			e.sock = this.sock
 		}else throw '.openInterface(<here>, _): Block, entity or ephemeral interface expected'
 		this.sock.interface = e
-		this.sock.interfaceD = e.isBlock ? save(e) : e instanceof Entity ? e : null
+		this.sock.interfaceD = dep.isBlock ? save(dep) : dep instanceof Entity ? dep : null
 		this.sock.send(res.build())
 		e.interfaceOpened?.(id, this)
 		return true
