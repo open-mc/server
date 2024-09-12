@@ -14,16 +14,16 @@ import '../biomes/end.js'
 const biomemap = []
 biomemap.buffer = new DataView((await PNG.from(import.meta, './biomes.png')).buffer)
 const biomeconvert = {
-	0x2eb300: Biomes.plains,
-	0x0048b3: Biomes.ocean,
-	0x757575: Biomes.rocky,
-	0xd7d05c: Biomes.desert,
-	0x0000ff: Biomes.river,
-	0xeeeeee: Biomes.snowy
+	0x20b000: Biomes.plains,
+	0x0040b0: Biomes.ocean,
+	0x707070: Biomes.rocky,
+	0xd0d050: Biomes.desert,
+	0x0000f0: Biomes.river,
+	0xe0e0e0: Biomes.snowy
 }
 for(let i = 0; i < biomemap.buffer.byteLength; i+=4){
-	const b = biomeconvert[biomemap.buffer.getUint32(i) >>> 8]
-	if(!b) console.error('\x1b[31mMissing biome mapping for color 0x'+(biomemap.buffer.getUint32(i)>>>8).toString(16).padStart(6,'0')),process.exit(1)
+	const b = biomeconvert[(biomemap.buffer.getUint32(i) >>> 8) & 0xf0f0f0]
+	if(!b) console.error('\x1b[31mMissing biome mapping for color 0x'+(biomemap.buffer.getUint32(i)>>>8).toString(16).padStart(6,'0')),close()
 	biomemap.push(b)
 }
 const maps = new Map()
