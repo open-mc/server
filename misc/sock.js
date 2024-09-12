@@ -50,9 +50,10 @@ export async function open(){
 	}
 	this.state = 1; this.send(indexCompressed)
 	let perms = PERMISSIONS[this.username] ?? CONFIG.permissions.default
-	if(perms*1000 > Date.now()){
+	const now = Date.now() * .001
+	if(perms > now){
 		this.end(1000, perms >= 2147483647 ? '\\19You are permanently banned from this server':'\\19You are banned from this server for '
-			+ Date.formatTime(perms*1000-Date.now())+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
+			+ Date.formatTime((perms-now)*1000)+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
 		return
 	}else if(perms == 0)
 		return this.end(1000, '\\1fYou are not invited to play on this server')
@@ -105,14 +106,14 @@ export async function open(){
 		playersConnecting.delete(this.username)
 		link = !CONFIG.permissions.join_as_spectator
 	}
-	const now = Date.now()
 	if(Object.hasOwn(player, 'skin')) player.skin = this.skin
 	player._avatar = null
 	player.sock = this
 	player.name = this.username
 	this.perms = perms
-	this.movePacketCd = now / 1000 - 1
-	this.joinedAt = now
+	this.movePacketCd = now - 1
+	this.chatCd = 0
+	this.joinedAt = Math.floor(now)
 	this.r = 255
 	this.rx = CONFIG.socket.movement_check_mercy
 	this.ry = CONFIG.socket.movement_check_mercy

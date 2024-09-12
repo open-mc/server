@@ -76,7 +76,7 @@ function validateMove(sock, player, buf){
 const DEFAULT_BLOCKSHAPE = [0, 0, 1, 1]
 function playerMovePacket(player, buf){
 	if(!player.world || player.health <= 0 || buf.byte() != this.r) return
-	let t = Date.now() / 1000
+	let t = Date.now() * .001
 	if(t < (t = max(this.movePacketCd + 1 / currentTPS, t - 2))) return
 	this.movePacketCd = t
 	let prx = 2147483648, pry = 0, plx = 2147483648, ply = 0
@@ -332,10 +332,13 @@ export function voiceChat(player, buf){
 	if(buf.left < 2) return
 	const r = CONFIG.proximity_chat || 0
 	if(!r || !player.linked) return
+	let t = Date.now() * .001
+	if(t < (t = max(this.chatCd + buf.left * .000125, t - 60))) return
+	this.chatCd = t
 	const packet = new DataView(new ArrayBuffer(buf.left + 7))
 	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
 	packet.setUint8(0, 96)
-	const t = new Set
+	const targets = new Set
 	if(typeof r == 'number'){
 		packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
 		const cx0 = floor(player.x-r)>>>6, cx1 = floor(player.x+r)+64>>>6
@@ -348,19 +351,19 @@ export function voiceChat(player, buf){
 					if(!s.entity || s.entity === player) continue
 					const dx = s.entity.x - player.x, dy = s.entity.y - player.y
 					if(dx*dx+dy*dy > r*r) continue
-					t.add(s)
+					targets.add(s)
 				}
 			}
 		}
 	}else if(r == 'world'){
 		for(const p of players.values())
 			if(p.world == player.world && p != player)
-				t.add(p.sock)
+				targets.add(p.sock)
 	}else if(r == 'server'){
 		for(const p of players.values())
-			if(p != player) t.add(p.sock)
+			if(p != player) targets.add(p.sock)
 	}
-	for(const s of t) s.send(packet.buffer)
+	for(const s of targets) s.send(packet.buffer)
 }
 
 function disappearPacket(player){
@@ -399,6 +402,9 @@ export const codes = Object.assign(new Array(256), {
 	96: voiceChat,
 })
 export function onstring(player, text){
+	let t = Date.now() * .001
+	if(t < (t = max(this.chatCd + 1, t - 60))) return
+	this.chatCd = t
 	if(!(text = text.trimEnd())) return
 	if(text[0] == '/'){
 		try{
