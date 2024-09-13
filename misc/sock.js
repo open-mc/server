@@ -181,6 +181,7 @@ function closesock(){
 export async function close(){
 	const state = this.state; this.state = 0
 	if(state == 2) return playerLeftQueue(this)
+	if(!exiting) chat('\\+b' + entity.name + ' left the game')
 	const {entity} = this
 	if(!entity) return
 	closesock.call(this)
@@ -199,7 +200,6 @@ export async function close(){
 	buf.float(entity.f)
 	buf.double(entity.age)
 	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
-	if(!exiting) chat('\\+b' + entity.name + ' left the game')
 	buf.byte(this.mode)
 	await playersLevel.put(this.username, buf.build())
 	playersConnecting.delete(this.username)

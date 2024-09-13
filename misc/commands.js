@@ -618,10 +618,11 @@ export const anyone_help = {
 	id: '[block|item|entity|blockdata|itemdata|entitydata] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID',
 	hide: '[player] -- Put a player in spectator',
 	show: '[player] -- Put a player out of spectator',
-	where: '[player] -- Where is a specific player?'
+	where: '[player] -- Where is a specific player?',
+	doxx: ' -- alias for /where',
+	reconn: '[player] (delay) -- Reconnect players',
 }, help = {
 	...mod_help,
-	reconn: '[player] (delay) -- Reconnect players',
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
 	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
 	tick: ['[tps] -- Set TPS', 'freeze|resume|entities|blocks|all|none -- Enable only certain tick phases', '+[amount] -- Step some ticks forward (for tick phases that are disabled)'],
