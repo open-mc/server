@@ -1,7 +1,7 @@
 {
 	"type": "module",
 	"scripts": {
-		"start": "[ -d node_modules ] || npm i; node ."
+		"start": "[ -d node_modules ] || npm i; node --default-type=module --allow-natives-syntax ."
 	},
 	"dependencies": {
 		"basic-repl": "^2.2.2",

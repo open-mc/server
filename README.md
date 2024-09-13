@@ -1,6 +1,9 @@
 ## Overview
 
 Requirements: [Git](https://git-scm.com/downloads) and [Nodejs](https://nodejs.org/en/download)
+
+Note: For **windows**, it is recommended to install both via [scoop](https://scoop.sh). Follow the install instructions on their website, then install both by typing `scoop install git` and `scoop install nodejs@20.17.0`
+
 Clone this repository and run the start script:
 ```sh
 git clone https://github.com/open-mc/server
