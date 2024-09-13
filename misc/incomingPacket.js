@@ -380,7 +380,7 @@ export function creativeItemPacket(player, buf){
 	const a = new ItemIDs[id](1)
 	a.count = min(a.maxStack, buf.byte()||1)
 	const b = player.getItem(2, 0)
-	if(b && (b.constructor !== a.constructor || a.savedata)){
+	if(b && !b.stackableWith(a)){
 		player.setItem(2, 0, null)
 		player.itemChanged(2, 0, null)
 		return

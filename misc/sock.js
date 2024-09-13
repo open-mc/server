@@ -181,9 +181,9 @@ function closesock(){
 export async function close(){
 	const state = this.state; this.state = 0
 	if(state == 2) return playerLeftQueue(this)
-	if(!exiting) chat('\\+b' + entity.name + ' left the game')
 	const {entity} = this
 	if(!entity) return
+	if(!exiting) chat('\\+b' + entity.name + ' left the game')
 	closesock.call(this)
 	if(entity.sock && entity.sock != this) return
 	players.delete(this.username)

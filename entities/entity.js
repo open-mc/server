@@ -95,25 +95,26 @@ export class Entity{
 		}
 	}
 	give(stack, id = 0){
+		let {count} = stack
 		this.mapItems(id, itm => {
-			if(!stack.count) return
-			const count = min(stack.maxStack, stack.count)
-			if(!itm) return stack.count -= count, new stack.constructor(count)
-			if(itm.constructor == stack.constructor && !itm.savedata){
-				const c = min(count, itm.maxStack - itm.count)
-				stack.count -= c
+			if(!count) return
+			let c = min(stack.maxStack, count)
+			if(!itm) return (count -= c) ? stack.copy(c) : (stack.count = c, stack)
+			if(stack.stackableWith(itm)){
+				c = min(c, itm.maxStack - itm.count)
+				count -= c
 				itm.count += c
 				return itm
 			}
 		})
-		return stack.count ? stack : null
+		return count ? (stack.count = count, stack) : null
 	}
 	giveAndDrop(stack){
-		this.give(stack)
-		if(stack.count) while(true){
+		stack = this.give(stack)
+		if(stack?.count) while(true){
 			const e = new Entities.item()
 			if(stack.count > 255)
-				e.item = stack.constructor(255), stack.count -= 255
+				e.item = stack.copy(255), stack.count -= 255
 			else e.item = stack
 			e.dx = this.dx + this.f > 0 ? 7 : -7
 			e.place(this.world, this.x, this.y + this.head - 0.5)

@@ -15,7 +15,7 @@ Entities.item = class ItemEntity extends Entity{
 			this.remove()
 			return
 		}
-		if(e instanceof ItemEntity && e.age >= 10 && e.item && e.item.constructor == this.item.constructor && !this.item.savedata && this.world){
+		if(e instanceof ItemEntity && e.age >= 10 && e.item && e.item.stackableWith(this.item) && this.world){
 			const maxRemovable = max(0, 32767 - this.item.count)
 			if(maxRemovable >= e.item.count){
 				if(this.item.count < e.item.count)
@@ -31,10 +31,10 @@ Entities.item = class ItemEntity extends Entity{
 			return
 		}
 		if(this.age < 10 || !e.inv) return
-		if(this.item.count !== (e.give(this.item), this.item.count)){
-			const c = this.item.count
+		let c = this.item.count
+		if(c !== (c = (this.item = e.give(this.item))?.count ?? 0)){
 			this.event(1, buf => buf.byte(c))
-			if(!this.item.count) this.remove()
+			if(!c) this.remove()
 		}
 	}
 }

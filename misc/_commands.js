@@ -6,10 +6,10 @@ import { entityMap } from '../world/tick.js'
 
 export const marks = new WeakMap
 
-const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?!\1|\\).|\\.)*\1/y
+const ID = /[a-zA-Z0-9_]*/y, NUM = /[+-]?(\d+(\.\d*)?|\.\d+)([Ee][+-]?\d+)?/y, BOOL = /1|0|true|false|/yi, STRING = /(['"`])((?:(?!\1|\\).|\\.)*)\1/y
 const ESCAPES = {n: '\n', b: '\b', t: '\t', v: '\v', r: '\r', f: '\f'}
 
-export const snbt = (s, t, T1, T2) => {try{return _snbt(s,0,t,T1,T2)}catch{throw 'invalid syntax in snbt'}}
+export const snbt = (s, t, T1, T2=T1) => {try{return _snbt(s,0,t,T1,T2)}catch(e){throw typeof e=='string'?e:'invalid syntax in snbt'}}
 
 function _snbt(s, i, t, T1, T2){
 	if(typeof t == 'object'){
@@ -45,7 +45,8 @@ function _snbt(s, i, t, T1, T2){
 				STRING.lastIndex = i
 				const a = s.match(STRING)
 				if(!a) throw 'expected string for key '+k
-				t[k] = a.slice(1,-1).replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
+				i = STRING.lastIndex
+				t[k] = a[2].replace(/\\(x[a-fA-F0-9]{2}|u[a-fA-F0-9]{4}|.)/g, v => v.length > 2 ? String.fromCharCode(parseInt(v.slice(2))) : ESCAPES[v[1]] || v[1])
 				break
 				case undefined: case null: throw 'Key '+k+' invalid in snbt'
 				default: i = _snbt(s, i, t[k])
@@ -321,7 +322,7 @@ export function err(e){
 	return '\\+9' + e + '\nType /stacktrace to view full stack trace'
 }
 export const ENTITYCOMMONDATA = {dx: Float, dy: Float, f: Float, age: Double}
-export const ITEMCOMMONDATA = {count: Uint8}
+export const ITEMCOMMONDATA = {count: Uint8, name: String}
 
 export const commands = {__proto__: null}
 export const PERMS = {

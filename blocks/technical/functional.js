@@ -33,12 +33,12 @@ class CraftingInterface extends EphemeralInterface{
 		if(!this.output) return
 		let count = this.output.count
 		if(holding){
-			if(this.output.constructor === holding.constructor && !this.output.savedata) count = min(count, this.output.maxStack - holding.count)
+			if(this.output.stackableWith(holding)) count = min(count, this.output.maxStack - holding.count)
 			else return
 		}
 		count = min(this.canProduce, floor(count/this.output.count))
 		if(holding) holding.count += count*this.output.count
-		else holding = new this.output.constructor(count*this.output.count)
+		else holding = this.output.copy(count*this.output.count)
 		let changed = false
 		for(let i = 0; i < 9; i++){
 			if(!this.slots[i]) continue
@@ -54,12 +54,12 @@ class CraftingInterface extends EphemeralInterface{
 		if(!this.output) return
 		let count = this.output.maxStack
 		if(holding){
-			if(this.output.constructor === holding.constructor && !this.output.savedata) count = this.output.maxStack - holding.count
+			if(this.output.stackableWith(holding)) count = this.output.maxStack - holding.count
 			else return
 		}
 		count = min(this.canProduce, floor(count/this.output.count))
 		if(holding) holding.count += count*this.output.count
-		else holding = new this.output.constructor(count*this.output.count)
+		else holding = this.output.copy(count*this.output.count)
 		let changed = false
 		for(let i = 0; i < 9; i++){
 			if(!this.slots[i]) continue
@@ -170,6 +170,6 @@ Blocks.furnace = class extends Blocks.stone{
 		if(!--this.output.count) this.output = null
 		this.itemChanged(0, 2, this.output)
 		this.calcCook()
-		return new o.constructor(1)
+		return o.copy(1)
 	}
 }
