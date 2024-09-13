@@ -19,11 +19,12 @@ class Sapling extends Block{
 	}
 }
 function genericTree(B, B2){
+	const B3 = B2.behind
 	return function(){
 		let r = randint()
 		let height = (r&3) + 1; r >>= 2
 		while(height--){
-			place(B2.behind)
+			place(B3, true)
 			up()
 		}
 		

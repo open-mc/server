@@ -1,4 +1,4 @@
-import { players, stat, statAvg } from '../world/index.js'
+import { players, stat, statAvg, STATS } from '../world/index.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { updateStats } from './chunk.js'
 import { Dimensions } from './index.js'
@@ -9,13 +9,17 @@ export let currentTPS = 0
 export const entityMap = new Map()
 export const toUnlink = new Map()
 export let actualTPS = currentTPS
+export let tickBits = 0
 
 export let tickFlags = 3
 export let setTickFlags = (e, d=0) => tickFlags = e&3|d<<2
+let curTick = STATS.misc.tps_count ?? 0
 
 export function tick(){
 	let t = tickFlags
 	if(t>3) tickFlags-=4, t=3
+	tickBits = 1
+	for(let i = 1; i < 32; i++) if(!(curTick%i)) tickBits |= 1<<i
 	if(t&1) for(const n in Dimensions){
 		const w = Dimensions[n]
 		w.tick++
@@ -87,9 +91,11 @@ setInterval(function s(){
 	const mspt = 1000 / currentTPS
 	const now = performance.now()
 	if(exiting || lastTick + mspt >= now) return
-	const dt = Math.floor((now - lastTick) / mspt)
+	const dt = Math.floor((now - lastTick) * currentTPS * .001)
 	lastTick += dt*mspt
-	actualTPS += (currentTPS/dt - actualTPS)/currentTPS/2
-	statAvg('misc', 'tps', currentTPS/dt)
+	const a = currentTPS / dt
+	actualTPS += (a - actualTPS)*mspt*.0005
+	statAvg('misc', 'tps', a)
+	curTick++
 	tick()
 })

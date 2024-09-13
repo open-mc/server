@@ -120,8 +120,8 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface
 		const {offset, height} = biomes[i]
 		const o = biomeData[i] = typeof offset == 'function' ? offset(cx+i/4, cy) : offset
 		const h = biomeData[i+5] = typeof height == 'function' ? height(cx+i/4, cy) : height
-		if(o - abs(h) > (cy << 6)+96) k -= Math.sign(h)||Math.sign(1/h)
-		else if(o + abs(h) < (cy<<6)-16) k += Math.sign(h)||Math.sign(1/h)
+		if(!(flags&1)){if(o - abs(h) > (cy << 6)+96) k -= Math.sign(h)||Math.sign(1/h)
+		else if(o + abs(h) < (cy<<6)-16) k += Math.sign(h)||Math.sign(1/h)}
 	}
 	if(k >= 5){ chunk.fill(Blocks.air); return }
 	if(k <= -5){ chunk.fill(fill); return }

@@ -1,5 +1,6 @@
 import { down, left, peek, peekdown, peekleft, peekright, peekup, place, right, up } from "../misc/ant.js"
 import { GAMERULES } from "../world/index.js"
+import { tickBits } from "../world/tick.js"
 import { Blocks } from "./block.js"
 import { BlockShape } from "./blockshapes.js"
 
@@ -8,8 +9,8 @@ export const fluidify = (B, t, renewable = false) => {
 	const filled = class extends B{
 		static destroy = undefined
 		variant(){ return !peekup().fluidLevel ? top : undefined }
-		update(v){
-			if(v < B.delay && !GAMERULES.fastfluids) return v+1
+		update(){
+			if(!(tickBits>>B.delay&1) && !GAMERULES.fastfluids) return 1
 			down()
 			const b = peek()
 			if(b.fluidLevel && b.fluidType != t) return void this.combine?.(b)
@@ -45,8 +46,8 @@ export const fluidify = (B, t, renewable = false) => {
 		static fluidLevel = 8
 		static flows = true
 		static destroy = undefined
-		update(v){
-			if(v < B.delay && !GAMERULES.fastfluids) return v+1
+		update(){
+			if(!(tickBits>>B.delay&1) && !GAMERULES.fastfluids) return 1
 			let b = peekup()
 			if(b.fluidType != t){
 				const l = max(peekleft().fluidLevel??0, peekright().fluidLevel??0) - 1 - (B.delay > 10)*2
@@ -97,8 +98,8 @@ export const fluidify = (B, t, renewable = false) => {
 	const level = class extends B{
 		static flows = true
 		static destroy = undefined
-		update(v){
-			if(v < B.delay && !GAMERULES.fastfluids) return v+1
+		update(){
+			if(!(tickBits>>B.delay&1) && !GAMERULES.fastfluids) return 1
 			const u = peekup(), r = peekright(), l = peekleft()
 			if(u.fluidLevel && u.fluidType != t) u.combine?.(this)
 			if(r.fluidLevel && r.fluidType != t)
