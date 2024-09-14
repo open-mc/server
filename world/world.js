@@ -9,8 +9,9 @@ import { BlockIDs } from '../blocks/block.js'
 const dimLevel = DB.sublevel('dimensions')
 
 export class World extends Map{
-	constructor(id, u = null){
+	constructor(id, type = 0, u = null){
 		super()
+		this.type = type
 		this.id = id
 		this.gx = 0
 		this.gy = -32
@@ -22,7 +23,7 @@ export class World extends Map{
 		else this.gend = a, this.genn = b
 		this.update = u
 	}
-	static new(id, u){ return Dimensions[id] ??= new this(id, u) }
+	static new(id, type = 0, u){ return Dimensions[id] ??= new this(id, type, u) }
 	_loaded(ch){
 		ch.t = 20
 		stat('world', 'chunk_revisits')
@@ -231,7 +232,7 @@ export class World extends Map{
 	}
 }
 
-World.new('overworld', function(){
+World.new('overworld', 0, function(){
 	// Runs every tick
 	if(this.weather&0x0FFFFFFF) this.weather--
 	else this.weather = 0
@@ -243,9 +244,9 @@ World.new('overworld', function(){
 		this.event(10, buf => buf.uint32(this.weather))
 	}
 })
-World.new('nether')
-World.new('end')
-World.new('void')
+World.new('nether', 1)
+World.new('end', 2)
+World.new('void', 3)
 
 const dimCreate = []
 for(let i in Dimensions){

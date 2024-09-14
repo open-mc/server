@@ -1,7 +1,4 @@
-import { Blocks } from '../../blocks/block.js'
-import { stat } from '../../world/index.js'
 import { Item } from '../../items/item.js'
-import { cancelgridevent, goto, gridevent, peek, place } from '../../misc/ant.js'
 import { ChunkLoader } from '../chunkloader.js'
 import { Entities } from '../entity.js'
 import { LivingEntity } from './living.js'

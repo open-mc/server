@@ -3,7 +3,7 @@ import { err, executeCommand } from './_commands.js'
 import { Entities } from '../entities/entity.js'
 import { gridevent, cancelgridevent, down, getX, getY, goto, jump, left, peek, peekdown, peekleft, peekright, peekup, right, up, antChunk } from './ant.js'
 import { currentTPS, entityMap } from '../world/tick.js'
-import { fastCollision, stepEntity } from '../world/physics.js'
+import { fastCollision } from '../world/physics.js'
 import { Dimensions, GAMERULES, MOD, players, stat, statRecord } from '../world/index.js'
 import './commands.js'
 import { ItemIDs } from '../items/item.js'
@@ -62,9 +62,7 @@ function validateMove(sock, player, buf){
 		if(player.linked){
 			player.dx = mx * currentTPS
 			player.dy = my * currentTPS
-			fastCollision(player)
-			player.impactDx = idx; player.impactDy = idy
-			stepEntity(player)
+			fastCollision(player, undefined, idx, idy)
 		}else{
 			player.x += mx; player.y += my
 			player.dx = player.dy = 0
@@ -83,7 +81,7 @@ function playerMovePacket(player, buf){
 	top: {
 		updatesock.call(this)
 		validateMove(this, player, buf)
-		// Player may have changed world with validateMove()->fastCollision()->.touched() or stepEntity()->.tick() etc...
+		// Player may have changed world with validateMove()->fastCollision()->.touched() or validateMove()->fastCollision()->.tick() etc...
 		if(!player.world) break top
 		
 		statRecord('player', 'max_speed', sqrt(player.dx * player.dx + player.dy * player.dy))

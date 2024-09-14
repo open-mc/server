@@ -99,7 +99,7 @@ export const fluidify = (B, t, renewable = false) => {
 	const level = class extends B{
 		get pushX(){
 			const L = this.fluidLevel
-			return (peekright().fluidLevel??0) < L ? (peekleft().fluidLevel??0) < L ? 0 : 25 : (peekleft().fluidLevel??0) < L ? -25 : 0
+			return (peekright().fluidLevel??0) < L ? (peekleft().fluidLevel??0) < L ? 0 : 8 : (peekleft().fluidLevel??0) < L ? -8 : 0
 		}
 		static flows = true
 		static destroy = undefined

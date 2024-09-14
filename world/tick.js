@@ -2,7 +2,7 @@ import { players, stat, statAvg, STATS } from '../world/index.js'
 import { DataWriter } from '../modules/dataproto.js'
 import { updateStats } from './chunk.js'
 import { Dimensions } from './index.js'
-import { fastCollision, stepEntity } from './physics.js'
+import { fastCollision } from './physics.js'
 import { encodeDelete, mirrorEntity, mirrorEntitySelf } from './encodemove.js'
 
 export let currentTPS = 0
@@ -40,7 +40,6 @@ export function tick(){
 				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&112)!=112) continue }
 				else if((chunk.loadedAround&193)!=193) continue
 			fastCollision(e)
-			stepEntity(e)
 		}
 		if(e.netId >= 0) mirrorEntity(e)
 	}

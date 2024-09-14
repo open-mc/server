@@ -2,48 +2,18 @@ import { gotopos } from '../misc/ant.js'
 import { currentTPS } from './tick.js'
 import { BlockIDs } from '../blocks/block.js'
 
-export function stepEntity(e, dt = 1 / currentTPS){
-	if(!e.world) return
-	if(e.state & 1) e.dy = 0
-	else{
-		e.dy += dt * e.world.gy * e.gy
-		e.dy = e.dy * e.yDrag ** dt
-		e.dx += dt * e.world.gx * e.gx
-	}
-	e.dx = e.dx * (e.impactDy < 0 ? e.groundDrag : e.airDrag) ** dt
-
-	// Entity collision
-	const x0 = e.x - e.width - e.collisionPaddingX, x1 = e.x + e.width + e.collisionPaddingX
-	const y0 = e.y - e.collisionPaddingY, y1 = e.y + e.height + e.collisionPaddingY
-	const cx0 = floor(x0 - 16) >>> 6, cx1 = -(floor(-x1 - 16) >> 6) & 0x3FFFFFF
-	const cy0 = floor(y0) >>> 6, cy1 = -(floor(-y1 - 16) >> 6) & 0x3FFFFFF
-	for(let cx = cx0; cx != cx1; cx = cx + 1 & 0x3FFFFFF){
-		for(let cy = cy0; cy != cy1; cy = cy + 1 & 0x3FFFFFF){
-			const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world?.get(cx+cy*0x4000000)
-			if(!chunk) continue
-			for(const e2 of chunk.entities){
-				const {collisionPaddingX: ctpx, collisionPaddingY: ctpy} = e2
-				if((!e2.world | e2.netId <= e.netId) || e2.x + e2.width + ctpx < x0 || e2.x - e2.width - ctpx > x1 || e2.y + e2.height + ctpy < y0 || e2.y - ctpy > y1) continue
-				e.touch?.(e2)
-				if(!e.world) return
-				if(e2.world) e2.touch?.(e)
-			}
-		}
-	}
-	e.age++
-	e.update?.()
-}
-
 const EPS = .000002
 
 export const COSMIC_SPEED_LIMIT = 32
-export function fastCollision(e, dt = 1 / currentTPS){
+export function fastCollision(e, dt = 1 / currentTPS, idx = NaN, idy = NaN){
+	const {world} = e
+	if(!world) return
 	const dx = max(-COSMIC_SPEED_LIMIT, min(e.dx * dt, COSMIC_SPEED_LIMIT)), dy = max(-COSMIC_SPEED_LIMIT, min(e.dy * dt, COSMIC_SPEED_LIMIT))
 	e.state &= 0xffff
 	const CLIMB = e.impactDy < 0 ? e.stepHeight ?? 0.01 : 0.01
 	e.impactDx = e.impactDy = e.impactSoftness = 0
 	let x0 = floor(e.x)&-64, y0 = floor(e.y)&-64
-	let ch = e.world.get((x0>>>6)+(y0>>>6)*0x4000000)
+	let ch = world.get((x0>>>6)+(y0>>>6)*0x4000000)
 	const xs = floor(e.x - e.width + EPS), xw = ceil(e.x + e.width - EPS)-xs
 	const ex0v = e.x - e.width - xs + EPS + 1, ex1v = e.x + e.width - xs - EPS + 1
 	y: if(dy > 0){
@@ -105,8 +75,8 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		e.y += dy
 	}
 	const ny0 = floor(e.y)>>>6
-	if(!ch) ch = e.world.get((x0>>>6)+ny0*0x4000000)
-	else if(ny0!=y0>>>6) ch = ny0==y0-64>>>6?ch.down:ny0==y0+64>>>6?ch.up:e.world.get((x0>>>6)+ny0*0x4000000); y0 = ny0<<6
+	if(!ch) ch = world.get((x0>>>6)+ny0*0x4000000)
+	else if(ny0!=y0>>>6) ch = ny0==y0-64>>>6?ch.down:ny0==y0+64>>>6?ch.up:world.get((x0>>>6)+ny0*0x4000000); y0 = ny0<<6
 	let ys = floor(e.y + EPS), yh = ceil(e.y + e.height - EPS)-ys
 	let ey0v = e.y + EPS - ys + 1, ey1v = e.y + e.height - ys - EPS + 1
 	x: if(dx > 0){
@@ -221,9 +191,12 @@ export function fastCollision(e, dt = 1 / currentTPS){
 		e.x += dx
 	}
 	const nx0 = floor(e.x)>>>6
-	if(!ch) ch = e.world.get(nx0+(y0>>>6)*0x4000000)
-	else if(nx0!=x0>>>6) ch = nx0==x0-64>>>6?ch.left:nx0==x0+64>>>6?ch.right:e.world.get(nx0+(y0>>>6)*0x4000000)
+	if(!ch) ch = world.get(nx0+(y0>>>6)*0x4000000)
+	else if(nx0!=x0>>>6) ch = nx0==x0-64>>>6?ch.left:nx0==x0+64>>>6?ch.right:world.get(nx0+(y0>>>6)*0x4000000)
 	x0 = nx0<<6
+
+	if(idx == idx) e.impactDx = idx, e.impactDy = idy
+
 	let v = 0, c = false
 	let x = floor(e.x - e.width + EPS)
 	const ex = ceil(e.x + e.width - EPS)
@@ -259,7 +232,7 @@ export function fastCollision(e, dt = 1 / currentTPS){
 			if(b.touched(e)) break a
 		}
 	}
-	e.dx += (px0+px1)*dt; e.dy += (py0+py1)*dt
+	if(e.world != world) return
 	v = (1 - v)**dt
 	e.dx *= v
 	if(e.dx > -.00390625 && e.dx < .00390625) e.dx = 0
@@ -268,8 +241,38 @@ export function fastCollision(e, dt = 1 / currentTPS){
 	e.dy *= v4*v8*v16*v16*v16
 	if(e.dy > -.00390625 && e.dy < .00390625) e.dy = 0
 	e.x = ifloat(e.x); e.y = ifloat(e.y)
+	if(e.state & 1) e.dy = 0
+	else{
+		e.dy += dt * world.gy * e.gy
+		e.dy = e.dy * e.yDrag ** dt
+		e.dx += dt * world.gx * e.gx
+	}
+	e.dx = e.dx * (e.impactDy < 0 ? e.groundDrag : e.airDrag) ** dt
+	e.dx += (px0+px1)*dt; e.dy += (py0+py1)*dt
+
+	entity_collision: {
+		const x0 = e._x - e.width - e.collisionPaddingX, x1 = e._x + e.width + e.collisionPaddingX
+		const y0 = e._y - e.collisionPaddingY, y1 = e._y + e.height + e.collisionPaddingY
+		const cx0 = floor(x0 - 16) >>> 6, cx1 = -(floor(-x1 - 16) >> 6) & 0x3FFFFFF
+		const cy0 = floor(y0) >>> 6, cy1 = -(floor(-y1 - 16) >> 6) & 0x3FFFFFF
+		let lim = 65
+		for(let cx = cx0; cx != cx1; cx = cx + 1 & 0x3FFFFFF){
+			for(let cy = cy0; cy != cy1; cy = cy + 1 & 0x3FFFFFF){
+				const chunk = e.chunk && (e.chunk.x == cx & e.chunk.y == cy) ? e.chunk : e.world?.get(cx+cy*0x4000000)
+				if(!chunk) continue
+				for(const e2 of chunk.entities){
+					const {collisionPaddingX: ctpx, collisionPaddingY: ctpy} = e2
+					if((!e2.world | e2.netId <= e.netId) || e2._x + e2.width + ctpx < x0 || e2._x - e2.width - ctpx > x1 || e2._y + e2.height + ctpy < y0 || e2._y - ctpy > y1) continue
+					if(!--lim) break entity_collision
+					e.touch?.(e2)
+					e2.touch?.(e)
+					if(e.world != world) break entity_collision
+				}
+			}
+		}
+	}
+	e.age++
+	e.update?.()
 }
 
-
-Function.optimizeImmediately(stepEntity)
 Function.optimizeImmediately(fastCollision)
