@@ -230,11 +230,13 @@ export function fastCollision(e, dt = 1 / currentTPS){
 	ch = x<x0?ch?.left:x>(x0|63)?ch?.right:ch
 	ch = ys<y0?ch?.down:ys>(y0|63)?ch?.up:ch
 	let i = x&63|ys<<6&4032
+	let px0 = 0, px1 = 0, py0 = 0, py1 = 0
 	a: for(;ch&&x<ex;x++,(++i&63)||(i-=64,ch=ch.right)){
 		let c1 = ch, j = i
 		b: for(let y = 0; c1&&y<yh; y++,(j+=64)>=4096&&(j&=63,c1=c1.up)){
 			const id = c1[j], b = id==65535?c1.tileData.get(j):BlockIDs[id]
-			const {blockShape, fluidLevel, viscosity, climbable} = b
+			gotopos(c1, j)
+			const {blockShape, fluidLevel, viscosity, climbable = false, pushX = 0, pushY = 0} = b
 			let touchingBottom = 1 - (e.y - y - ys)
 			if(blockShape){
 				const bx0 = e.x - e.width - x, bx1 = e.x + e.width - x
@@ -245,15 +247,19 @@ export function fastCollision(e, dt = 1 / currentTPS){
 					if((bx0 > blockShape[i+2] | bx1 < blockShape[i]) || (y < 0 | by1 < blockShape[i+1])) continue b
 				}
 			}
+			if(pushX){ if(pushX < 0){ if(pushX < px0) px0 = pushX }
+			else if(pushX > px1) px1 = pushX }
+			if(pushY){ if(pushY < 0){ if(pushY < py0) py0 = pushY }
+			else if(pushY > py1) py1 = pushY }
 			if(fluidLevel) e.impactSoftness = 1
 			if(viscosity > v) v = viscosity
 			if(climbable & !c)
 				c = touchingBottom > (e.impactDx ? 0 : dy > 0 ? .125 : .375) * e.height
 			if(!b.touched) continue b
-			gotopos(c1, j)
 			if(b.touched(e)) break a
 		}
 	}
+	e.dx += (px0+px1)*dt; e.dy += (py0+py1)*dt
 	v = (1 - v)**dt
 	e.dx *= v
 	if(e.dx > -.00390625 && e.dx < .00390625) e.dx = 0

@@ -129,26 +129,26 @@ export const filler = (fill = Blocks.stone, liquid = Blocks.water, liquidSurface
 	for(let i = 0; i < 4160;){
 		if(i < 64){
 			if(flags&1){
-				heights[i] = Infinity
+				heights[i] = 0
 				facs[i] = 0
 			}else{
 				const lerp = lerpLookup[i & 15]
 				const offset = (1 - lerp) * biomeData[i>>4] + lerp * biomeData[(i>>4)+1]
-				const height = (1 - lerp) * biomeData[(i>>4)+5] + lerp * biomeData[(i>>4)+6]
-				facs[i] = ((cy << 6) - offset) / height
+				const height = 1 / ((1 - lerp) * biomeData[(i>>4)+5] + lerp * biomeData[(i>>4)+6])
+				facs[i] = ((cy << 6) - offset) * height
 				heights[i] = height
 			}
 		}
 		const height = heights[i & 63]
 		const fac = facs[i & 63]
 		const {deepsurface, surface} = biomes[(i >> 4 & 3) + (i >> 3 & 1)]
-		const u = sel[i] = (sel[i] >= 1 ? high[i] : sel[i] <= 0 ? low[i] : sel[i] * high[i] + (1-sel[i]) * low[i]) + fac + (i >> 6) / height
+		const u = sel[i] = (sel[i] >= 1 ? high[i] : sel[i] <= 0 ? low[i] : sel[i] * high[i] + (1-sel[i]) * low[i]) + fac + (i >> 6) * height
 		if(i < 64){i++;continue}
 		const s = sel[i -= 64]
 		chunk[i] = s < 0 ?
 			u >= 0 && surface ?
 				surface
-			: s > -5/height && deepsurface ?
+			: s > -5*height && deepsurface ?
 				deepsurface
 			: fill
 		: lvl>0 ? lvl==1 && i >= 4032 ? liquidSurface : liquid : Blocks.air

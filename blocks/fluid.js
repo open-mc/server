@@ -46,6 +46,7 @@ export const fluidify = (B, t, renewable = false) => {
 		static fluidLevel = 8
 		static flows = true
 		static destroy = undefined
+		static pushY = -6
 		update(){
 			if(!(tickBits>>B.delay&1) && !GAMERULES.fastfluids) return 1
 			let b = peekup()
@@ -96,6 +97,10 @@ export const fluidify = (B, t, renewable = false) => {
 		}
 	}
 	const level = class extends B{
+		get pushX(){
+			const L = this.fluidLevel
+			return (peekright().fluidLevel??0) < L ? (peekleft().fluidLevel??0) < L ? 0 : 25 : (peekleft().fluidLevel??0) < L ? -25 : 0
+		}
 		static flows = true
 		static destroy = undefined
 		update(){
