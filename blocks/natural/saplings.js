@@ -6,7 +6,6 @@ import './logs.js'
 
 class Sapling extends Block{
 	static solid = false
-	static replaceable = true
 	static targettable = true
 	static breaktime = 0
 	update(){
@@ -23,7 +22,8 @@ function genericTree(B, B2){
 	const B3 = B2.behind
 	return function(){
 		let r = randint()
-		let height = (r&3) + 1; r >>= 2
+		let height = r&3; r >>= 2
+		place(B3), up()
 		while(height--){
 			place(B3, true)
 			up()
