@@ -1,6 +1,6 @@
 import { Blocks } from "../../blocks/block.js"
 import { Entities } from "../../entities/entity.js"
-import { gridevent, place, summon, soliddown } from "../../misc/ant.js"
+import { gridevent, place, summon, soliddown, peek } from "../../misc/ant.js"
 import { Item, Items } from "../item.js"
 
 Items.flint_and_steel = class extends Item{
@@ -12,6 +12,7 @@ Items.flint_and_steel = class extends Item{
 		e.dx = random() * 4 - 2
 	}
 	place(){
+		if(peek().flows) return
 		if(!soliddown()) return
 		place(Blocks.fire); gridevent(1)
 	}
