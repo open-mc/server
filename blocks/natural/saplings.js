@@ -6,6 +6,7 @@ import './logs.js'
 
 class Sapling extends Block{
 	static solid = false
+	static replaceable = true
 	static targettable = true
 	static breaktime = 0
 	update(){
