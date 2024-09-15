@@ -16,7 +16,7 @@ Entities.item = class ItemEntity extends Entity{
 			return
 		}
 		if(e instanceof ItemEntity && e.age >= 10 && e.item && e.item.stackableWith(this.item) && this.world){
-			const maxRemovable = max(0, 32767 - this.item.count)
+			const maxRemovable = max(0, 255 - this.item.count)
 			if(maxRemovable >= e.item.count){
 				if(this.item.count < e.item.count)
 					this.x = e.x, this.y = e.y
