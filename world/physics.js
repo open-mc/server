@@ -212,8 +212,8 @@ export function fastCollision(e, dt = 1 / currentTPS, idx = NaN, idy = NaN){
 			const {blockShape, fluidLevel, viscosity, climbable = false, pushX = 0, pushY = 0} = b
 			let touchingBottom = 1 - (e.y - y - ys)
 			if(blockShape){
-				const bx0 = e.x - e.width - x, bx1 = e.x + e.width - x
-				const by0 = 1-touchingBottom, by1 = by0 + e.height
+				const bx0 = e.x - e.width - x + EPS, bx1 = e.x + e.width - x - EPS
+				const by0 = 1-touchingBottom + EPS, by1 = by0 + e.height - EPS
 				for(let i = 0; i < blockShape.length; i += 4){
 					const y = blockShape[i+3] - by0
 					if(y > touchingBottom) touchingBottom = y
