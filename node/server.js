@@ -9,7 +9,7 @@ import { input, repl } from 'basic-repl'
 import { App, SSLApp, us_listen_socket_close } from 'uWebSockets.js'
 import { open, close } from '../misc/sock.js'
 import { players, STATS, DEFAULT_TPS, stat, saveAll, saving } from '../world/index.js'
-import { codes, onstring } from '../misc/incomingPacket.js'
+import { packets, onstring } from '../misc/incomingPacket.js'
 import { PROTOCOL_VERSION } from '../version.js'
 import { Dimensions } from '../world/index.js'
 import { setTPS } from '../world/tick.js'
@@ -150,7 +150,7 @@ server.ws('/*', {
 			if(sock.state){
 				if(!isBinary) return void onstring.call(sock, sock.entity, decoder.decode(a))
 				const code = buf.byte()
-				codes[code]?.call(sock, sock.entity, buf)
+				packets[code]?.call(sock, sock.entity, buf)
 				return
 			}
 			const cli_ver = buf.short(), username = sock.username = buf.string()

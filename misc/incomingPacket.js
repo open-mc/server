@@ -387,7 +387,7 @@ export function creativeItemPacket(player, buf){
 	player.itemChanged(2, 0, a)
 }
 
-export const codes = Object.assign(new Array(256), {
+export const packets = Object.assign(new Array(256), {
 	4: playerMovePacket,
 	5: respawnPacket,
 	6: disappearPacket,
