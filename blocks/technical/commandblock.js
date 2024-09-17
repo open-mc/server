@@ -18,6 +18,7 @@ Blocks.command_block = class CommandBlock extends Block{
 	static breaktime = Infinity
 	static tool = 'pick'
 	static blast = 2147483647
+	static adminOnly = true
 	update(a){
 		if(this.type == 2){
 			const ctx = {x: getX()+.5, y: getY(), world: antChunk.world, name: '!', sock: {perms: 4}}

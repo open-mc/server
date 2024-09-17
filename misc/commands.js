@@ -113,6 +113,7 @@ Object.assign(commands, {
 			if(!(type in Blocks)) throw 'No such block: ' + type
 			b = Blocks[type]
 		}
+		if(b.adminOnly && this?.sock?.perms < OP) throw 'You do not have permission to place '+b.className
 		if(b.savedata && data) snbt(data, b = new b, b.savedata)
 		goto(w, floor(x), floor(y))
 		place(b)
@@ -135,6 +136,7 @@ Object.assign(commands, {
 			if(!(type in Blocks)) throw 'No such block: ' + type
 			b = Blocks[type]
 		}
+		if(b.adminOnly && this?.sock?.perms < OP) throw 'You do not have permission to place '+b.className
 		let count = x2*y2+x2+y2+1
 		if(count > CONFIG.permissions.max_fill) throw 'Cannot /fill more than '+CONFIG.permissions.max_fill+' blocks'
 		for(y = 0; y != y2+1; y=(y+1)|0){
@@ -575,6 +577,48 @@ Object.assign(commands, {
 			return ch.world.unpin(ch) ? 'Unpinned chunk' : 'Chunk already unpinned'
 			default: throw 'Unknown chunk option: '+f
 		}
+	},
+	camera(e, t, v){
+		if(!v) v=t,t=e,e='@s'
+		if(!t) return 'Not enough arguments!'
+		const targets = selector(e, this)
+		const b = new DataWriter()
+		b.byte(21)
+		const val = +v || 0
+		switch(t = t.toLowerCase()){
+			case 'rot':
+			b.byte(16)
+			b.float(val/180*PI)
+			break
+			case 'offx':
+			b.byte(2)
+			b.float(val)
+			break
+			case 'offy':
+			b.byte(8)
+			b.float(val)
+			break
+			case 'staticx':
+			b.byte(1)
+			b.double(val)
+			break
+			case 'staticy':
+			b.byte(4)
+			b.double(val)
+			break
+			case 'zoom':
+			b.byte(32)
+			b.float(val)
+			break
+			case 'reset':
+			b.byte(58)
+			b.double(0); b.double(0)
+			break
+			default: throw 'Unknown camera option: '+t
+		}
+		const p = b.build(); let tot = 0
+		for(const t of targets) t.sock?.send(p), tot++
+		return `Set camera ${t} for ${tot} player(s)`
 	}
 })
 
