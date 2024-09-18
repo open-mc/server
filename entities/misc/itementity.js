@@ -20,8 +20,8 @@ Entities.item = class ItemEntity extends Entity{
 			if(maxRemovable >= e.item.count){
 				if(this.item.count < e.item.count)
 					this.x = e.x, this.y = e.y
-				this.item.count += e.item.count
-				this.event(2, buf => buf.byte(this.item.count))
+				const c = this.item.count += e.item.count
+				this.event(2, buf => buf.byte(c))
 				e.remove()
 			}else{
 				const c = this.item.count += maxRemovable
