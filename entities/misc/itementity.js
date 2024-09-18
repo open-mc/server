@@ -24,8 +24,8 @@ Entities.item = class ItemEntity extends Entity{
 				this.event(2, buf => buf.byte(this.item.count))
 				e.remove()
 			}else{
-				this.item.count += maxRemovable
-				this.event(2, buf => buf.byte(this.item.count))
+				const c = this.item.count += maxRemovable
+				this.event(2, buf => buf.byte(c))
 				e.item.count -= maxRemovable
 			}
 			return

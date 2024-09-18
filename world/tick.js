@@ -32,13 +32,13 @@ export function tick(){
 	}
 	if(t&2) for(const e of entityMap.values()){
 		const {world, chunk, sock} = e
-		if(world && chunk && !sock){
+		a: if(world && chunk && !sock){
 			if(floor(e.x)>>>5&1)
-				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&7)!=7) continue }
-				else if((chunk.loadedAround&28)!=28) continue
+				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&7)!=7) break a }
+				else if((chunk.loadedAround&28)!=28) break a
 			else
-				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&112)!=112) continue }
-				else if((chunk.loadedAround&193)!=193) continue
+				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&112)!=112) break a }
+				else if((chunk.loadedAround&193)!=193) break a
 			fastCollision(e)
 		}
 		if(e.netId >= 0) mirrorEntity(e)
