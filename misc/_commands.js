@@ -305,7 +305,7 @@ export function selector(a, who){
 			for(const p of players.values())
 				if(testSelector(p, who, filters)) can.push(p)
 			if(!can.length) throw "No targets matched selector"
-			else return can[floor(random()*can.length)]
+			else return [can[floor(random()*can.length)]]
 		}
 	}else{
 		const player = players.get(a)
