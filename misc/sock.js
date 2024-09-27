@@ -63,7 +63,6 @@ export async function open(){
 	let link = true
 	this.mode = 0
 	if(other){
-		other.unlink()
 		other.sock.end(1000, '\\19You are logged in from another session')
 		perms = other.sock.perms; this.mode = other.sock.mode
 		closesock.call(other.sock)
