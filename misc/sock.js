@@ -60,13 +60,13 @@ export async function open(){
 	else if(perms > 9){ perms = CONFIG.permissions.default }
 	playersConnecting.add(this.username)
 	let player, other = players.get(this.username)
-	let link = true
+	let link = 0
 	this.mode = 0
 	if(other){
-		other.sock.end(1000, '\\19You are logged in from another session')
 		perms = other.sock.perms; this.mode = other.sock.mode
 		closesock.call(other.sock)
 		other.sock.entity = null
+		other.sock.end(1000, '\\19You are logged in from another session')
 		other.sock = null
 		other._world = null
 		player = other
@@ -77,7 +77,8 @@ export async function open(){
 		if(!this.state) return
 		other = null
 		let id = buf.short()
-		if(id===65535) id = buf.short(), link = false
+		if(id===65535) id = buf.short(), link = -1
+		else link = 1
 		player = new EntityIDs[id]()
 		player.x = buf.double(); player.y = buf.double()
 		player.world = Dimensions[buf.string()]
@@ -103,7 +104,7 @@ export async function open(){
 		player.inv[10] = new Items.sandstone(10)
 		stat('misc', 'unique_players')
 		playersConnecting.delete(this.username)
-		link = !CONFIG.permissions.join_as_spectator
+		link = CONFIG.permissions.join_as_spectator ? -1 : 1
 	}
 	if(Object.hasOwn(player, 'skin')) player.skin = this.skin
 	player._avatar = null
@@ -112,10 +113,9 @@ export async function open(){
 	this.perms = perms
 	this.movePacketCd = now - 1
 	this.chatCd = 0
-	this.joinedAt = Math.floor(now)
+	this.joinedAt = floor(now)
 	this.r = 255
-	this.rx = CONFIG.socket.movement_check_mercy
-	this.ry = CONFIG.socket.movement_check_mercy
+	this.rx = this.ry = CONFIG.socket.movement_check_mercy
 	this.entity = player
 	this.netId = player.netId
 	this.packets = []
@@ -126,8 +126,8 @@ export async function open(){
 	this.breakTool = null
 	this.bx = this.by = 0
 	this.send(configPacket())
-	if(link) player.link()
-	else this.netId = newId(), player.rubber(127)
+	if(link === 1) player.link()
+	else if(link === -1) this.netId = newId(), player.rubber(127)
 	players.set(this.username, player)
 	this.tbuf = new DataWriter()
 	this.ebuf = new DataWriter()
@@ -184,7 +184,6 @@ export async function close(){
 	if(!entity) return
 	if(!exiting) chat('\\+b' + entity.name + ' left the game')
 	closesock.call(this)
-	if(entity.sock && entity.sock != this) return
 	players.delete(this.username)
 	playersConnecting.add(this.username)
 	const buf = new DataWriter()
