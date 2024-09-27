@@ -32,7 +32,8 @@ export function tick(){
 	}
 	if(t&2) for(const e of entityMap.values()){
 		const {world, chunk, sock} = e
-		a: if(world && chunk && !sock){
+		if(sock) continue
+		a: if(world && chunk){
 			if(floor(e.x)>>>5&1)
 				if(floor(e.y)>>>5&1){ if((chunk.loadedAround&7)!=7) break a }
 				else if((chunk.loadedAround&28)!=28) break a

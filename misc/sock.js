@@ -60,7 +60,7 @@ export async function open(){
 	else if(perms > 9){ perms = CONFIG.permissions.default }
 	playersConnecting.add(this.username)
 	let player, other = players.get(this.username)
-	let link = 0
+	let link = true
 	this.mode = 0
 	if(other){
 		perms = other.sock.perms; this.mode = other.sock.mode
@@ -68,7 +68,7 @@ export async function open(){
 		other.sock.entity = null
 		other.sock.end(1000, '\\19You are logged in from another session')
 		other.sock = null
-		other._world = null
+		other.unlink()
 		player = other
 		playersConnecting.delete(this.username)
 	}else try{
@@ -77,8 +77,7 @@ export async function open(){
 		if(!this.state) return
 		other = null
 		let id = buf.short()
-		if(id===65535) id = buf.short(), link = -1
-		else link = 1
+		if(id===65535) id = buf.short(), link = false
 		player = new EntityIDs[id]()
 		player.x = buf.double(); player.y = buf.double()
 		player.world = Dimensions[buf.string()]
@@ -104,7 +103,7 @@ export async function open(){
 		player.inv[10] = new Items.sandstone(10)
 		stat('misc', 'unique_players')
 		playersConnecting.delete(this.username)
-		link = CONFIG.permissions.join_as_spectator ? -1 : 1
+		link = !CONFIG.permissions.join_as_spectator
 	}
 	if(Object.hasOwn(player, 'skin')) player.skin = this.skin
 	player._avatar = null
@@ -126,8 +125,8 @@ export async function open(){
 	this.breakTool = null
 	this.bx = this.by = 0
 	this.send(configPacket())
-	if(link === 1) player.link()
-	else if(link === -1) this.netId = newId(), player.rubber(127)
+	if(link) player.link()
+	else this.netId = newId(), player.rubber(127)
 	players.set(this.username, player)
 	this.tbuf = new DataWriter()
 	this.ebuf = new DataWriter()

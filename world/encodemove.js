@@ -29,7 +29,7 @@ export function calculateMv(e){
 export function encodeMove(e, sock, mv, id = e.netId){
 	const {ebuf} = sock
 	ebuf.byte(mv)
-	ebuf.int(id | 0), ebuf.short(id / 4294967296 | 0)
+	ebuf.int(id)
 	if(mv & 64) ebuf.short(e.id), ebuf.double(e.age), ebuf.write(e.savedata, e)
 	if(mv & 1) ebuf.double(e.x)
 	if(mv & 2) ebuf.double(e.y)
@@ -50,7 +50,7 @@ export function encodeDelete(e, id){
 	if(e.chunk && e._world) for(const {ebuf} of e.chunk.sockets){
 		if(e.pendingEvents.length){
 			ebuf.byte(EVENTS)
-			ebuf.uint32(id), ebuf.uint16(id / 4294967296 | 0)
+			ebuf.uint32(id)
 			const l = e.pendingEvents.length
 			for(let i = 0; i < l; i+=2){
 				const id = e.pendingEvents[i]
@@ -59,7 +59,7 @@ export function encodeDelete(e, id){
 			}
 			ebuf.byte(0)
 		}
-		ebuf.byte(0), ebuf.uint32(id), ebuf.uint16(id / 4294967296 | 0)
+		ebuf.byte(0), ebuf.uint32(id)
 	}
 	e.netId = -1
 	if(e.chunk) e.chunk.entities.remove(e), e.chunk = null
@@ -70,7 +70,7 @@ export function mirrorEntity(e){
 		if(e.chunk && e._world) for(const {ebuf} of e.chunk.sockets){
 			if(e.pendingEvents.length){
 				ebuf.byte(EVENTS)
-				ebuf.uint32(e.netId), ebuf.uint16(e.netId / 4294967296 | 0)
+				ebuf.uint32(e.netId)
 				const l = e.pendingEvents.length
 				for(let i = 0; i < l; i+=2){
 					const id = e.pendingEvents[i]
@@ -79,7 +79,7 @@ export function mirrorEntity(e){
 				}
 				ebuf.byte(0)
 			}
-			ebuf.byte(0), ebuf.uint32(e.netId), ebuf.uint16(e.netId / 4294967296 | 0)
+			ebuf.byte(0), ebuf.uint32(e.netId)
 		}
 		if(e.chunk) e.chunk.entities.remove(e), e.chunk = null
 		e._world = null
@@ -99,7 +99,7 @@ export function mirrorEntity(e){
 	}
 	if(!chunk){
 		if(_chunk) for(const {ebuf} of _chunk.sockets)
-			ebuf.byte(0), ebuf.uint32(e.netId), ebuf.uint16(e.netId / 4294967296 | 0)
+			ebuf.byte(0), ebuf.uint32(e.netId)
 		e.pendingEvents.length = 0
 		return
 	}
@@ -120,7 +120,7 @@ export function mirrorEntity(e){
 	}
 	if(_chunk) for(const sock of _chunk.sockets){
 		if(chunk.sockets.includes(sock)) continue
-		sock.ebuf.byte(0), sock.ebuf.uint32(e.netId), sock.ebuf.uint16(e.netId / 4294967296 | 0)
+		sock.ebuf.byte(0), sock.ebuf.uint32(e.netId)
 	}
 	e.pendingEvents.length = 0
 }
@@ -139,7 +139,7 @@ export function mirrorEntitySelf(e){
 	if(emv) encodeMove(e, e.sock, emv, e.sock.netId)
 	if(!_world){
 		const {ebuf} = e.sock
-		ebuf.byte(0), ebuf.uint32(e.sock.netId), ebuf.uint16(e.sock.netId / 4294967296 | 0)
+		ebuf.byte(0), ebuf.uint32(e.sock.netId)
 	}
 	e.pendingEvents.length = 0
 }

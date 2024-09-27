@@ -94,7 +94,7 @@ function playerMovePacket(player, buf){
 		const x = buf.float(), y = buf.float()
 		if(x != x){
 			player.f = y || 0
-			const e = entityMap.get(buf.uint32() + buf.short() * 4294967296)
+			const e = entityMap.get(buf.uint32())
 			if(this.perms >= 2 && e && e.chunk && e != player && (e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y) <= (REACH + 2) * REACH && e.chunk.sockets.includes(this)){
 				//hit e
 				const itm = player.inv[player.selected]
@@ -333,12 +333,12 @@ export function voiceChat(player, buf){
 	let t = Date.now() * .001
 	if(t < (t = max(this.chatCd + buf.left * .000125, t - 60))) return
 	this.chatCd = t
-	const packet = new DataView(new ArrayBuffer(buf.left + 7))
-	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 7)
+	const packet = new DataView(new ArrayBuffer(buf.left + 5))
+	new Uint8Array(packet.buffer).set(new Uint8Array(buf.buffer, buf.byteOffset + buf.i, buf.left), 5)
 	packet.setUint8(0, 96)
 	const targets = new Set
 	if(typeof r == 'number'){
-		packet.setUint32(1, player.netId|0); packet.setUint16(5, player.netId/4294967296|0)
+		packet.setUint32(1, player.netId)
 		const cx0 = floor(player.x-r)>>>6, cx1 = floor(player.x+r)+64>>>6
 		const cy0 = floor(player.y-r)>>>6, cy1 = floor(player.y+r)+64>>>6
 		for(let x = cx0; x != cx1; x=x+1&0x3ffffff){

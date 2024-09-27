@@ -87,7 +87,7 @@ export class World extends Map{
 					sock.send(buf)
 					const {ebuf} = sock
 					for(const e of ch.entities)
-						ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+						ebuf.byte(0), ebuf.uint32(e.netId)
 				}
 			})
 		}else if(ch.t > -1) ch.t = 20
@@ -110,14 +110,14 @@ export class World extends Map{
 					sock.send(buf)
 					const {ebuf} = sock
 					for(const e of ch.entities)
-						ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+						ebuf.byte(0), ebuf.uint32(e.netId)
 				}
 			})
 		}else{
 			sock.send(ch.toBuf(new DataWriter(), true).build())
 			const {ebuf} = sock
 			for(const e of ch.entities)
-				ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+				ebuf.byte(0), ebuf.uint32(e.netId)
 		}
 		ch.sockets.push(sock)
 	}
@@ -127,7 +127,7 @@ export class World extends Map{
 		ch.sockets.remove(sock)
 		const {ebuf} = sock
 		for(let e of ch.entities)
-			ebuf.byte(0), ebuf.uint32(e.netId | 0), ebuf.uint16(e.netId / 4294967296 | 0)
+			ebuf.byte(0), ebuf.uint32(e.netId)
 		return true
 	}
 	check(ch){

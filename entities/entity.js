@@ -12,7 +12,10 @@ export const Entities = Object.create(null)
 export const X = 1, Y = 2, DXDY = 4, STATE = 8, NAME = 16, EVENTS = 32, STRUCT = 64
 
 let i = -1
-export const newId = () => ++i
+export const newId = () => {
+	while(entityMap.has(i=i+1>>>0));
+	return i
+}
 export class Entity{
 	constructor(name = ''){
 		this._x = this.x = 0
@@ -131,7 +134,7 @@ export class Entity{
 			res.byte(this.sock.interfaceId = id&255)
 		}else if(e instanceof Entity){
 			res.byte(13)
-			res.uint32(e.netId); res.short(e.netId / 4294967296 | 0)
+			res.uint32(e.netId)
 			res.byte(this.sock.interfaceId = id&255)
 		}else if(e instanceof EphemeralInterface){
 			res.byte(12)
@@ -191,7 +194,7 @@ export class Entity{
 			if(!sock.ibuf) (sock.ibuf = ibuf = new DataWriter()).byte(32)
 			if(ibufLastB != this.netId || ibufLastA != id){
 				ibuf.byte(128)
-				ibuf.uint32(this.netId); ibuf.short(this.netId/4294967296|0)
+				ibuf.uint32(this.netId)
 				ibuf.byte(id)
 				sock.ibufLastA = id
 				sock.ibufLastB = this.netId
@@ -216,7 +219,7 @@ export class Entity{
 		this.sock.r = (this.sock.r + 1) & 0xff
 		let buf = new DataWriter()
 		buf.byte(1)
-		buf.uint32(this.sock.netId | 0), buf.uint16(this.sock.netId / 4294967296 | 0)
+		buf.uint32(this.sock.netId)
 		buf.byte(this.sock.r)
 		buf.float(currentTPS)
 		buf.byte(this.sock.perms)
