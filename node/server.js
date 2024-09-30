@@ -89,23 +89,30 @@ Object.setPrototypeOf(endpoints, null)
 const {0:statsHtml0, 1:statsHtml1} = (await fs.readFile(PATH+'node/index.html')).toString().split('[[SERVER_INSERT]]')
 const PORT = argv.port || CONFIG.port || 27277
 const {key, cert} = CONFIG
-const secure = !(key==null || cert==null)
-const certPath = secure ? cert ? cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert : PATH+'node/default.crt':null
-const server = secure ? SSLApp({
+const secOpts = {
 	key_file_name: key ? key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key : PATH+'node/default.key',
-	cert_file_name: certPath,
-}) : App()
-
-if(secure && cert){
-	const sock = new TLSSocket(null, {cert: await fs.readFile(certPath)})
-	const {subject: {CN}, valid_to} = sock.getCertificate()
-	const expires = +new Date(valid_to)
-	if(expires < Date.now()) console.warn('SSL certificate has expired')
-	host = CONFIG.host ?? CN.split(',').find(a=>!a.includes('*'))
-	if(!host) throw "Unable to determine host name, which is required for secure servers. Specify one via -host=<host> as a command line argument, or add a property 'host' in properties.yaml\n"
-	host += ':' + PORT
-	sock.destroy()
-}else if(secure) host = 'local.blobk.at:' + PORT
+	cert_file_name: cert ? cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert : PATH+'node/default.crt',
+}
+const server = SSLApp(secOpts)
+const sock = new TLSSocket(null, {cert: await fs.readFile(secOpts.cert_file_name)})
+const {subject: {CN}, valid_to} = sock.getCertificate()
+const expires = +new Date(valid_to)
+if(expires < Date.now()) console.warn('SSL certificate has expired')
+host = CONFIG.host
+if(!host){
+	const a = CN.split(',').filter(a=>!a.includes('*'))
+	if(a.length == 1) host = a[0]
+}
+if(!host) throw "Unable to determine host name, which is required for secure servers. Specify one via -host=<host> as a command line argument, or add a property 'host' in properties.yaml\n"
+const h = host
+host += ':' + PORT
+sock.destroy()
+const w = fs.watch(secOpts.cert_file_name)[Symbol.asyncIterator]()
+w.next().then(function S(){
+	server.removeServerName(h)
+	server.addServerName(h, secOpts)
+	w.next().then(S)
+}).catch(e=>null)
 
 server.any('/*', (res, req) => {
 	res.onAborted(() => res.aborted = true)
@@ -219,7 +226,7 @@ export default function openServer(){
 		if(exiting){ us_listen_socket_close(lS); return }
 		started = Date.now()
 		clear()
-		serverLoaded(`Everything Loaded. \x1b[1;33mServer listening on port ${PORT+(secure?' (secure)':'')}\x1b[m\nType /help for a list of commands, or hit tab to switch to JS repl`)
+		serverLoaded(`Everything Loaded. \x1b[1;33mServer listening on port ${PORT}\x1b[m\nType /help for a list of commands, or hit tab to switch to JS repl`)
 		setTPS(DEFAULT_TPS)
 		repl('[server] ', async text => {
 			if(text == 'clear') return clear()

@@ -27,15 +27,22 @@ You may want to secure your server so that players on other computers can join:
 
 Make sure you have a domain that points to your server's IP. We recommend [no-ip](https://ddns.net) as you can set it to automatically update when your IP inevitably changes
 
-If you are running your server on a local network (such as a home router) you will need to enable port forwarding first (See next section).
+If you are running your server on a local network (such as a home router) you will need to enable port forwarding first (See next section). Repeat those instructions with port 80 (which is necessary for generating a certificate)
 
-1. Go over to https://certbot.eff.org/instructions, follow their instructions to install certbot for your OS if you haven't already.
-2. Run `certbot certonly --standalone`.
-3. If this is your first time using certbot, enter your email, and agree to their required and optional emails if you wish.
-4. Enter your domain name(s)
-5. Once the command has finished, it will show you where the private key and certificate are saved, for example, `/etc/letsencrypt/live/mydomain.com/privkey.key` and `/etc/letsencrypt/live/mydomain.com/fullchain.pem`. Copy these
-6. Enter those paths into the `key: ` and `cert: ` entries in the `properties.yaml` file respectively, and restart the server.
-7. Certificates expire after 90 days so you'll need to repeat from step **2.** every few months
+Run the following command:
+
+```sh
+npx instacert ssl.key ssl.crt http: [your_domain]
+```
+
+This will save files called `ssl.key` and `ssl.crt`. Put those files' path in `properties.yaml`, e.g
+
+```yaml
+key: "./ssl.key"
+cert: "./ssl.crt"
+```
+
+> Note: Certificates expire after 90 days so you'll need to repeat this step every few months
 
 ## Port forwarding
 
