@@ -22,12 +22,8 @@ Object.defineProperties(Array.prototype, {
 		return el
 	}},
 	remove: {enumerable: false, value(a){
-		let i = 0, j = 0
-		for(; j < this.length; j++){
-			if(j > i) this[i] = this[j]
-			if(this[i] != a) i++
-		}
-		return this.length = i
+		let i = this.indexOf(a)
+		if(i>-1){while(i<this.length)this[i]=this[++i];this.pop()}
 	}},
 	mutmap: {enumerable: false, value(fn){
 		const len = this.length
