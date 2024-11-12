@@ -1,7 +1,6 @@
 import { promises as fs, exists, createReadStream, createWriteStream } from 'node:fs'
 import { Worker, parentPort } from 'node:worker_threads'
 import { PNG } from 'pngjs'
-import fetch from 'node-fetch'
 import { deflateSync, inflateSync } from 'node:zlib'
 
 globalThis.fetch = fetch
