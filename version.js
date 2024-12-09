@@ -1,5 +1,5 @@
 export const PROTOCOL_VERSION = 9
-export const VERSION = 'alpha 10'
+export const VERSION = 'alpha 11'
 
 export const credit = `
 
