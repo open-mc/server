@@ -1,4 +1,4 @@
-import { Biomes } from '../vars.js'
+import { Biomes } from '../util/vars.js'
 
 Biomes.end = {
 	surface: null, offset: 0, height: 64, deepsurface: null,

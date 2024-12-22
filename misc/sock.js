@@ -61,7 +61,7 @@ export async function open(){
 	playersConnecting.add(this.username)
 	let player, other = players.get(this.username)
 	let link = true
-	this.mode = 0
+	this.mode = CONFIG.world.default_mode ?? 0
 	if(other){
 		perms = other.sock.perms; this.mode = other.sock.mode
 		closesock.call(other.sock)

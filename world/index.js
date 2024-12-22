@@ -32,7 +32,7 @@ export async function savePermissions(){
 
 GAMERULES.commandlogs ??= true
 GAMERULES.spawnx ??= 0
-GAMERULES.spawny ??= 18
+GAMERULES.spawny ??= 48
 GAMERULES.spawnworld ??= 'overworld'
 GAMERULES.randomtickspeed ??= 2
 GAMERULES.globalevents ??= true

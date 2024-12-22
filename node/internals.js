@@ -37,6 +37,8 @@ Math.ifloat = x => {
 	return (f | 0) + (x - f)
 }
 Math.randint = () => Math.random() * 4294967296 | 0
+const h = '0123456789abcdef'
+Number.prototype.toHex = function(){return h[this>>>28]+h[this>>24&15]+h[this>>20&15]+h[this>>16&15]+h[this>>12&15]+h[this>>8&15]+h[this>>4&15]+h[this&15]}
 
 // Blazingly fast!!
 const nul = new Array(100).fill(null)
@@ -81,28 +83,24 @@ globalThis.Worker = class extends Worker{
 		if(this._onmsg=fn){
 			let f = wFns.get(fn)
 			if(!f) wFns.set(fn, f=data=>(msgEv.data=data,fn(msgEv)))
-			this.on('message', f)
+			this.addListener('message', f)
 		}
 	}
 	set onclose(fn){
 		if(this._oncl) this.removeListener('close', this._oncl)
-		if(this._oncl=fn) this.on('close', fn)
+		if(this._oncl=fn) this.addListener('close', fn)
 	}
-	addEventListener(ev, fn){
+	addEventListener(ev, fn, o){
+		let e
 		if(ev == 'message'){
-			let f = wFns.get(fn)
-			if(!f) wFns.set(fn, f=data=>(msgEv.data=data,fn(msgEv)))
-			this.on('message', f)
-		}else this.on(ev, fn)
+			const f = fn; fn = wFns.get(fn)
+			if(!fn) wFns.set(f, fn = o?.once ? data=>(msgEv.data=data,e?e():this.removeListener(ev, fn),f(msgEv)) : data=>(msgEv.data=data,f(msgEv)))
+			this.addListener('message', fn)
+		}else this.addListener(ev, o?.once ? (wFns.set(fn, fn = ev=>(e?e():this.removeListener(ev, fn),fn(ev))),fn) : fn)
+		o.signal?.addEventListener('abort', e = () => (o.signal.removeEventListener('abort', e),this.removeListener(ev, fn)))
 	}
-	removeEventListener(ev, fn){
-		if(ev == 'message'){
-			this.removeListener('message', wFns.get(fn))
-		}else this.removeListener(ev, fn)
-	}
+	removeEventListener(ev, fn){ this.removeListener(ev, wFns.get(fn) ?? fn) }
 }
-Worker.prototype.addEventListener = Worker.prototype.addListener
-Worker.prototype.removeEventListener = Worker.prototype.removeListener
 globalThis.parentPort = parentPort
 
 import { getHeapStatistics } from 'node:v8'
@@ -121,7 +119,7 @@ for(const opt of typeof Deno == 'undefined' ? process.argv.slice(2) : Deno.args)
 			const k = opt.slice(1+(opt[1]=='-'), i), v = opt.slice(i + 1)
 			if(k==k>>>0) throw 'Invalid argument name: '+k
 			const nv = +v
-			argv[k] = nv == nv ? nv : v
+			argv[k] = v && nv == nv ? nv : v
 		}
 	}else if(opt) Array.prototype.push.call(argv, opt)
 }
@@ -178,18 +176,8 @@ Object.defineProperty(perf,Symbol.for('nodejs.util.inspect.custom'), {value(){
 	return s.join('\n\n')
 },enumerable:false})
 
-if(!parentPort) fs.rm(PATH + 'node/.logs').catch(e=>null)
-
-function uncaughtErr(e){
-	console.error(e)
-	e = e && (e.stack || e.message || e)
-	if(!e) return
-	if(!parentPort) fs.appendFile(PATH + 'node/.logs', e+'\n').catch(e=>console.log(e))
-	else parentPort.postMessage(e+'')
-	// https://discord.gg/NUUwFNUHkf
-}
-process.on('uncaughtException', uncaughtErr)
-process.on('unhandledRejection', uncaughtErr)
+process.on('uncaughtException', console.error)
+process.on('unhandledRejection', console.error)
 
 let total = 0, loaded = 0
 let resolvePromise = null

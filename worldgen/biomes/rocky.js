@@ -1,4 +1,4 @@
-import { Biomes } from '../vars.js'
+import { Biomes } from '../util/vars.js'
 
 Biomes.rocky = {
 	surface: null,

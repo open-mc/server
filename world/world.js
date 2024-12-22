@@ -18,9 +18,6 @@ export class World extends Map{
 		this.tick = 0
 		this.level = dimLevel.sublevel(id, {valueEncoding: 'binary'})
 		this.pinned = new Set
-		const {0:a,1:b} = (CONFIG.generators[this.id]??'default').split('/', 2)
-		if(!b) this.gend = this.id, this.genn = a
-		else this.gend = a, this.genn = b
 		this.update = u
 	}
 	static new(id, type = 0, u){ return Dimensions[id] ??= new this(id, type, u) }
@@ -76,7 +73,7 @@ export class World extends Map{
 		if(!ch){
 			ch = new Chunk(cx, cy, this)
 			super.set(k, ch)
-			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			this.level.get(''+k).catch(() => generator(cx,cy,this.id)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				if(!super.has(k)) return
@@ -99,7 +96,7 @@ export class World extends Map{
 		if(!ch){
 			ch = new Chunk(cx, cy, this)
 			super.set(k, ch)
-			this.level.get(''+k).catch(() => generator(cx,cy,this.gend,this.genn)).then(buf => {
+			this.level.get(''+k).catch(() => generator(cx,cy,this.id)).then(buf => {
 				buf = new DataReader(buf)
 				// Corresponding unstat in gendelegator.js
 				if(!super.has(k)) return

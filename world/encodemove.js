@@ -9,7 +9,7 @@ export function calculateMv(e){
 		if(e.sock){
 			let buf = new DataWriter()
 			buf.byte(2)
-			buf.byte(e.world.type)
+			buf.flint(e.world.type)
 			buf.float(e.world.gx)
 			buf.float(e.world.gy)
 			buf.write(e.world.constructor.savedata, e.world)

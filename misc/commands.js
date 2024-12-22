@@ -37,8 +37,8 @@ Object.assign(commands, {
 		else return log(this, `Teleported ${targets[0].name} to ${target.name}`)
 	},
 	tp(a='@s', _x, _y, d = '~'){
-		if(!_y) d=_y||'~',_y=_x||'~',_x=a=='@s'?'~':a,a='@s'
-		else if(!_x) _x='~'
+		if(!_x) throw 'Missing coordinates'
+		if(!_y) _y=_x,_x=a=='@s'?'~':a,a='@s'
 		const targets = selector(a, this)
 		const {x, y, w} = parseCoords(_x, _y, d, this)
 		for(const e of targets)
@@ -152,12 +152,12 @@ Object.assign(commands, {
 	},
 	id(cat, type){
 		cat = cat.toLowerCase()
-		let dict, list, name, data = cat.endsWith('data')
-		switch(data ? cat.slice(0, -4) : cat){
+		let dict, list, name
+		switch(cat){
 			case 'block': dict = Blocks, list = BlockIDs, name = 'Block'; break
 			case 'item': dict = Items, list = ItemIDs, name = 'Item'; break
 			case 'entity': dict = Entities, list = EntityIDs, name = 'Entity'; break
-			default: throw 'Allowed categories: block, item, entity, blockdata, itemdata, entitydata'
+			default: throw 'Allowed categories: block, item, entity'
 		}
 		let res, obj
 		if(type == (type & 65535)){
@@ -168,9 +168,9 @@ Object.assign(commands, {
 			if(!(type in dict)) throw 'No such '+name.toLowerCase()+': ' + type
 			res = name+' '+type+' has ID '+(obj=dict[type]).id
 		}
-		if(data && obj.savedata){
+		if(obj.savedata){
 			res += ' and has data attributes:\n' + serializeTypePretty(obj.savedata)
-		}else if(data) res += ' and has no data attributes'
+		}else res += ' and has no data attributes'
 		return res
 	},
 	clear(sel = '@s', _item='none', _max = '2147483647'){
@@ -290,7 +290,7 @@ Object.assign(commands, {
 		return log(this, `Set the spawn point to (x=${GAMERULES.spawnx.toFixed(2)}, y=${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},
 	info(){
-		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
+		return `Vanilla server software ${VERSION}\nUptime: ${Date.formatTime(Date.now() - started)}, CPU: ${(perf.elu[0]*100).toFixed(1)}%, RAM: ${(perf.mem[0]/1048576).toFixed(1)}MB` + (this.age ? '\nTime since last death: ' + Date.formatTime(this.age * 1000 / currentTPS) : '')
 	},
 	tick(tps=''){
 		if(tps[0] == '+'){
@@ -376,15 +376,13 @@ Object.assign(commands, {
 		}
 		return log(this, 'Linked '+i+' players')
 	},
-	async regen(_x, _y, type, _w){
+	async regen(_x, _y, _w){
 		let {x, y, w} = parseCoords(_x, _y, _w, this)
 		x = floor(x) >>> 6; y = floor(y) >>> 6
-		let {0:a, 1:b} = type ? type.split('/',2) : [w.gend,w.genn]
-		if(!b) b=a,a=w.id
 		const chunk = w.chunk(x, y)
 		if(!chunk) throw 'Chunk not loaded'
 		chunk.t = 2147483647
-		const buf = new DataReader(await generator(x, y, a, b))
+		const buf = new DataReader(await generator(x, y, w.id))
 		chunk.parse(buf)
 		const delw = new DataWriter()
 		delw.byte(17), delw.int(x), delw.int(y)
@@ -646,20 +644,20 @@ export const anyone_help = {
 	kill: '-- Suicide'
 }, mod_help = {
 	...anyone_help,
-	give: '[player] [item] (count=1) ',
-	kick: '[player] -- Kick a player',
-	say: '[style] [...msg] -- Send a message in chat',
-	tp: '[targets] [x] [y] (dimension=~) -- teleport someone to a dimension',
-	tpe: '[targets] [destEntity]',
+	give: '[player] [item] (count=1) -- Give item(s) to a player',
+	kick: '[player] -- Kick a player from the server',
+	say: '[...msg] -- Send a message in chat',
+	tp: '[targets] [x] [y] (dimension=~) -- teleport entities to a dimension',
+	tpe: '[targets] [destEntity] -- Teleport entities to another entity',
 	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
 	summon: '[entity_type] (x) (y) (dimension=~) (snbt_data={}) -- Summon an entity',
 	setblock: '[x] [y] [block_type] (dimension=~) (snbt_data={}) -- Place a block somewhere',
 	clear: '[player] (filter_item=none) (max_amount=Infinity) -- Remove items from a player',
 	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension=~) -- Fill an area with a certain block',
-	regen: '(x=~) (y=~) -- Re-generate this chunk with fresh terrain',
+	regen: '(x=~) (y=~) (dimension=~) -- Re-generate this chunk with fresh terrain',
 	kill: '[target] (cause=void) -- Kill a player or entity',
-	mark: '[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position and entity selectors with !',
-	id: '[block|item|entity|blockdata|itemdata|entitydata] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID',
+	mark: '[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position/entity selectors with \'!\'',
+	id: '[block|item|entity] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID',
 	hide: '[player] -- Put a player in spectator',
 	show: '[player] -- Put a player out of spectator',
 	where: '[player] -- Where is a specific player?',
@@ -668,7 +666,7 @@ export const anyone_help = {
 }, help = {
 	...mod_help,
 	mutate: '[entity] [snbt_data] -- Change properties of an entity',
-	gamerule: '[gamerule] [value] -- Change a gamerule, such as difficulty or default gamemode',
+	gamerule: ['[gamerule] [value] -- Change a gamerule', '-- List available gamerules'],
 	tick: ['[tps] -- Set TPS', 'freeze|resume|entities|blocks|all|none -- Enable only certain tick phases', '+[amount] -- Step some ticks forward (for tick phases that are disabled)'],
 	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
 	perm: '[target] [int]|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
@@ -683,7 +681,7 @@ export const anyone_help = {
 	],
 	repeat: '[count] [...command] -- Execute a command multiple times',
 	delay: '[time_seconds] [...command] -- Execute a command after a delay',
-	restart: '(delay=0) -- Restart the server after delay',
+	restart: '(delay_seconds=0) -- Restart the server after delay',
 	bell: '-- @here',
 }, cheats = ['give', 'summon', 'setblock', 'fill', 'mutate', 'time']
 Object.setPrototypeOf(anyone_help, null)

@@ -6,24 +6,26 @@ import { stat } from './index.js'
 const loaded = task('Loading WorldGen process...')
 const gen = new Worker('./worldgen/genprocess.js')
 
-const waiting = new Map()
-let key = 0
-gen.onmessage = function({data: a}){
-	if(typeof a == 'string') throw '(from gen child process)\n'+a
-	const {key, buf} = a
-	if(key == -1) return loaded('WorldGen process loaded')
-	else if(key == -2) return perf.addData(1,arguments[0])
-	else if(key == -3) return gen.postMessage([blockindex, itemindex, entityindex])
+let waiting = [], i = 0
+let onmsg = function({data: a}){
+	if(!(a instanceof ArrayBuffer)) return perf.addData(1,a)
 	stat('world', 'chunks_generated')
 	stat('world', 'chunk_revisits', -1)
-	waiting.get(key)(buf)
-	waiting.delete(key)
+	waiting[i++](a)
+	if(i > (waiting.length>>1)) waiting = waiting.slice(i), i = 0
 }
+gen.addEventListener('message', () => {
+	gen.postMessage({indices: [blockindex, itemindex, entityindex], seed: CONFIG.world.seed+'', generators: CONFIG.generators})
+	gen.addEventListener('message', () => {
+		loaded('WorldGen process loaded')
+		gen.onmessage = onmsg
+	}, {once: true})
+}, {once: true})
+
 gen.onclose = close
 
-export const generator = (x, y, gend, genn) => new Promise(r => {
-	x = x << 6 >> 6; y = y << 6 >> 6
-	waiting.set(key, r)
-	gen.postMessage({x, y, d: gend, key, seed: CONFIG.world.seed, name: genn})
-	key++
+export const generator = (x, y, id) => new Promise(r => {
+	waiting.push(r)
+	gen.postMessage({x: x<<6, y: y<<6, d: id})
 })
+export const genMap = new Map()

@@ -1,8 +1,8 @@
-import { Biomes, Blocks } from '../vars.js'
+import { place } from '../util/chunk.js'
+import { Biomes, Blocks } from '../globals.js'
 
 Biomes.plains = {
-	surface: Blocks.grass,
-	offset: 12,
-	height: 8,
-	deepsurface: Blocks.dirt
+	surface(){
+		place(Blocks.grass)
+	},
 }

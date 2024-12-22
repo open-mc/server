@@ -1,5 +1,5 @@
 import { argv, PATH } from './internals.js'
-import fs from 'fs/promises'
+import fs from 'node:fs/promises'
 import { DataReader, DataWriter, decoder, encoder } from '../modules/dataproto.js'
 import crypto from 'node:crypto'
 import { TLSSocket } from 'node:tls'
@@ -115,6 +115,7 @@ w.next().then(function S(){
 }).catch(e=>null)
 
 server.any('/*', (res, req) => {
+	console.log(req.getUrl())
 	res.onAborted(() => res.aborted = true)
 	const {1:endpoint,2:i} = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){

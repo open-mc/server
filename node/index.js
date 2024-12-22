@@ -1,7 +1,7 @@
-import fs from 'fs/promises'
+import fs from 'node:fs/promises'
 import { argv, ready } from './internals.js'
-import { parse } from 'yaml'
-import { ClassicLevel } from 'classic-level'
+import { parse } from 'npm:yaml'
+import { ClassicLevel } from 'npm:classic-level'
 
 globalThis.CONFIG = null
 globalThis.configLoaded = fn => configLoaded.listeners.push(fn)
@@ -20,7 +20,7 @@ function argvConfig(){
 	return o
 }
 function fallback(o, f){
-	if(o == null && typeof f == 'object') return f
+	if((o === null || typeof o != 'object') && typeof f == 'object') return f
 	else if(Array.isArray(o)) return o
 	for(const k in f){
 		if(k in o){
@@ -55,22 +55,22 @@ for(let i = 0; i < argv.length; i++){
 	const w2 = fs.watch(argv[i])[Symbol.asyncIterator]()
 	w2.next().then(function S(){ loadConfigs(); w2.next().then(S) }).catch(e=>null)
 }
-class VolatileLevel extends Map{
-	prefix = ''
-	sublevel(a){const s=new VolatileLevel;s.prefix=this.prefix+'!'+a+'!';return s}
+class VolatileLevel{
+	constructor(m=new Map,p=''){this._map=m;this._prefix=p}
+	sublevel(a){return new VolatileLevel(this._map,this._prefix+'!'+a+'!')}
 	batch(a){
 		for(const {type, key, value} of a){
-			if(type == 'put') this.set(key, value)
-			else if(type == 'del') this.delete(key)
+			if(type == 'put') this._map.set(this._prefix+key, value)
+			else if(type == 'del') this._map.delete(this._prefix+key)
 			else return Promise.reject("A batch operation must have a type property that is 'put' or 'del'")
 		}
 		return Promise.resolve()
 	}
-	get(a,cb){const v = super.get(a); if(v) return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
-	getMany(arr,cb){let nf=0;const v = arr.map(a=>super.get(a)??nf++); if(!nf) return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
-	put(a,b,cb){this.set(a,b);return cb?void cb():Promise.resolve()}
-	del(a,cb){this.delete(a);return cb?void cb():Promise.resolve()}
-	close(cb){console.warn('Temporary map, deleting all '+this.size+' saved entries');return cb?void cb():Promise.resolve()}
+	get(a,cb){const v = this._map.get(this._prefix+a); if(v) return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
+	getMany(arr,cb){let nf=0;const v = arr.map(a=>this._map.get(this._prefix+a)??nf++); if(!nf) return cb?void cb(null,v):Promise.resolve(v); else return cb?void cb('Not Found:',null):Promise.reject('Not Found:')}
+	put(a,b,cb){this._map.set(this._prefix+a,b);return cb?void cb():Promise.resolve()}
+	del(a,cb){this._map.delete(this._prefix+a);return cb?void cb():Promise.resolve()}
+	close(cb){console.warn('Temporary map, deleting all '+this._map.size+' saved entries');return cb?void cb():Promise.resolve()}
 }
 await loadConfigs().then(() => {
 	globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()

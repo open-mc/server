@@ -15,3 +15,7 @@ Blocks.sand = class extends Block{
 	}
 	drops(){ return new Items.sand(1) }
 }
+
+Blocks.gravel = class extends Blocks.sand{
+	drops(){ return new Items.gravel(1) }
+}
