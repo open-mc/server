@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import { argv, ready } from './internals.js'
-import { parse } from 'npm:yaml'
-import { ClassicLevel } from 'npm:classic-level'
+import { parse } from 'yaml'
+import { ClassicLevel } from 'classic-level'
 
 globalThis.CONFIG = null
 globalThis.configLoaded = fn => configLoaded.listeners.push(fn)

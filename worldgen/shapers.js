@@ -32,7 +32,7 @@ Shapers.nether = (period = 2048) => {
 	if(Number.isNaN(period = 1/period)) period = 1/2048
 	return (x, y, o) => {
 		const a = (y*period)%1 + (y<0)
-		o.offset = a < .5 ? 3.2*a-1 : a > .6875 ? 2.2-3.2*a : 22-32*a
+		o.offset = a < .5 ? 4*a-.75 : a > .6875 ? 1.65-2.4*a : 16.5-24*a
 		const h = hNoise(x)
 		o.temperature = 1
 		o.humidity = h*.5+.5

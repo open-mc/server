@@ -312,7 +312,7 @@ Object.assign(commands, {
 	radius(r=-1){
 		if(!this?.sock) throw 'Not a player'
 		if(r < 0) return 'Loading radius is at r='+(this.radius-1)
-		r = min(129, max(2, +r + 1 | 0))
+		r = min(257, max(2, +r + 1 | 0))
 		if(r == this.radius) return 'Loading radius unchanged (r='+(r-1)+')'
 		const {chunkX, chunkY} = this
 		this.unload(chunkX, chunkY, this.world)

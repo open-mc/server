@@ -91,7 +91,7 @@ generators:
 
   nether:
     shaper: nether
-    period: 64
+    period: 32
     value: 2048
     air_layers: ["air", 1024, "lava", 1407, "lavaTop", 1408, "air"]
     air_layers_repeat: 2048
