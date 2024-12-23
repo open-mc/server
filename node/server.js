@@ -115,7 +115,6 @@ w.next().then(function S(){
 }).catch(e=>null)
 
 server.any('/*', (res, req) => {
-	console.log(req.getUrl())
 	res.onAborted(() => res.aborted = true)
 	const {1:endpoint,2:i} = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){

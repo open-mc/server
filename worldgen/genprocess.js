@@ -1,4 +1,4 @@
-import { Blocks, Items, Entities, ItemIDs, BlockIDs, EntityIDs } from './globals.js'
+import { Blocks, Items, Entities, ItemIDs, BlockIDs, EntityIDs, Biomes, Biome } from './globals.js'
 import { setSeed, chunk } from './util/outer-noise.js'
 import { jsonToType } from '../modules/dataproto.js'
 import { cache, setGenerators } from './core.js'
@@ -46,8 +46,10 @@ let q = []
 parentPort.onmessage = e => q.push(e)
 
 const p = import('./shapers.js')
-await import('./biomers.js')
+await import('./biomes.js')
 await p
+
+for(const b of Object.values(Biomes)) if(b.id == -1) Biome.register([b])
 
 setGenerators(generators)
 chunk.fill(Blocks.air.id)

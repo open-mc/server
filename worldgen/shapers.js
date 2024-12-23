@@ -4,7 +4,7 @@ import { Noise1D } from "./util/random.js"
 const oNoise = Noise1D('overworld.offset', 512), tNoise = Noise1D('temperature', 1024), hNoise = Noise1D('humidity', 512)
 Shapers.overworld = (amplification = 1) => {
 	if(Number.isNaN(amplification -= 0)) amplification = 1
-	const a = -6/amplification
+	const b = 128*amplification
 	return (x, y, o) => {
 		let off = oNoise(x)
 		if(off>0){
@@ -12,9 +12,9 @@ Shapers.overworld = (amplification = 1) => {
 			const p = off*off
 			off += p*p*4
 		}
-		off = (off+.25)*128
-		o.offset = (y-=off)*a/(off+160)
-		const t = tNoise(x) + min(.3, max(-.3, y*.005))
+		off = (off+.25)*b
+		o.offset = (y-=off)*-6/(off+1.25*b)
+		const t = tNoise(x) + min(.3, max(-.3, y*-.005))
 		const h = hNoise(x)
 		o.temperature = t*.5+.5
 		o.humidity = h*.5+.5

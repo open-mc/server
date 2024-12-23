@@ -1,7 +1,7 @@
-import { Shapers, voidShaper, Blocks, Biomers, voidBiomer } from './globals.js'
-import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, place, down, peekNoise, getY, getX } from './util/chunk.js'
+import { Shapers, voidShaper, Blocks, Biomes } from './globals.js'
+import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData } from './util/chunk.js'
 import { expand, genNoisev, seed } from './util/outer-noise.js'
-import { hash2, hashCode, LowNoise1D, setPartialSeed } from './util/random.js'
+import { hash2, hashCode, setPartialSeed } from './util/random.js'
 
 // b b b b b b b b b
 // b b b b b b b b b
@@ -17,11 +17,10 @@ import { hash2, hashCode, LowNoise1D, setPartialSeed } from './util/random.js'
 // x = features
 
 const ZERO = new NoiseChunk(Infinity, 512), ONE = new NoiseChunk(Infinity, 512).fill(255)
-const depth = LowNoise1D('depth')
 export class WorldCache{
 	localSeed = 0
 	shaper = voidShaper
-	biomer = voidBiomer
+	biome = Biomes.void.id
 	temperatureOffset = 0
 	humidityOffset = 0
 	airl = []
@@ -39,9 +38,9 @@ export class WorldCache{
 	fetchArea(x, y){
 		const now = Date.now()
 		// Coffee is bad, trust me
-		const l = this.localSeed^0xC0FFEBAD, ex = x+320|0, sy = y-256|0, ey = y+320|0
+		const l = this.localSeed^0xC0FFEBAD, ex = x+320|0, sx = x-256|0, ey = y+320|0
 		setPartialSeed(hash2(seed[2], l), hash2(seed[3], l), hash2(seed[4], l), hash2(seed[5], l))
-		for(let xi = x-256|0, i = 0; xi != ex; xi=xi+64|0) for(let yi = sy; yi != ey; yi=yi+64|0, i++){
+		for(let yi = y-256|0, i = 0; yi != ey; yi=yi+64|0) for(let xi = sx; xi != ex; xi=xi+64|0, i++){
 			const k = (xi>>>6)+(yi>>>6)*0x4000000
 			let c = this.biomeCache.get(k)
 			if(c) c.expires = now + 3600e3
@@ -74,33 +73,31 @@ export class WorldCache{
 			}
 		}
 		setPartialSeed(hash2(seed[4], l), hash2(seed[5], l), hash2(seed[6], l), hash2(seed[7], l))
-		const ay = this.airMod?y%this.airMod+(-(y<0)&this.airMod):y, gy = this.groundMod?y%this.groundMod+(-(y<0)&this.groundMod):y
-		let i = 0, ab, gb, o = this.airl[0]
-		while(o && o.minY<=ay) ab = o, o = this.airl[++i]
+		const y0 = y-256|0, gy = this.groundMod?y%this.groundMod+(-(y<0)&this.groundMod):y
+		let ay = this.airMod?y0%this.airMod+(-(y0<0)&this.airMod):y0
+		let o = this.airl[0], i = 0, last
+		for(let j = 0; j < 9; j++){
+			while(o && o.minY<=ay) last = o, o = this.airl[++i];
+			airBlockArrays[j] = last
+			if(!this.airMod) ay = ay+64|0
+			else if((ay += 64) == this.airMod) ay = 0
+		}
 		o = this.groundl[0]; i = 0
-		while(o && o.minY<=gy) gb = o, o = this.groundl[++i]
-		
-		_setChunkPos(x, y)
-		for(const i of expand(x, y, this.localSeed, ab, gb, _noiseChunks[4], new Uint8Array(_noiseChunks[7].buffer, 0, 128), new Uint8Array(_noiseChunks[1].buffer, 384, 128))){
+		while(o.minY<=gy) if(!(last = o, o = this.groundl[++i])) break
+		_setChunkPos(x, y, hash2(seed[3]^seed[2]^seed[1], this.localSeed), this.biome)
+		for(const i of expand(x, y, this.localSeed, airBlockArrays[4], last, _noiseChunks[4], new Uint8Array(_noiseChunks[7].buffer, 0, 128), new Uint8Array(_noiseChunks[1].buffer, 384, 128))){
 			goto(i)
-			if(this.biomer == Biomers.overworld){
-				let d = round(depth(getX())*2+5)
-				let y = getY()
-				if(y < 1){
-					while(d--){
-						if(!peekNoise()) break
-						place(y-- < -16 ? Blocks.gravel : Blocks.sand)
-						down()
-					}
-				}else{
-					place(Blocks.grass)
-					while(--d){
-						down()
-						if(!peekNoise()) break
-						place(Blocks.dirt)
-					}
-				}
+			peekBiome().surface?.()
+		}
+		const b = _biomeChunks[40]
+		for(let x = 0; x < 5; x++){
+			let t = 0, h = 0, i = x+25
+			for(let y = 0; y < 5; y++){
+				t += b[i]; h += b[i+25]
+				i += 5
 			}
+			biomeData[x<<1] = round(t*51)
+			biomeData[x<<1|1] = round(h*51)
 		}
 	}
 }
@@ -161,15 +158,15 @@ export function setGenerators(g){
 			temperature = .5, humidity = .5,
 			air_layers_repeat = 0, ground_layers_repeat = 0,
 			period = 128, roughness = 0.5,
-			biomer
+			biome
 		} = g[k]
 		let w = cache.get(k)
 		const sh = Shapers[shaper]?.(value) ?? voidShaper
-		const b = Biomers[biomer] ?? voidBiomer
-		if(sh == voidShaper) console.warn('No shaper named %s, defaulting to void', shaper)
-		if(b == voidBiomer) console.warn('No biomer named %s, defaulting to void', biomer)
+		const b = Biomes[biome]
+		if(sh == voidShaper) console.warn('\x1b[33mNo shaper named %s, defaulting to void', shaper)
+		if(!b) console.warn('\x1b[33mNo biome named %s, defaulting to void', biome)
 		if(!w) cache.set(k, w = new WorldCache(k))
-		w.shaper = sh; w.biomer = b
+		w.shaper = sh; w.biome = (b??Biomes.void).id
 		w.temperatureOffset = temperature-.5
 		w.humidityOffset = humidity-.5
 		w.airMod = air_layers_repeat & -64

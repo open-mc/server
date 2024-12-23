@@ -1,8 +1,6 @@
-import { place } from '../util/chunk.js'
 import { Biomes, Blocks } from '../globals.js'
+import { overworld } from './overworld.js'
 
-Biomes.plains = {
-	surface(){
-		place(Blocks.grass)
-	},
-}
+Biomes.plains = overworld.add({
+
+})

@@ -87,7 +87,7 @@ generators:
     value: 1
     air_layers: ["bedrock", -2147483647, 4, "water", -1, "waterTop", 0, "air"]
     ground_layers: ["bedrock", -2147483647, 4, "stone"]
-    biomer: overworld
+    biome: overworld
 
   nether:
     shaper: nether
@@ -96,7 +96,7 @@ generators:
     air_layers: ["air", 1024, "lava", 1407, "lavaTop", 1408, "air"]
     air_layers_repeat: 2048
     ground_layers: ["netherrack"]
-    biomer: nether
+    biome: nether
 
   end:
     shaper: end
@@ -104,14 +104,14 @@ generators:
     value: 2048
     air_layers: ["air"]
     ground_layers: ["endstone"]
-    biomer: end
+    biome: end
 
   void:
     shaper: uniform
     value: 0
     air_layers: ["air"]
     ground_layers: ["stone"]
-    biomer: void
+    biome: void
 
 permissions:
   # Allow anyone to use /kill to kill themselves (only moderators and above can /kill others)
