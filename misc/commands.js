@@ -285,7 +285,7 @@ Object.assign(commands, {
 	},
 	spawnpoint(x='~',y='~',d=this){
 		if(x.toLowerCase() == 'tp') // For the /spawnpoint tp [entity] syntax
-			return commands.tp.call(this, y || '@s', GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
+			return commands.tp.call(this, y == '~' ? '@s' : y, GAMERULES.spawnx, GAMERULES.spawny, GAMERULES.spawnworld)
 		void ({x: GAMERULES.spawnx, y: GAMERULES.spawny, w: {id: GAMERULES.spawnworld}} = parseCoords(x,y,d,this))
 		return log(this, `Set the spawn point to (x=${GAMERULES.spawnx.toFixed(2)}, y=${GAMERULES.spawny.toFixed(2)}) in the ${GAMERULES.spawnworld}`)
 	},

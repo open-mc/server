@@ -13,7 +13,10 @@ export const voidShaper = (x, y, o) => { o.offset = -2000; o.temperature = o.hum
 
 export const _biomeArr = []
 export class Biome extends Array{
-	constructor(o){ super(); Object.assign(this, o) }
+	constructor(o){
+		super(); Object.assign(this, o)
+		if(!this.priority) this.temperature = this.humidity = -Infinity
+	}
 	static register(arr){
 		const next = []
 		for(const b2 of arr) next.push(b2.children.length ? (Biome.register(b2.children), b2.children[0].id) : 0)

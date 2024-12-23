@@ -1,9 +1,9 @@
 import { Biomes, Blocks } from '../globals.js'
-import { down, getX, getY, peekNoise, place } from '../util/chunk.js'
+import { down, getX, getY, peekAirType, peekNoise, place } from '../util/chunk.js'
 import { depthNoise } from './overworld.js'
 
 Biomes.ocean = Biomes.overworld.add({
-	priority: 0.1,
+	priority: 0,
 	surface(){
 		const block = getY() < -32 ? Blocks.gravel : Blocks.sand
 		place(block)

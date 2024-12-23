@@ -24,13 +24,13 @@ export const peekAirType = () => {
 	const i = y+256>>>6, i1 = (y&63)*3
 	if(i > 8) return Blocks.air
 	const aba = airBlockArrays[i], r = aba[i1]
-	return aba[r?i1+1+(hash3(bSeed, cx+x|0, cy+y|0)&0xff < r):i1+1]
+	return BlockIDs[aba[(r?i1+((hash3(bSeed, cx+x|0, cy+y|0)&0xff) < r):i1)+1]]
 }
 export const peekBiome = () => {
 	const i = y+256>>>6, j = x+256>>>6, i1 = (y&63)*3
 	if(i > 8 || j > 8) return Biomes.void
 	const aba = airBlockArrays[i], r = aba[i1]
-	const block = aba[r?i1+1+(hash3(bSeed, cx+x|0, cy+y|0)&0xff < r):i1+1]
+	const block = aba[(r?i1+(hash3(bSeed, cx+x|0, cy+y|0)&0xff < r):i1)+1]
 	const bda = _biomeChunks[j+i*9]
 	const i0 = (x>>4&3) + (y>>4&3)*5
 	const xf0 = (x&15)*.0625, xf = (3-xf0-xf0)*xf0*xf0
@@ -41,7 +41,6 @@ export const peekBiome = () => {
 	const c = bda[i0+50], d = bda[i0+55]
 	const c1 = c + (bda[i0+51]-c)*xf
 	const h = c1 + ((d + (bda[i0+56]-d)*xf)-c1)*yf
-
 	return _biomeArr[findBiome(rootBiome, t, h, block)]
 }
 export const peek = () => BlockIDs[chunk[y<<6|x|(x&-64)<<6]??0]
