@@ -43,8 +43,8 @@ export const Noise1D = (name, period = 256) => {
 		const l1 = utof(hash2(h^b, x1)), r1 = utof(hash2(h^b, x1+p1|0))
 		const l2 = utof(hash2(h^c, x2)), r2 = utof(hash2(h^c, x2+p2|0))
 		const l3 = utof(hash2(h^d, x3)), r3 = utof(hash2(h^d, x3+p3|0))
-		return (l0 + lerp((x+p1-x0)*i_period)*(r0-l0))*.533 + (l1 + lerp((x+p2-x1)*i_period*.5)*(r1-l1))*.267
-			+ (l2 + lerp((x+p3-x2)*i_period*.25)*(r2-l2))*.133 + (l3 + lerp((x+p4-x3)*i_period*.125)*(r3-l3))*.067
+		return (l0 + lerp((x+p1-x0|0)*i_period)*(r0-l0))*.533 + (l1 + lerp((x+p2-x1|0)*i_period*.5)*(r1-l1))*.267
+			+ (l2 + lerp((x+p3-x2|0)*i_period*.25)*(r2-l2))*.133 + (l3 + lerp((x+p4-x3|0)*i_period*.125)*(r3-l3))*.067
 	}
 }
 export const LowNoise1D = (name, period = 256) => {
@@ -54,7 +54,7 @@ export const LowNoise1D = (name, period = 256) => {
 	return x => {
 		const x0 = x+p1&-period
 		const l0 = utof(hash2(h^a, x0)), r0 = utof(hash2(h^a, x0+period|0))
-		return (l0 + lerp((x+p1-x0)*i_period)*(r0-l0))
+		return (l0 + lerp((x+p1-x0|0)*i_period)*(r0-l0))
 	}
 }
 
