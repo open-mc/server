@@ -6,6 +6,7 @@ export { chunk }
 let i = 0, x = 0, y = 0
 let cx=0,cy=0,bSeed=0,rootBiome=0
 export const airBlockArrays = [null,null,null,null,null,null,null,null,null]
+export const groundBlockArrays = [null,null,null,null,null,null,null,null,null]
 export const _setChunkPos = (x,y,bs,b) => {cx=x;cy=y;bSeed=bs;rootBiome=b}
 export const goto = j => {i=j;x=j&63;y=j>>6}
 export const up = () => {y++}
@@ -26,6 +27,12 @@ export const peekAirType = () => {
 	const aba = airBlockArrays[i], r = aba[i1]
 	return BlockIDs[aba[(r?i1+((hash3(bSeed, cx+x|0, cy+y|0)&0xff) < r):i1)+1]]
 }
+export const peekGroundType = () => {
+	const i = y+256>>>6, i1 = (y&63)*3
+	if(i > 8) return Blocks.air
+	const aba = groundBlockArrays[i], r = aba[i1]
+	return BlockIDs[aba[(r?i1+((hash3(bSeed, cx+x|0, cy+y|0)&0xff) < r):i1)+1]]
+}
 export const peekBiome = () => {
 	const i = y+256>>>6, j = x+256>>>6, i1 = (y&63)*3
 	if(i > 8 || j > 8) return Biomes.void
@@ -43,6 +50,7 @@ export const peekBiome = () => {
 	const h = c1 + ((d + (bda[i0+56]-d)*xf)-c1)*yf
 	return _biomeArr[findBiome(rootBiome, t, h, block)]
 }
+export const blockUpdates = []
 export const peek = () => BlockIDs[chunk[y<<6|x|(x&-64)<<6]??0]
 export const place = b => {chunk[y<<6|x|(x&-64)<<6]=b.id}
 export const cmpxchg = (ob,b) => {const i=y<<6|x|(x&-64)<<6;if(chunk[i]==ob.id)chunk[i]=b.id}
@@ -51,6 +59,11 @@ export const placeup = b => {chunk[y+1<<6|x|(x&-64)<<6]=b.id}
 export const placedown = b => {chunk[y-1<<6|x|(x&-64)<<6]=b.id}
 export const placeright = b => {chunk[y<<6|x+1|(x+1&-64)<<6]=b.id}
 export const placeleft = b => {chunk[y-1<<6|x-1|(x-1&-64)<<6]=b.id}
+export const blockupdate = (dx=0,dy=0) => {
+	const i = y+dy<<6|x+dx|(x+dx&-64)<<6
+	if(i>>12) return
+	blockUpdates.push(i)
+}
 
 export const tileData = new Map()
 export const biomeData = new Uint8Array(10)
@@ -77,7 +90,8 @@ export function toBuf(buf = new DataWriter()){
 	if(!lastId) lastId = palette.push(65535)-1
 	try{
 		buf.flint(0)
-		buf.short(0)
+		buf.short(blockUpdates.length)
+		for(const b of blockUpdates) buf.short(b)
 		buf.byte(palette.length - 1)
 		buf.short(65535)
 		for(const b of biomeData) buf.byte(b)
@@ -129,6 +143,8 @@ export function toBuf(buf = new DataWriter()){
 	}finally{
 		for(const p of paletteFull) PM[p] = 0x0100
 	}
+	tileData.clear()
+	blockUpdates.length = 0
 	return buf
 }
 

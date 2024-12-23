@@ -1,19 +1,10 @@
-import { Biomes, Blocks } from '../util/vars.js'
+import { cmpxchg, getX, place, up } from '../util/chunk.js'
+import { Biome, Biomes, Blocks } from '../globals.js'
+import { foliageRng } from './overworld.js'
 
-Biomes.nether = {
-	surface: null,
-	deepsurface: null,
-	offset(_,cy){
-		const icy = cy - (cy = (cy+16&31)-16) << 6
-		return (cy>=0)*960 - 640 + icy
-	},
-	height(_,cy){
-		cy = (cy+16&31)-16
-		return (cy<0?cy<-10?80:800:-400)
+Biomes.nether = new Biome({
+	surface(){
+		if(foliageRng(getX())&15) return
+		up(); cmpxchg(Blocks.air, Blocks.fire)
 	}
-}
-Biomes.netheropensky = {
-	...Biomes.nether,
-	offset: -640,
-	height(_,cy){return cy<-10?80:800}
-}
+})

@@ -12,10 +12,16 @@ import { actualTPS, currentTPS } from '../world/tick.js'
 import { cancelgridevent, goto, gridevent, peek, place, summonDrops } from './ant.js'
 import { Blocks } from '../blocks/block.js'
 
+const hostNames = {
+	__proto__: null, '': 'singleplayer',
+	'local.blobk.at': 'localhost'
+}
 function sendTabMenu(encodePlayers = false){
 	const buf = new DataWriter()
 	buf.byte(4)
-	buf.string('\\1fYou are playing on '+(host||'localhost'))
+	const i = host.lastIndexOf(':'), h = i >= 0 ? host.slice(0, i) : host
+	const hname = h in hostNames ? hostNames[h]+host.slice(h.length) : host
+	buf.string('\\1fYou are playing on '+hname)
 	buf.string(`\\0${actualTPS>=currentTPS*0.8?'a':actualTPS>=currentTPS/2?'b':'9'}TPS: ${actualTPS.toFixed(2)}`)
 	if(encodePlayers){
 		buf.flint(players.size)

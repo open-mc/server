@@ -53,7 +53,7 @@ for(const b of Object.values(Biomes)) if(b.id == -1) Biome.register([b])
 
 setGenerators(generators)
 chunk.fill(Blocks.air.id)
-const emptyChunk = toBuf()
+const emptyChunk = toBuf().build().buffer
 parentPort.onmessage = ({data}) => {
 	if('seed' in data){
 		setSeed(data.seed)
@@ -62,10 +62,11 @@ parentPort.onmessage = ({data}) => {
 	}
 	const d = cache.get(data.d)
 	if(!d) return void parentPort.postMessage(emptyChunk)
-	d.fetchArea(data.x, data.y)
-
-	const b = toBuf().build().buffer
-	parentPort.postMessage(b, [b])
+	let b = emptyChunk
+	try{
+		d.generate(data.x, data.y)
+		b = toBuf().build().buffer
+	}finally{ parentPort.postMessage(b, [b]) }
 }
 parentPort.postMessage(null)
 for(const m of q) parentPort.onmessage(m)

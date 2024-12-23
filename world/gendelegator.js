@@ -15,7 +15,8 @@ let onmsg = function({data: a}){
 	if(i > (waiting.length>>1)) waiting = waiting.slice(i), i = 0
 }
 gen.addEventListener('message', () => {
-	gen.postMessage({indices: [blockindex, itemindex, entityindex], seed: CONFIG.world.seed+'', generators: CONFIG.generators})
+	gen.postMessage({indices: [blockindex, itemindex, entityindex], seed: CONFIG.world.seed, generators: CONFIG.generators})
+	configLoaded(() => gen.postMessage({seed: CONFIG.world.seed, generators: CONFIG.generators}))
 	gen.addEventListener('message', () => {
 		loaded('WorldGen process loaded')
 		gen.onmessage = onmsg

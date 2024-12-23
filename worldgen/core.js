@@ -1,5 +1,5 @@
 import { Shapers, voidShaper, Blocks, Biomes } from './globals.js'
-import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData } from './util/chunk.js'
+import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData, groundBlockArrays } from './util/chunk.js'
 import { expand, genNoisev, seed } from './util/outer-noise.js'
 import { hash2, hashCode, setPartialSeed } from './util/random.js'
 
@@ -35,7 +35,7 @@ export class WorldCache{
 	biomeCache = new Map()
 	// TTL: 15mins
 	noiseCache = new Map()
-	fetchArea(x, y){
+	generate(x, y){
 		const now = Date.now()
 		// Coffee is bad, trust me
 		const l = this.localSeed^0xC0FFEBAD, ex = x+320|0, sx = x-256|0, ey = y+320|0
@@ -73,19 +73,25 @@ export class WorldCache{
 			}
 		}
 		setPartialSeed(hash2(seed[4], l), hash2(seed[5], l), hash2(seed[6], l), hash2(seed[7], l))
-		const y0 = y-256|0, gy = this.groundMod?y%this.groundMod+(-(y<0)&this.groundMod):y
+		const y0 = y-256|0
 		let ay = this.airMod?y0%this.airMod+(-(y0<0)&this.airMod):y0
-		let o = this.airl[0], i = 0, last
+		let gy = this.groundMod?y0%this.groundMod+(-(y0<0)&this.groundMod):y0
+		let o = this.airl[0], i = 0, last = null
 		for(let j = 0; j < 9; j++){
 			while(o && o.minY<=ay) last = o, o = this.airl[++i];
 			airBlockArrays[j] = last
 			if(!this.airMod) ay = ay+64|0
 			else if((ay += 64) == this.airMod) ay = 0
 		}
-		o = this.groundl[0]; i = 0
-		while(o.minY<=gy) if(!(last = o, o = this.groundl[++i])) break
+		o = this.groundl[0]; i = 0; last = null
+		for(let j = 0; j < 9; j++){
+			while(o && o.minY<=gy) last = o, o = this.groundl[++i];
+			groundBlockArrays[j] = last
+			if(!this.groundMod) gy = gy+64|0
+			else if((gy += 64) == this.groundMod) gy = 0
+		}
 		_setChunkPos(x, y, hash2(seed[3]^seed[2]^seed[1], this.localSeed), this.biome)
-		for(const i of expand(x, y, this.localSeed, airBlockArrays[4], last, _noiseChunks[4], new Uint8Array(_noiseChunks[7].buffer, 0, 128), new Uint8Array(_noiseChunks[1].buffer, 384, 128))){
+		for(const i of expand(x, y, this.localSeed, airBlockArrays[4], groundBlockArrays[4], _noiseChunks[4], new Uint8Array(_noiseChunks[7].buffer, 0, 128), new Uint8Array(_noiseChunks[1].buffer, 384, 128))){
 			goto(i)
 			peekBiome().surface?.()
 		}

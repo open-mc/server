@@ -116,11 +116,8 @@ export class Chunk extends Uint16Array{
 				buf.int(this.y)
 			}
 			buf.flint(Chunk.savedatahistory.length)
-			if(packet) buf.short(0)
-			else{
-				buf.short(this.blockupdates.size)
-				for(const t of this.blockupdates.keys()) buf.short(t)
-			}
+			buf.short(this.blockupdates.size)
+			for(const t of this.blockupdates.keys()) buf.short(t)
 			buf.byte(palette.length - 1)
 
 			for(const e of this.entities){

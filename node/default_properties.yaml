@@ -29,8 +29,9 @@ maxplayers: 20
 
 # World simulation stuff
 world:
-  # 32 bit world seed
-  seed: 1234
+  # Any text. Hashed to 256 bits
+  # Advanced mode: specify an array of 8 32-bit integers to use as the internal 'seed' parameters
+  seed: '1234'
   # 8 in traditional minecraft; 16 here. 123 blocks in the nether corresponds to (123 * nether_scale) blocks in the overworld
   nether_scale: 16
   # Radius around players where chunks are loaded. Recommended: 2
