@@ -5,7 +5,7 @@ import './grass.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
-	static flags = BlockFlags.TARGETTABLE | BlockFlags.HARD_TOP | BlockFlags.REPLACEABLE
+	static flags = BlockFlags.TARGETTABLE | BlockFlags.HARD_TOP | BlockFlags.FRAGILE
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1

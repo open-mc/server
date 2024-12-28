@@ -13,7 +13,7 @@ Entities.falling_block = class extends Entity{
 		if(this.impactDy < 0){
 			goto(this)
 			const bl = peek()
-			if(bl.replaceable){
+			if(bl.fragile){
 				bl.destroy?.(false)
 				place(BlockIDs[this.block] ?? Blocks.air)
 				return void this.remove()

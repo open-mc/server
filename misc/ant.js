@@ -38,7 +38,7 @@ export function place(bl, safe = false){
 	bl = bl === bl.constructor && bl.savedata ? new bl : bl
 	if(!_chunk) return bl
 	const _id = _chunk[_pos], _b = _id === 65535 ? _chunk.tileData.get(_pos) : BlockIDs[_id]
-	if(safe && !(_b.flags&2048)) return
+	if(safe && !(_b.flags&4096)) return
 	if(_b.unset){
 		_b.unset()
 		chunk = _chunk; pos = _pos

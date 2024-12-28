@@ -22,12 +22,12 @@ Blocks.fire = class extends Block{
 		const b = peekdown()
 		if(b == Blocks.obsidian){
 			let i = 0
-			while(++i < 32 & (up(), peek().replaceable));
+			while(++i < 32 & (up(), peek().fragile));
 			if(peek() != Blocks.obsidian) return
 			if(i < 3) return
 			while(--i>=0) down(), place(Blocks.portal)
 			antChunk.portals.push(chunkTileIndex)
-		}else if(b.replaceable){
+		}else if(b.fragile){
 			place(Blocks.air)
 		}
 	}

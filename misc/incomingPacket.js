@@ -221,7 +221,7 @@ function playerMovePacket(player, buf){
 		jump(ax, ay)
 		b = peek()
 		{
-			if(!(b.flags&2048)||(b&targetFlag)) break top
+			if(!(b.flags&4096)) break top
 			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
 			if(!(up.flags&targetFlag) && !(left.flags&targetFlag) && !(down.flags&targetFlag) && !(right.flags&targetFlag)) break top
 		}

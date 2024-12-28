@@ -23,8 +23,10 @@ export const BlockFlags = {
 	TARGET_BLOCKING: 512,
 	TARGET_CAPTURE: 768,
 	TARGET_FLUID: 1024,
-	REPLACEABLE: 2048,
-	CLIMBABLE: 4096
+	CLIMBABLE: 2048,
+	OVERWRITABLE: 4096,
+	FRAGILE: 8192,
+	REPLACEABLE: 12288,
 }
 
 export class Block{
@@ -33,7 +35,7 @@ export class Block{
 	static breaktime = 3
 	static blast = 20
 	static flags = BlockFlags.SOLID | BlockFlags.HARD | BlockFlags.TARGET_CAPTURE
-	get replaceable(){return (this.flags&2048)!=0}
+	get fragile(){return (this.flags&8192)!=0}
 	static tool = ''
 	static savedata = null
 	destroy(sound = true){

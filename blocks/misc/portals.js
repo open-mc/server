@@ -4,7 +4,7 @@ import { Dimensions, GAMERULES } from '../../world/index.js'
 import { Block, BlockFlags, Blocks } from '../block.js'
 
 Blocks.portal = class extends Block{
-	static flags = BlockFlags.TARGET_BLOCKING | BlockFlags.REPLACEABLE
+	static flags = BlockFlags.TARGET_BLOCKING | BlockFlags.FRAGILE
 	static blockShape = [0.375, 0, 0.625, 1]
 	static breaktime = Infinity
 	static blast = 40

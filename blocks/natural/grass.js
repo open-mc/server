@@ -21,7 +21,7 @@ Blocks.grass = Grass
 Blocks.snowy_grass = class SnowyGrass extends Grass{}
 
 Blocks.tall_grass = class extends Block{
-	static flags = BlockFlags.TARGETTABLE
+	static flags = BlockFlags.TARGETTABLE | BlockFlags.FRAGILE | BlockFlags.REPLACEABLE
 	static breaktime = 0
 	update(){
 		if(peekdown() != Blocks.grass) this.destroy(), place(Blocks.air)
