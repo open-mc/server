@@ -150,7 +150,7 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		let ax = l << 24 >> 24, ay = l << 16 >> 24
-		const targetFlag = item?.interactFluid ? 1024 : 256
+		const targetFlag = item?.interactFluid ? 1280 : 256
 		if(d >= reach){
 			const {flags} = ax?ax<0?peekleft():peekright():ay<0?peekdown():peekup()
 			if(flags&targetFlag){
