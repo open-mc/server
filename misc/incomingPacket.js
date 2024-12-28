@@ -110,10 +110,10 @@ function playerMovePacket(player, buf){
 		let d = 0, px = ifloat(player.x - bx), py = ifloat(player.y + player.head - by)
 		const dx = x / reach, dy = y / reach
 		let l = 0
-		const item = player.inv[sel&127], interactFluid = item?.interactFluid ?? false
+		const item = player.inv[sel&127], blockingFlag = item?.interactFluid ? 1536 : 512
 		a: while(d < reach){
-			const {solid, mustBreak, blockShape = DEFAULT_BLOCKSHAPE, flows} = peek()
-			if(solid || (sel > 127 && mustBreak) || (interactFluid && flows === false)){
+			const {flags, blockShape = DEFAULT_BLOCKSHAPE} = peek()
+			if(flags&blockingFlag){
 				for(let i = 0; i < blockShape.length; i += 4){
 					const x0 = blockShape[i], x1 = blockShape[i+2], y0 = blockShape[i+1], y1 = blockShape[i+3]
 					if(dx > 0 && px <= x0){
@@ -150,9 +150,10 @@ function playerMovePacket(player, buf){
 			break top
 		}
 		let ax = l << 24 >> 24, ay = l << 16 >> 24
+		const targetFlag = item?.interactFluid ? 1024 : 256
 		if(d >= reach){
-			const {solid, targettable, flows} = ax?ax<0?peekleft():peekright():ay<0?peekdown():peekup()
-			if(((targettable && !solid) || (interactFluid && flows === false))){
+			const {flags} = ax?ax<0?peekleft():peekright():ay<0?peekdown():peekup()
+			if(flags&targetFlag){
 				jump(ax, ay)
 				px -= ax; py -= ay
 				l >>>= 16
@@ -163,13 +164,14 @@ function playerMovePacket(player, buf){
 				else if(l == 65280) py = 0
 			}else{
 				if(sel > 127) break top
-				px = ((player.x + x)%1+1)%1; py = ((player.y + player.head + y)%1+1)%1
+				px = (player.x + x)%1; py = (player.y + player.head + y)%1
+				px += px<0; py += py<0
 			}
 		}else px -= ax, py -= ay
 		if(!antChunk||antChunk.flags&1) break top
 		if(sel > 127){
 			const block = peek()
-			if((block.targettable||block.solid) | block.mustBreak){
+			if(block.flags&256){
 				if(!this.breakGridEvent | this.bx != (this.bx = getX()) | this.by != (this.by = getY())){
 					if(this.breakGridEvent)
 						cancelgridevent(this.breakGridEvent)
@@ -192,7 +194,7 @@ function playerMovePacket(player, buf){
 		}
 		let b = peek()
 		plx = getX(); ply = getY()
-		if((b.targettable||b.solid) | (interactFluid && b.fluidLevel)){
+		if(b.flags&targetFlag){
 			b: if(item && item.interact){
 				const i2 = item.interact(b, player)
 				if(i2 === undefined || this.mode == 1) break b
@@ -217,19 +219,18 @@ function playerMovePacket(player, buf){
 		}
 		if(!item) break top
 		jump(ax, ay)
-		{
-			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
-			if(interactFluid){
-				if(up.flows === false && left.flows === false && down.flows === false && right.flows === false) break top
-			}else if(!(up.targettable||up.solid) && !(left.targettable||left.solid) && !(down.targettable||down.solid) && !(right.targettable||right.solid)) break top
-		}
 		b = peek()
-		if(!b.replaceable || (interactFluid && b.flows === false)) break top
-		plx = plx+ax|0; ply = ply+ay|0
-		if(false){
-			// TODO better entity check allowing for quasi-solid blocks like sugar_cane
-			if(plx < player.x + player.width && plx + 1 > player.x - player.width && ply < player.y + player.height && ply + 1 > player.y) break top
+		{
+			if(!(b.flags&2048)||(b&targetFlag)) break top
+			const up = peekup(), left = peekleft(), down = peekdown(), right = peekright()
+			if(!(up.flags&targetFlag) && !(left.flags&targetFlag) && !(down.flags&targetFlag) && !(right.flags&targetFlag)) break top
 		}
+		plx = plx+ax|0; ply = ply+ay|0
+		// TODO: entity check that's disabled for nonsolid blocks like torches
+		/*if(!item.interactFluid && plx < player.x + player.width && plx + 1 > player.x - player.width && ply < player.y + player.height && ply + 1 > player.y){
+			plx = 2147483648
+			break top
+		}*/
 		if(item.place && !(item.forbidden&&this.perms<MOD&&this.mode==0)){
 			player.state |= 8
 			const i2 = item.place(px, py, player)
@@ -303,15 +304,16 @@ function altInventoryPacket(player, buf){
 }
 
 function dropItemPacket(player, buf){
-	const item = player.getItem(0, player.selected)
-	if(item){
-		player.setItem(0, player.selected, null)
-		player.itemChanged(0, player.selected, null)
-		const e = new Entities.item()
-		e.item = item
-		e.dx = player.dx + player.f > 0 ? 7 : -7
-		e.place(player.world, player.x, player.y + player.head - 0.5)
-	}
+	let item = player.getItem(0, player.selected)
+	if(!item) return
+	let drop
+	if(item.count > 1) item.count--, drop = item.copy(1)
+	else drop = item, player.setItem(0, player.selected, item = null)
+	player.itemChanged(0, player.selected, item)
+	const e = new Entities.item()
+	e.item = drop
+	e.dx = player.dx + player.f > 0 ? 7 : -7
+	e.place(player.world, player.x, player.y + player.head*.5)
 }
 function dropSlot(p, id, slot){
 	const t = p.getItem(id, slot)

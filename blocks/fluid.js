@@ -1,7 +1,7 @@
 import { down, left, peek, peekdown, peekleft, peekright, peekup, place, right, up } from "../misc/ant.js"
 import { GAMERULES } from "../world/index.js"
 import { tickBits } from "../world/tick.js"
-import { Blocks } from "./block.js"
+import { BlockFlags, Blocks } from "./block.js"
 import { BlockShape } from "./blockshapes.js"
 
 export const fluidify = (B, t, renewable = false) => {
@@ -35,7 +35,8 @@ export const fluidify = (B, t, renewable = false) => {
 			}else b.destroy?.(), place(flowing)
 		}
 		static fluidLevel = 8
-		static flows = false
+		static source = true
+		static flags = B.flags | BlockFlags.TARGET_FLUID
 	}
 	const top = class extends filled{
 		static destroy = undefined
@@ -44,7 +45,7 @@ export const fluidify = (B, t, renewable = false) => {
 	}
 	const flowing = class extends B{
 		static fluidLevel = 8
-		static flows = true
+		static source = false
 		static destroy = undefined
 		static pushY = -6
 		update(){
@@ -58,16 +59,16 @@ export const fluidify = (B, t, renewable = false) => {
 			b = peek()
 			if(b.fluidLevel >= 8){
 				if(b.fluidType != t) this.combine?.(b)
-				else if(renewable && !b.flows){
+				else if(renewable && b.source){
 					up()
 					b = peekright()
 					if(!b.replaceable){
 						b = peekleft()
-						if(b.fluidType != t || b.flows) return
+						if(b.fluidType != t || !b.source) return
 					}else{
-						if(b.fluidType != t || b.flows) return
+						if(b.fluidType != t || !b.source) return
 						b = peekleft()
-						if((b.fluidType != t || b.flows) && b.replaceable) return
+						if((b.fluidType != t || !b.source) && b.replaceable) return
 					}
 					place(filled)
 				}
@@ -80,14 +81,14 @@ export const fluidify = (B, t, renewable = false) => {
 				if(!b.replaceable) fillSource-=2
 				else if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = 0
 				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
-				else if(b.flows) fillSource = 0
+				else if(!b.source) fillSource = 0
 				else fillSource--
 				left(); left()
 				b = peek()
 				if(!b.replaceable) fillSource-=2
 				else if(!b.fluidLevel||b.fluidLevel < 7) b.destroy?.(), place(levels[7]), fillSource = 0
 				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
-				else if(b.flows) fillSource = 0
+				else if(!b.source) fillSource = 0
 				else fillSource--
 				if(fillSource>=1) right(), place(filled)
 			}else if(b.fluidLevel){
@@ -101,7 +102,7 @@ export const fluidify = (B, t, renewable = false) => {
 			const L = this.fluidLevel
 			return (peekright().fluidLevel??0) < L ? (peekleft().fluidLevel??0) < L ? 0 : 8 : (peekleft().fluidLevel??0) < L ? -8 : 0
 		}
-		static flows = true
+		static source = false
 		static destroy = undefined
 		update(){
 			if(!(tickBits>>B.delay&1) && !GAMERULES.fastfluids) return 1
@@ -118,16 +119,16 @@ export const fluidify = (B, t, renewable = false) => {
 			let b = peek()
 			if(b.fluidLevel >= 8){
 				if(b.fluidType != t) this.combine?.(b)
-				else if(renewable && !b.flows){
+				else if(renewable && b.source){
 					up()
 					b = peekright()
 					if(!b.replaceable){
 						b = peekleft()
-						if(b.fluidType != t || b.flows) return
+						if(b.fluidType != t || !b.source) return
 					}else{
-						if(b.fluidType != t || b.flows) return
+						if(b.fluidType != t || !b.source) return
 						b = peekleft()
-						if((b.fluidType != t || b.flows) && b.replaceable) return
+						if((b.fluidType != t || !b.source) && b.replaceable) return
 					}
 					place(filled)
 				}
@@ -142,14 +143,14 @@ export const fluidify = (B, t, renewable = false) => {
 				if(!b.replaceable) fillSource-=2
 				else if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = 0
 				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
-				else if(b.flows) fillSource = 0
+				else if(!b.source) fillSource = 0
 				else fillSource--
 				left(); left()
 				b = peek()
 				if(!b.replaceable) fillSource-=2
 				else if(!b.fluidLevel||b.fluidLevel < L) b.destroy?.(), place(levels[L]), fillSource = 0
 				else if(b.fluidType != t) this.combine?.(b), fillSource = 0
-				else if(b.flows) fillSource = 0
+				else if(!b.source) fillSource = 0
 				else fillSource--
 				if(fillSource>=1) right(), place(filled)
 			}else if(b.fluidLevel){

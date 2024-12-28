@@ -1,13 +1,11 @@
 import { Items } from '../../items/item.js'
 import { load, peek, place, save, up, down, peekleft, peekright } from '../../misc/ant.js'
-import { Block, Blocks } from '../block.js'
+import { Block, BlockFlags, Blocks } from '../block.js'
 import './grass.js'
 
 Blocks.sugar_cane = class extends Block{
 	static breaktime = 0
-	static solid = false
-	static targettable = true
-	static replaceable = true
+	static flags = BlockFlags.TARGETTABLE | BlockFlags.HARD_TOP | BlockFlags.REPLACEABLE
 	randomtick(){ // happens on average every 3 mins 24s
 		if(random() < .5){
 			let length = 1
@@ -26,7 +24,7 @@ Blocks.sugar_cane = class extends Block{
 		const b = peek(), l = peekleft(), r = peekright()
 		up()
 		if(b === Blocks.sugar_cane) return
-		if(!b.solid | ((l.flows !== false | l.fluidType != 'water') & (r.flows !== false | r.fluidType != 'water')))
+		if(!(b.flags&BlockFlags.SOLID_TOP) | ((!l.source | l.fluidType != 'water') & (!r.source | r.fluidType != 'water')))
 			this.destroy(), place(Blocks.air)
 	}
 	drops(){ return new Items.sugar_cane(1) }

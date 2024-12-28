@@ -1,8 +1,7 @@
-import { Block, Blocks } from '../block.js'
+import { Block, BlockFlags, Blocks } from '../block.js'
 
 Blocks.air = class Air extends Block{
-	static solid = false
-	static replaceable = true
+	static flags = BlockFlags.REPLACEABLE
 	static blast = 10
 	static destroy = undefined
 }

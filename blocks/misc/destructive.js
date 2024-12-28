@@ -2,7 +2,7 @@ import { Entities } from '../../entities/entity.js'
 import { damageTypes } from '../../entities/deathmessages.js'
 import { Items } from '../../items/item.js'
 import { antChunk, chunkTileIndex, down, peek, peekdown, place, summon, up } from '../../misc/ant.js'
-import { Block, Blocks } from '../block.js'
+import { Block, BlockFlags, Blocks } from '../block.js'
 
 Blocks.tnt = class extends Block{
 	static breaktime = 0
@@ -15,9 +15,7 @@ Blocks.tnt = class extends Block{
 }
 
 Blocks.fire = class extends Block{
-	static solid = false
-	static replaceable = true
-	static mustBreak = true
+	static flags = BlockFlags.REPLACEABLE | BlockFlags.TARGET_CAPTURE
 	static breaktime = 0
 	static blast = 10
 	update(){

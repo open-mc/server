@@ -10,6 +10,7 @@ import './misc/minerals.js'
 import './misc/portals.js'
 
 import './natural/air.js'
+import './natural/desert.js'
 import './natural/crops.js'
 import './natural/end.js'
 import './natural/grass.js'

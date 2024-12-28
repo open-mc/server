@@ -5,7 +5,7 @@ import { Item, Items } from '../item.js'
 
 Items.bucket = class extends Item{
 	interact(b, p){
-		if(b.fluidLevel && !b.flows){
+		if(b.source){
 			blockevent(34)
 			place(Blocks.air)
 			let i = null

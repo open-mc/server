@@ -32,7 +32,7 @@ export const ChunkLoader = T => class extends T{
 		let YT = min(cy,ocy)+radius
 		const trashed = new DataWriter()
 		trashed.byte(17)
-		for(let y = y0; y < y1; y++){
+		for(let y = y1-1; y >= y0; y--){
 			for(let x=cx-radius+1;x<XT;x++){
 				this.world.link(x, y, sock)
 				if(this.world.unlink(tx-x, ty-y, sock)){
@@ -41,8 +41,9 @@ export const ChunkLoader = T => class extends T{
 				}
 			}
 		}
+		const ty1 = max(cy,ocy)-radius+1
 		for(let x = x0; x < x1; x++){
-			for(let y=max(cy,ocy)-radius+1;y<YT;y++){
+			for(let y=YT-1;y>=ty1;y--){
 				this.world.link(x, y, sock)
 				if(this.world.unlink(tx-x, ty-y, sock)){
 					trashed.int(tx-x)
@@ -57,7 +58,7 @@ export const ChunkLoader = T => class extends T{
 		const {radius, sock} = this
 		if(!sock) return
 		for(let x=cx-radius+1;x<cx+radius;x++)
-			for(let y=cy-radius+1;y<cy+radius;y++)
+			for(let y=cy+radius-1;y>cy-radius;y--)
 				world.link(x, y, sock)
 	}
 	unload(cx, cy, world, send = true){

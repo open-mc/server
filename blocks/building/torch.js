@@ -1,13 +1,11 @@
 import { Items } from '../../items/item.js'
 import { soliddown, solidleft, solidright, place } from '../../misc/ant.js'
-import { Block, Blocks } from '../block.js'
+import { Block, BlockFlags, Blocks } from '../block.js'
 
 Blocks.torch = class extends Block{
-	static solid = false
+	static flags = BlockFlags.TARGETTABLE
 	static breaktime = 0
 	static blast = 15
-	static targettable = true
-	static replaceable = true
 	static blockShape = [7/16, 0, 9/16, 10/16]
 	drops(){ return new Items.torch() }
 	update(){

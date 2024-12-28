@@ -1,4 +1,4 @@
-import { BlockIDs, Blocks } from "../../blocks/block.js"
+import { BlockFlags, BlockIDs, Blocks } from "../../blocks/block.js"
 import { goto, peek, place, summonDrops } from "../../misc/ant.js"
 import { Entities, Entity } from "../entity.js"
 

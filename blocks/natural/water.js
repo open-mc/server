@@ -1,19 +1,17 @@
 import { damageTypes } from '../../entities/deathmessages.js'
 import { antChunk, blockevent, place } from '../../misc/ant.js'
 import { Dimensions } from '../../world/index.js'
-import { Block, Blocks } from '../block.js'
+import { Block, BlockFlags, Blocks } from '../block.js'
 import { fluidify } from '../fluid.js'
 
 class Water extends Block{
-	static solid = false
-	static replaceable = true
-	static climbable = true
+	static flags = BlockFlags.REPLACEABLE | BlockFlags.CLIMBABLE
 	static viscosity = 0.15
 	static delay = 5
 	static blast = 400
 	static combine(fluid){
 		if(fluid.fluidType == 'lava')
-			blockevent(32), place(fluid.flows ? Blocks.cobblestone : Blocks.obsidian)
+			blockevent(32), place(fluid.source ? Blocks.obsidian : Blocks.cobblestone)
 	}
 }
 void({
@@ -28,7 +26,7 @@ class Lava extends Water{
 	static get delay(){return antChunk.world == Dimensions.nether ? 5 : 20}
 	static combine(fluid){
 		if(fluid.fluidType == 'water')
-			blockevent(32), place(fluid.flows ? Blocks.cobblestone : Blocks.stone)
+			blockevent(32), place(fluid.source ? Blocks.stone : Blocks.cobblestone)
 	}
 	touched(e){
 		e.damage?.(4, damageTypes.fire)

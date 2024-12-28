@@ -1,12 +1,11 @@
 import { Items } from "../../items/item.js"
 import { down, left, peekdown, place, right, up } from "../../misc/ant.js"
-import { Block, Blocks } from "../block.js"
+import { Block, Blocks, BlockFlags } from "../block.js"
 import './leaves.js'
 import './logs.js'
 
 class Sapling extends Block{
-	static solid = false
-	static targettable = true
+	static flags = BlockFlags.TARGETTABLE
 	static breaktime = 0
 	update(){
 		if(!peekdown().dirt) this.destroy(), place(Blocks.air)

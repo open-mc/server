@@ -12,7 +12,7 @@ Items.flint_and_steel = class extends Item{
 		e.dx = random() * 4 - 2
 	}
 	place(){
-		if(peek().flows) return
+		if(typeof peek().source == 'boolean') return
 		if(!soliddown()) return
 		place(Blocks.fire); gridevent(1)
 	}

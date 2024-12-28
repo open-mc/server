@@ -1,14 +1,13 @@
 import { DXDY, X, Y } from '../../entities/entity.js'
 import { antChunk, chunkTileIndex, down, getX, getY, goto, jump, load, peek, peekdown, peekup, place, right, save, up } from '../../misc/ant.js'
 import { Dimensions, GAMERULES } from '../../world/index.js'
-import { Block, Blocks } from '../block.js'
+import { Block, BlockFlags, Blocks } from '../block.js'
 
 Blocks.portal = class extends Block{
-	static solid = false
+	static flags = BlockFlags.TARGET_BLOCKING | BlockFlags.REPLACEABLE
 	static blockShape = [0.375, 0, 0.625, 1]
 	static breaktime = Infinity
 	static blast = 40
-	static replaceable = true
 	update(){
 		const u = peekup(), d = peekdown()
 		if((d == Blocks.obsidian | d == Blocks.portal) & (u == Blocks.obsidian | u == Blocks.portal)) return
@@ -86,7 +85,7 @@ Blocks.portal = class extends Block{
 }
 
 Blocks.end_portal = class extends Block{
-	static solid = false
+	static flags = BlockFlags.TARGET_BLOCKING
 	static blockShape = [0, 0, 1, 0.75]
 	static softness = 1
 	static breaktime = Infinity

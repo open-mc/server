@@ -48,7 +48,7 @@ export class World extends Map{
 			let ty = cy+1<<6
 			for(let i = 0; i < 64; i++) if(expU[i]==ty){
 				let y=64
-				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?b.tileData.get(j):BlockIDs[b]).solid) break }
+				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?b.tileData.get(j):BlockIDs[b]).flags&128) break }
 				expU[i] = y+ty-63|0
 			}
 			ty = ty-64|0
@@ -62,7 +62,7 @@ export class World extends Map{
 			const ty = cy<<6|1
 			for(let i = 0; i < 64; i++){
 				let y=64
-				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?ch.tileData.get(j):BlockIDs[b]).solid){ expD[i] = y+ty|0; break } }
+				while(--y>=0){ const j=i|y<<6,b=ch[j]; if((b==65535?ch.tileData.get(j):BlockIDs[b]).flags&128){ expD[i] = y+ty|0; break } }
 			}
 			ch.exposure = expD
 		}else ch.exposure = new Int32Array(64).fill(cy+1<<6)
@@ -170,7 +170,7 @@ export class World extends Map{
 						let y2 = y-1|0, c2 = c
 						while(c2){
 							const j=i|y2<<6&4032,b=c2[j]
-							if((b==65535?c2.tileData.get(j):BlockIDs[b]).solid) break
+							if((b==65535?c2.tileData.get(j):BlockIDs[b]).flags&128) break
 							if(!(--y2&63)) c2 = c2.down
 						}
 						exp[i] = y2+1|0

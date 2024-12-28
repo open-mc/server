@@ -2,15 +2,38 @@ import { Item } from '../items/item.js'
 import { getX, getY, gridevent, antChunk, summonDrops } from '../misc/ant.js'
 import { EphemeralInterface } from '../misc/ephemeralinterface.js'
 
+export const BlockFlags = {
+	NONE: 0,
+	SOLID: 15,
+	SOLID_LEFT: 1,
+	SOLID_RIGHT: 2,
+	SOLID_HORIZONTAL: 3,
+	SOLID_BOTTOM: 4,
+	SOLID_TOP: 8,
+	SOLID_VERTICAL: 12,
+	HARD: 240,
+	HARD_LEFT: 16,
+	HARD_RIGHT: 32,
+	HARD_HORIZONTAL: 48,
+	HARD_BOTTOM: 64,
+	HARD_TOP: 128,
+	HARD_VERTICAL: 192,
+	SOLID_HARD: 255,
+	TARGETTABLE: 256,
+	TARGET_BLOCKING: 512,
+	TARGET_CAPTURE: 768,
+	TARGET_FLUID: 1024,
+	REPLACEABLE: 2048,
+	CLIMBABLE: 4096
+}
+
 export class Block{
 	[Symbol.for('nodejs.util.inspect.custom')](){ return `Blocks.${this.className}${this.savedata ? ' {...}' : ''}` }
 	static flammability = 0
 	static breaktime = 3
 	static blast = 20
-	static solid = true
-	static targettable = false
-	static replaceable = false
-	static mustBreak = false
+	static flags = BlockFlags.SOLID | BlockFlags.HARD | BlockFlags.TARGET_CAPTURE
+	get replaceable(){return (this.flags&2048)!=0}
 	static tool = ''
 	static savedata = null
 	destroy(sound = true){

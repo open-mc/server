@@ -22,6 +22,7 @@ import './nature/sand.js'
 import './nature/sandstone.js'
 import './nature/saplings.js'
 import './nature/stone.js'
+import './nature/desert.js'
 
 import './tools/axes.js'
 import './tools/buckets.js'

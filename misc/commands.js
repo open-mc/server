@@ -4,7 +4,7 @@ import { chat } from './chat.js'
 import { DXDY, Entities, EntityIDs } from '../entities/entity.js'
 import { ItemIDs, Items } from '../items/item.js'
 import { goto, jump, peek, place, right, up } from './ant.js'
-import { BlockIDs, Blocks } from '../blocks/block.js'
+import { BlockFlags, BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, setTickFlags, tickFlags } from '../world/tick.js'
 import { generator } from '../world/gendelegator.js'
 import { Chunk } from '../world/chunk.js'
@@ -392,7 +392,7 @@ Object.assign(commands, {
 		if(this){
 			goto(this)
 			let moved = false
-			while((floor(this.y)&63|!moved) && peek().solid)
+			while((floor(this.y)&63|!moved) && peek().flags&BlockFlags.HARD_TOP)
 				this.y = floor(this.y) + 1, moved = true, up()
 			if(moved) this.rubber(Y)
 		}

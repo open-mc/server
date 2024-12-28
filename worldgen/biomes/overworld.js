@@ -10,7 +10,7 @@ export const overworld = Biomes.overworld.add({
 	airBlock: Blocks.air,
 	surface(){
 		if(!(foliageRng(getX())&7)){
-			//placeat(0, 1, Blocks.tall_grass)
+			placeat(0, 1, Blocks.tall_grass)
 		}
 		place(Blocks.grass)
 		let d = round(depthNoise(getX())*2+5)

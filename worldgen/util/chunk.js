@@ -10,6 +10,8 @@ export const groundBlockArrays = [null,null,null,null,null,null,null,null,null]
 export const _setChunkPos = (x,y,bs,b) => {cx=x;cy=y;bSeed=bs;rootBiome=b}
 export const goto = j => {i=j;x=j&63;y=j>>6}
 export const up = () => {y++}
+export const save = v => ({x,y,v})
+export const load = o => (x=o.x,y=o.y,o.v)
 export const down = () => {y--}
 export const right = () => {x++}
 export const left = () => {x--}
@@ -21,6 +23,15 @@ export const peekNoise = () => {
 	if(x1>191||y1>191) return false
 	return (_noiseChunks[(x1>>6)+(y1>>6)*3][x1>>3&7|(y1&63)<<3]>>(x1&7)&1)!=0
 }
+export const peekNoiseAt = (dx=0,dy=0) => {
+	const x1=x+dx+64>>>0,y1=y+dy+64>>>0
+	if(x1>191||y1>191) return false
+	return (_noiseChunks[(x1>>6)+(y1>>6)*3][x1>>3&7|(y1&63)<<3]>>(x1&7)&1)!=0
+}
+export const peekNoiseRight = () => peekNoiseAt(1,0)
+export const peekNoiseLeft = () => peekNoiseAt(-1,0)
+export const peekNoiseUp = () => peekNoiseAt(0,1)
+export const peekNoiseDown = () => peekNoiseAt(0,-1)
 export const peekAirType = () => {
 	const i = y+256>>>6, i1 = (y&63)*3
 	if(i > 8) return Blocks.air

@@ -1,7 +1,7 @@
 import { Shapers } from "./globals.js"
-import { Noise1D } from "./util/random.js"
+import { Noise1D, LowNoise1D } from "./util/random.js"
 
-const oNoise = Noise1D('overworld.offset', 512), tNoise = Noise1D('temperature', 1024), hNoise = Noise1D('humidity', 512)
+const oNoise = Noise1D('overworld.offset', 512), tNoise = LowNoise1D('temperature', 1024), hNoise = LowNoise1D('humidity', 512)
 Shapers.overworld = (amplification = 1) => {
 	if(Number.isNaN(amplification -= 0)) amplification = 1
 	const b = 128*amplification
@@ -21,7 +21,7 @@ Shapers.overworld = (amplification = 1) => {
 	}
 }
 
-Shapers.uniform = (v=0) => (v=v*4-2, (x, y, o) => { o.offset = v, o.temperature = .5, o.humidity = .5 })
+Shapers.uniform = (v=0) => (v=v*4-2, (x, y, o) => { o.offset = v, o.temperature = tNoise(x)*.5+.5, o.humidity = hNoise(x)*.5+.5 })
 
 Shapers.flat = (y0=0) => (x, y, o) => { o.offset = (y-y0)*-2000, o.temperature = .5, o.humidity = .5 }
 

@@ -1,7 +1,7 @@
 import { Enchantments } from '../../items/enchantments.js'
 import { Items } from '../../items/item.js'
-import { down, jump, peekleft, peekright, peekup, place, up } from '../../misc/ant.js'
-import { Block, Blocks } from '../block.js'
+import { down, jump, peekleft, peekright, place, up, peekdown, solidup } from '../../misc/ant.js'
+import { Block, Blocks, BlockFlags } from '../block.js'
 
 class Grass extends Block{
 	static tool = 'shovel'
@@ -11,13 +11,21 @@ class Grass extends Block{
 		return item?.ench?.has(Enchantments.silk_touch) ? new Items.grass(1) : new Items.dirt(1)
 	}
 	randomtick(){
-		if(peekup().solid)
+		if(solidup())
 			place(Blocks.dirt)
 	}
 }
+
 Blocks.grass = Grass
 
-Blocks.snowy_grass = class SnowyGrass extends Grass{
+Blocks.snowy_grass = class SnowyGrass extends Grass{}
+
+Blocks.tall_grass = class extends Block{
+	static flags = BlockFlags.TARGETTABLE
+	static breaktime = 0
+	update(){
+		if(peekdown() != Blocks.grass) this.destroy(), place(Blocks.air)
+	}
 }
 
 Blocks.dirt = class Dirt extends Block{
@@ -28,7 +36,7 @@ Blocks.dirt = class Dirt extends Block{
 		return new Items.dirt(1)
 	}
 	randomtick(){
-		if(peekup().solid) return
+		if(solidup()) return
 		check: {
 			if(peekright() == Blocks.grass || peekleft() == Blocks.grass) break check // y=~
 			up()
