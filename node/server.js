@@ -93,9 +93,10 @@ const secOpts = {
 	key_file_name: key ? key[0]=='/'||key[0]=='~' ? key : PATH + '../' + key : PATH+'node/default.key',
 	cert_file_name: cert ? cert[0]=='/'||cert[0]=='~' ? cert : PATH + '../' + cert : PATH+'node/default.crt',
 }
-const server = SSLApp(secOpts)
+const server = SSLApp()
 const sock = new TLSSocket(null, {cert: await fs.readFile(secOpts.cert_file_name)})
 const {subject: {CN}, valid_to} = sock.getCertificate()
+sock.destroy()
 const expires = +new Date(valid_to)
 if(expires < Date.now()) console.warn('SSL certificate has expired')
 host = CONFIG.host
@@ -106,15 +107,15 @@ if(!host){
 if(!host) throw "Unable to determine host name, which is required for secure servers. Specify one via -host=<host> as a command line argument, or add a property 'host' in properties.yaml\n"
 const h = host
 host += ':' + PORT
-sock.destroy()
+server.addServerName(h, secOpts)
 const w = fs.watch(secOpts.cert_file_name)[Symbol.asyncIterator]()
 w.next().then(function S(){
 	server.removeServerName(h)
 	server.addServerName(h, secOpts)
+	handlers(server.domain(h))
 	w.next().then(S)
 }).catch(e=>null)
-
-server.any('/*', (res, req) => {
+const handlers = app => app.any('/*', (res, req) => {
 	res.onAborted(() => res.aborted = true)
 	const {1:endpoint,2:i} = req.getUrl().match(/\/([\.\w_\-]+)(?:\/(.*))?$|/y)
 	if(!endpoint){
@@ -130,10 +131,7 @@ server.any('/*', (res, req) => {
 		if(CONFIG.log) console.warn(e)
 	}
 	return res.writeStatus('404'), res.end('404')
-})
-const clients = new Set
-let patchWs = function(sock){patchWs = null; const p = Object.getPrototypeOf(sock); p._send = p.send; p.send = function(a){if(this.state) this._send(a,typeof a!='string')}}
-server.ws('/*', {
+}).ws('/*', {
 	sendPingsAutomatically: false, maxBackpressure: (CONFIG.socket.backpressure)*1048576,
 	maxPayloadLength: 1048576, closeOnBackpressureLimit: true,
 	upgrade(res, req, ctx){
@@ -182,6 +180,10 @@ server.ws('/*', {
 	},
 	close(sock){ if(clients.delete(sock)) close.call(sock); else sock.state = 0 }
 })
+let patchWs = function(sock){patchWs = null; const p = Object.getPrototypeOf(sock); p._send = p.send; p.send = function(a){if(this.state) this._send(a,typeof a!='string')}}
+handlers(server.domain(h))
+
+const clients = new Set
 setInterval(() => {
 	for(const u of clients){
 		if(u.lastPing % 1){ u.end(); continue }

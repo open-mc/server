@@ -117,7 +117,7 @@ Object.assign(commands, {
 		if(b.savedata && data) snbt(data, b = new b, b.savedata)
 		goto(w, floor(x), floor(y))
 		place(b)
-		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data=='{}'?'':' (+data)'))
+		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data?' (+data)':''))
 	},
 	fill(_x, _y, _x2, _y2, type, d = '~'){
 		let n = performance.now()
