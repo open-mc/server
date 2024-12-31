@@ -122,7 +122,6 @@ export async function open(){
 	this.r = 255
 	this.rx = this.ry = CONFIG.socket.movement_check_mercy
 	this.entity = player
-	this.netId = player.netId
 	this.packets = []
 	this.interface = null; this.interfaceId = 0
 	this.interfaceD = null
@@ -132,7 +131,8 @@ export async function open(){
 	this.bx = this.by = 0
 	this.send(configPacket())
 	if(link) player.link()
-	else this.netId = newId(), player.rubber(127)
+	else player.netId = newId(), player.rubber(127)
+	this.netId = player.netId
 	players.set(this.username, player)
 	this.tbuf = new DataWriter()
 	this.ebuf = new DataWriter()
@@ -193,6 +193,7 @@ export async function close(){
 	playersConnecting.add(this.username)
 	const buf = new DataWriter()
 	if(!entity.linked) buf.short(65535)
+	else entity.unlink()
 	buf.short(entity.id)
 	buf.double(entity.x)
 	buf.double(entity.y)
@@ -204,9 +205,9 @@ export async function close(){
 	buf.double(entity.age)
 	buf.flint(entity.savedatahistory.length), buf.write(entity.savedata, entity)
 	buf.byte(this.mode)
+	if(entity.world) entity.remove()
 	await playersLevel.put(this.username, buf.build())
 	playersConnecting.delete(this.username)
-	if(entity.world) entity.remove()
 	sendTabMenu(true)
 	playerLeft()
 }

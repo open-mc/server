@@ -121,7 +121,7 @@ export class Chunk extends Uint16Array{
 			buf.byte(palette.length - 1)
 
 			for(const e of this.entities){
-				if(e.sock && !packet) continue
+				if((e.sock && !packet) || e.netId < 0) continue
 				buf.short(e.id)
 				buf.short(max(0, min(floor((e.x-(this.x<<6))*1024), 65535)))
 				buf.short(max(0, min(floor((e.y-(this.y<<6))*1024), 65535)))
