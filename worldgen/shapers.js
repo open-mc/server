@@ -13,8 +13,8 @@ Shapers.overworld = (amplification = 1) => {
 			off += p*p*4
 		}
 		off = (off+.25)*b
-		o.offset = (y-=off)*-6/(off+1.25*b)
-		const t = tNoise(x) + min(.3, max(-.3, y*-.005))
+		o.offset = (y-off)*-6/(off+1.25*b)
+		const t = tNoise(x) + min(.3, max(-.3, (y-48)*-.0005))
 		const h = hNoise(x)
 		o.temperature = t*.5+.5
 		o.humidity = h*.5+.5

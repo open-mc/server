@@ -99,7 +99,7 @@ export class WorldCache{
 		for(let x = 0; x < 5; x++){
 			let t = 0, h = 0, i = x+25
 			for(let y = 0; y < 5; y++){
-				t += b[i]; h += b[i+25]
+				t += min(1, max(0, b[i])); h += min(1, max(0, b[i+25]))
 				i += 5
 			}
 			biomeData[x<<1] = round(t*51)
