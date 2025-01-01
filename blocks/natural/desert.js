@@ -6,6 +6,7 @@ Blocks.cactus = class extends Block{
 	static flags = BlockFlags.HARD_TOP | BlockFlags.SOLID_TOP | BlockFlags.TARGETTABLE | BlockFlags.FRAGILE
 	static blockShape = [.0625, 0, .9375, 1]
 	static breaktime = .5
+	drops(){ return new Items.cactus(1) }
 	update(){
 		const d = peekdown()
 		if((d != Blocks.sand && d != Blocks.cactus) || solidright() || solidleft()) this.destroy(), place(Blocks.air)
