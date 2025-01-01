@@ -167,11 +167,11 @@ export function setGenerators(g){
 			biome
 		} = g[k]
 		let w = cache.get(k)
+		if(!w) cache.set(k, w = new WorldCache(k))
 		const sh = Shapers[shaper]?.(value) ?? voidShaper
 		const b = Biomes[biome]
 		if(sh == voidShaper) console.warn('\x1b[33mNo shaper named %s, defaulting to void', shaper)
 		if(!b) console.warn('\x1b[33mNo biome named %s, defaulting to void', biome)
-		if(!w) cache.set(k, w = new WorldCache(k))
 		w.shaper = sh; w.biome = (b??Biomes.void).id
 		w.temperatureOffset = temperature-.5
 		w.humidityOffset = humidity-.5
@@ -182,6 +182,8 @@ export function setGenerators(g){
 		let p = ceil(w.period), m = 0, s = 1
 		while(p-- > 1) m += s, s *= w.roughness
 		w.maxScale = m
+		w.noiseCache.clear()
+		w.biomeCache.clear()
 
 		parseLayers(w.airl, air_layers)
 		parseLayers(w.groundl, ground_layers)
