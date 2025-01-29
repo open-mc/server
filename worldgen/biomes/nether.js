@@ -5,6 +5,6 @@ import { foliageRng } from './overworld.js'
 Biomes.nether = new Biome({
 	surface(){
 		if(foliageRng(getX())&15) return
-		up(); cmpxchg(Blocks.air, Blocks.fire)
+		cmpxchg(Blocks.air, Blocks.fire)
 	}
 })

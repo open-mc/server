@@ -9,11 +9,11 @@ Biomes.desert = overworld.add({
 		const f = foliageRng(getX()); let f1 = f>>2&63
 		a: if(f1<3){
 			const a = save()
-			up()
 			if(peekNoiseRight() || peekNoiseLeft()) break a
 			do place(Blocks.cactus), up(); while(f1--)
 			load(a)
-		}else if(f1==3) placeup(Blocks.dead_bush)
+		}else if(f1==3) place(Blocks.dead_bush)
+		down()
 		place(Blocks.sand)
 		let d = round(depthNoise(getX())*2+5)
 		while(--d){

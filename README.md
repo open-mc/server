@@ -4,6 +4,8 @@ Requirements: [Git](https://git-scm.com/downloads) and [Nodejs](https://nodejs.o
 
 Note: For **windows**, it is recommended to install both via [scoop](https://scoop.sh). Follow the install instructions on their website, then install both by typing `scoop install git` and `scoop install nodejs@20.17.0`
 
+Note 2: The server software currently does not work with bun or deno due to the use of [uWebSockets.js](https://github.com/uNetworking/uWebSockets.js). Make your complaints there.
+
 Clone this repository and run the start script:
 ```sh
 git clone https://github.com/open-mc/server
@@ -32,7 +34,7 @@ If you are running your server on a local network (such as a home router) you wi
 Run the following command:
 
 ```sh
-npx instacert ssl.key ssl.crt http: [your_domain]
+npx instacert ssl.key ssl.crt "http:" [your_domain]
 ```
 
 This will save files called `ssl.key` and `ssl.crt`. Put those files' path in `properties.yaml`, e.g
@@ -63,7 +65,7 @@ Updating is done automatically by the start script.
 
 If you're starting the server directly without the start script, updating is as simple as performing `git pull`. If you are running a public server consider keeping to the `release` branch
 
-You can use a tool like [`tmux`](https://linuxize.com/post/getting-started-with-tmux/) or `systemd` to keep your server running even after you close your terminal session. Neither of these are available on windows, but why are you hosting on windows anyway? Renting a VPS than runs linux can cost as little as $1/mo and you won't need to leave your computer on then.
+You can use a tool like [`tmux`](https://linuxize.com/post/getting-started-with-tmux/) or `systemd` to keep your server running even after you close your terminal session. Neither of these are available on windows, but why are you hosting on windows anyway? Renting a VPS than runs linux can cost as little as $1/mo and you won't need to leave your computer on.
 
 ## Server management
 

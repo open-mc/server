@@ -1,6 +1,6 @@
 import { Shapers, voidShaper, Blocks, Biomes } from './globals.js'
 import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData, groundBlockArrays } from './util/chunk.js'
-import { expand, genNoisev, seed } from './util/outer-noise.js'
+import { expand, genNoisev, seed, chunk } from './util/outer-noise.js'
 import { hash2, hashCode, setPartialSeed } from './util/random.js'
 
 // b b b b b b b b b
@@ -43,10 +43,10 @@ export class WorldCache{
 		for(let yi = y-256|0, i = 0; yi != ey; yi=yi+64|0) for(let xi = sx; xi != ex; xi=xi+64|0, i++){
 			const k = (xi>>>6)+(yi>>>6)*0x4000000
 			let c = this.biomeCache.get(k)
-			if(c) c.expires = now + 3600e3
+			if(c) c.expires = now + 3600e3, this.biomeCache.delete(k)
 			else{
 				const v = {offset: 0, temperature: 0, humidity: 0}
-				this.biomeCache.set(k, c = new BiomeChunk(now + 3600e3))
+				c = new BiomeChunk(now + 3600e3)
 				for(let yj = 0, j = 0; yj <= 64; yj+=16) for(let xj = 0; xj <= 64; xj+=16,j++){
 					// TODO: temp/humd
 					this.shaper(xi+xj, yi+yj, v)
@@ -61,14 +61,16 @@ export class WorldCache{
 					c.uniform = ZERO
 				}
 			}
+			this.biomeCache.set(k, c)
 			_biomeChunks[i] = c
 			const xi1 = (xi-x>>6)+1&0xff, yi1 = (yi-y>>6)+1&0xff
 			if(xi1 >= 3 || yi1 >= 3) continue
 			if(c.uniform) _noiseChunks[xi1+yi1*3] = c.uniform
 			else{
 				let c1 = this.noiseCache.get(k)
-				if(c1) c1.expires = now + 900e3
-				else this.noiseCache.set(k, c1 = new NoiseChunk(now + 900e3, genNoisev(c, xi, yi, this.localSeed, this.period, this.roughness)))
+				if(c1) c1.expires = now + 900e3, this.noiseCache.delete(k)
+				else c1 = new NoiseChunk(now + 900e3, genNoisev(c, xi, yi, this.localSeed, this.period, this.roughness))
+				this.noiseCache.set(k, c1)
 				_noiseChunks[xi1+yi1*3] = c1
 			}
 		}
@@ -91,9 +93,34 @@ export class WorldCache{
 			else if((gy += 64) == this.groundMod) gy = 0
 		}
 		_setChunkPos(x, y, hash2(seed[3]^seed[2]^seed[1], this.localSeed), this.biome)
-		for(const i of expand(x, y, this.localSeed, airBlockArrays[4], groundBlockArrays[4], _noiseChunks[4], new Uint8Array(_noiseChunks[7].buffer, 0, 128), new Uint8Array(_noiseChunks[1].buffer, 384, 128))){
-			goto(i)
-			peekBiome().surface?.()
+		expand(x, y, this.localSeed, airBlockArrays[4], groundBlockArrays[4], new Uint8Array(_noiseChunks[4].buffer, 0, 512))
+		let c = _noiseChunks[1]; i = c.length-2
+		for(; i >= 512; i -= 2) if((c[i]|c[i+1]<<8) < 3072) break
+		for(let e = c.length; i < e; i += 2)
+			goto((c[i]|c[i+1]<<8)-4096); peekBiome().surface?.()
+		{
+			const c2 = _noiseChunks[4]; let i0 = 0, l = 0
+			i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l); peekBiome().surface?.() }
+			i0 = (c[508]|c[509]<<8|c[510]<<16|c[511]<<24)&~(c2[4]|c2[5]<<8|c2[6]<<16|c2[7]<<24)
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+32); peekBiome().surface?.() }
+			c = c2
+		}
+		for(let e = c.length, i = 512; i < e; i += 2){
+			goto((c[i]|c[i+1]<<8)); peekBiome().surface?.()
+		}
+		{
+			const c2 = _noiseChunks[7]; let i0 = 0, l = 0
+			i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+4096); peekBiome().surface?.() }
+			i0 = (c[508]|c[509]<<8|c[510]<<16|c[511]<<24)&~(c2[4]|c2[5]<<8|c2[6]<<16|c2[7]<<24)
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+4128); peekBiome().surface?.() }
+			c = c2
+		}
+		for(let e = c.length, i = 512; i < e; i += 2){
+			const k = c[i]|c[i+1]<<8
+			if(k >= 1024) break
+			goto(k+4096); peekBiome().surface?.()
 		}
 		const b = _biomeChunks[40]
 		for(let x = 0; x < 5; x++){
