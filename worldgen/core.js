@@ -1,7 +1,7 @@
 import { Shapers, voidShaper, Blocks, Biomes } from './globals.js'
-import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData, groundBlockArrays } from './util/chunk.js'
+import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData, groundBlockArrays, _surfaceFeature } from './util/chunk.js'
 import { expand, genNoisev, seed, chunk } from './util/outer-noise.js'
-import { hash2, hashCode, setPartialSeed } from './util/random.js'
+import { hash2, hash3, hashCode, setPartialSeed } from './util/random.js'
 
 // b b b b b b b b b
 // b b b b b b b b b
@@ -18,7 +18,7 @@ import { hash2, hashCode, setPartialSeed } from './util/random.js'
 
 const ZERO = new NoiseChunk(Infinity, 512), ONE = new NoiseChunk(Infinity, 512).fill(255)
 export class WorldCache{
-	localSeed = 0
+	localSeed = 0; bSeed = 0
 	shaper = voidShaper
 	biome = Biomes.void.id
 	temperatureOffset = 0
@@ -30,7 +30,7 @@ export class WorldCache{
 	period = 7
 	roughness = 0.5
 	maxScale = 1
-	constructor(k){ this.localSeed = hashCode(k) }
+	constructor(k){ this.localSeed = hashCode(k); this.bSeed = hash2(seed[3]^seed[2]^seed[1], this.localSeed) }
 	// TTL: 60mins
 	biomeCache = new Map()
 	// TTL: 15mins
@@ -92,12 +92,13 @@ export class WorldCache{
 			if(!this.groundMod) gy = gy+64|0
 			else if((gy += 64) == this.groundMod) gy = 0
 		}
-		_setChunkPos(x, y, hash2(seed[3]^seed[2]^seed[1], this.localSeed), this.biome)
+		const ix=x,iy=y
+		_setChunkPos(x, y, this.bSeed, this.biome)
 		expand(x, y, this.localSeed, airBlockArrays[4], groundBlockArrays[4], new Uint8Array(_noiseChunks[4].buffer, 0, 512))
 		let c = _noiseChunks[1]; i = c.length-2
 		for(; i >= 512; i -= 2) if((c[i]|c[i+1]<<8) < 3072) break
 		for(let e = c.length; i < e; i += 2)
-			goto((c[i]|c[i+1]<<8)-4096); peekBiome().surface?.()
+			goto((c[i]|c[i+1]<<8)-4096), peekBiome().surface?.()
 		{
 			const c2 = _noiseChunks[4]; let i0 = 0, l = 0
 			i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
@@ -106,9 +107,8 @@ export class WorldCache{
 			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+32); peekBiome().surface?.() }
 			c = c2
 		}
-		for(let e = c.length, i = 512; i < e; i += 2){
-			goto((c[i]|c[i+1]<<8)); peekBiome().surface?.()
-		}
+		for(let e = c.length, i = 512; i < e; i += 2)
+			goto((c[i]|c[i+1]<<8)), peekBiome().surface?.()
 		{
 			const c2 = _noiseChunks[7]; let i0 = 0, l = 0
 			i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
@@ -121,6 +121,32 @@ export class WorldCache{
 			const k = c[i]|c[i+1]<<8
 			if(k >= 1024) break
 			goto(k+4096); peekBiome().surface?.()
+		}
+		for(let x=0;x<3;x++){
+			const xo = (x<<6)-64
+			let c = _noiseChunks[x]
+			for(let i = 512, e = c.length; i < e; i += 2)
+				_surfaceFeature((c[i]|c[i+1]<<8)-4096, xo)
+			{
+				const c2 = _noiseChunks[x+3]; let i0 = 0, l = 0
+				i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
+				while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); _surfaceFeature(l, xo) }
+				i0 = (c[508]|c[509]<<8|c[510]<<16|c[511]<<24)&~(c2[4]|c2[5]<<8|c2[6]<<16|c2[7]<<24)
+				while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); _surfaceFeature(l+32, xo) }
+				c = c2
+			}
+			for(let i = 512, e = c.length; i < e; i += 2)
+				_surfaceFeature((c[i]|c[i+1]<<8), xo)
+			{
+				const c2 = _noiseChunks[x+6]; let i0 = 0, l = 0
+				i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
+				while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); _surfaceFeature(l+4096, xo) }
+				i0 = (c[508]|c[509]<<8|c[510]<<16|c[511]<<24)&~(c2[4]|c2[5]<<8|c2[6]<<16|c2[7]<<24)
+				while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); _surfaceFeature(l+4128, xo) }
+				c = c2
+			}
+			for(let i = 512, e = c.length; i < e; i += 2)
+				_surfaceFeature((c[i]|c[i+1]<<8)+4096, xo)
 		}
 		const b = _biomeChunks[40]
 		for(let x = 0; x < 5; x++){
@@ -214,6 +240,9 @@ export function setGenerators(g){
 
 		parseLayers(w.airl, air_layers)
 		parseLayers(w.groundl, ground_layers)
+	}
+	for(const b of cache.values()){
+		b.bSeed = hash2(seed[3]^seed[2]^seed[1], b.localSeed)
 	}
 }
 

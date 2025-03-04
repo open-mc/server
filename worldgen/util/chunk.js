@@ -1,14 +1,20 @@
 import { DataWriter } from '../../modules/dataproto.js'
 import { chunk, findBiome } from './outer-noise.js'
 import { _biomeArr, Biomes, BlockIDs, Blocks } from '../globals.js'
+import { hash3 } from './random.js'
 
 export { chunk }
-let i = 0, x = 0, y = 0
+let x = 0, y = 0
 let cx=0,cy=0,bSeed=0,rootBiome=0
 export const airBlockArrays = [null,null,null,null,null,null,null,null,null]
 export const groundBlockArrays = [null,null,null,null,null,null,null,null,null]
 export const _setChunkPos = (x,y,bs,b) => {cx=x;cy=y;bSeed=bs;rootBiome=b}
-export const goto = j => {i=j;x=j&63;y=j>>6}
+export const goto = j => {x=j&63;y=j>>6}
+export const _surfaceFeature = (j,xo=0) => {
+	x=(j&63)|xo;y=j>>6;
+	const n = hash3(bSeed, cx+x|0, cy+y|0), a = peekBiome().features
+	for(let i = 1; i < a.length; i += 2) if(a[i] >= n){ a[i-1](); break }
+}
 export const up = () => {y++}
 export const save = v => ({x,y,v})
 export const load = o => (x=o.x,y=o.y,o.v)
@@ -64,6 +70,18 @@ export const peekBiome = () => {
 export const blockUpdates = []
 export const peek = () => BlockIDs[chunk[y<<6|x|(x&-64)<<6]??0]
 export const place = b => {chunk[y<<6|x|(x&-64)<<6]=b.id}
+export const placeAir = b => {
+	if(!((x|y)>>6) && !(_noiseChunks[4][x>>3&7|(y&63)<<3]>>(x&7)&1)) chunk[y<<6|x]=b.id
+}
+export const placeGround = b => {
+	if(!((x|y)>>6) && (_noiseChunks[4][x>>3&7|(y&63)<<3]>>(x&7)&1)) chunk[y<<6|x]=b.id
+}
+export const placeatAir = (dx=0, dy=0, b) => {
+	if(!(((dx+=x)|(dy+=y))>>6) && !(_noiseChunks[4][dx>>3&7|(dy&63)<<3]>>(dx&7)&1)) chunk[dy<<6|dx]=b.id
+}
+export const placeatGround = (dx=0, dy=0, b) => {
+	if(!(((dx+=x)|(dy+=y))>>6) && (_noiseChunks[4][dx>>3&7|(dy&63)<<3]>>(dx&7)&1)) chunk[dy<<6|dx]=b.id
+}
 export const cmpxchg = (ob,b) => {const i=y<<6|x|(x&-64)<<6;if(chunk[i]==ob.id)chunk[i]=b.id}
 export const placeat = (dx=0,dy=0,b) => {chunk[y+dy<<6|x+dx|(x+dx&-64)<<6]=b.id}
 export const placeup = b => {chunk[y+1<<6|x|(x&-64)<<6]=b.id}
@@ -75,6 +93,9 @@ export const blockupdate = (dx=0,dy=0) => {
 	if(i>>12) return
 	blockUpdates.push(i)
 }
+export const cullX = (l, r) => x-l<64&&x+r>=0
+export const cullY = (d, u) => y-d<64&&y+u>=0
+export const cull = (l, r, d, u) => x-l<64&&x+r>=0&&y-d<64&&y+u>=0
 
 export const tileData = new Map()
 export const biomeData = new Uint8Array(10)

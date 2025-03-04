@@ -1,5 +1,6 @@
+import { OakTree } from "../features/tree.js"
 import { Biome, Blocks, Biomes } from "../globals.js"
-import { down, getX, peekNoise, place, placeat } from "../util/chunk.js"
+import { down, getX, peekNoise, place } from "../util/chunk.js"
 import { LowNoise1D, Rng1D } from "../util/random.js"
 
 export const depthNoise = LowNoise1D('depth'), foliageRng = Rng1D('tall_grass')
@@ -20,4 +21,5 @@ export const overworld = Biomes.overworld.add({
 			place(Blocks.dirt)
 		}
 	},
+	features: [ OakTree, 0.05 ]
 })

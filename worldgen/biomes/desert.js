@@ -28,4 +28,5 @@ Biomes.desert = overworld.add({
 			place(Blocks.sandstone)
 		}
 	},
+	features: []
 })

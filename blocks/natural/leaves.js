@@ -59,25 +59,25 @@ Blocks.jungle_leaves = class extends Leaves{
 
 
 Blocks.oak_log_leaves = class extends Blocks.oak_leaves{
-	static behind = Blocks.oak_log
+	static behind = Blocks.oak_log_back
 }
 
 Blocks.birch_log_leaves = class extends Leaves{
-	static behind = Blocks.birch_log
+	static behind = Blocks.birch_log_back
 }
 
 Blocks.spruce_log_leaves = class extends Leaves{
-	static behind = Blocks.spruce_log
+	static behind = Blocks.spruce_log_back
 }
 
 Blocks.dark_oak_log_leaves = class extends Leaves{
-	static behind = Blocks.dark_oak_log
+	static behind = Blocks.dark_oak_log_back
 }
 
 Blocks.acacia_log_leaves = class extends Leaves{
-	static behind = Blocks.acacia_log
+	static behind = Blocks.acacia_log_back
 }
 
 Blocks.jungle_log_leaves = class extends Leaves{
-	static behind = Blocks.jungle_log
+	static behind = Blocks.jungle_log_back
 }
