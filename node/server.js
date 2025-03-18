@@ -217,7 +217,7 @@ process.on('SIGINT', code => {
 })
 const clear = () => process.stdout.write('\x1bc\x1b[3J')
 const serverObject = {
-	sock: {perms: 4},
+	sock: {perms: 4, pingTime: 0},
 	x: 0, y: 0, getName(){return ''},
 	world: Dimensions.overworld
 }

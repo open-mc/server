@@ -84,7 +84,7 @@ Object.assign(commands, {
 		}
 		return log(this, 'Gave '+(typeof count=='number'?count+' players':count)+' '+item+'*'+c)
 	},
-	summon(type, _x = '~', _y = '~', _d = '~', data = '{}'){
+	summon(type, _x = '~', _y = '~', _d = '~', data = ''){
 		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		if(!(type in Entities)) throw 'No such entity: ' + type
 		const e = new Entities[type]()
@@ -212,10 +212,10 @@ Object.assign(commands, {
 		console.warn(stack)
 		return stack
 	},
-	time(time, d = this?this.world:'overworld'){
+	time(time='', d = this?this.world:'overworld'){
 		if(typeof d == 'string') d = Dimensions[d]
 		if(!d) throw 'Invalid dimension'
-		if(!time){
+		if(time == 'get' || !time){
 			return `This dimension is on tick ${d.tick}\nThe day is ${floor((d.tick + 7000) / 24000)} and the time is ${floor((d.tick/1000+6)%24).toString().padStart(2,'0')}:${(floor((d.tick/250)%4)*15).toString().padStart(2,'0')}`
 		}else if(time[0] == '+' || time[0] == '-'){
 			let t = d.tick + +time
@@ -310,7 +310,7 @@ Object.assign(commands, {
 		return log(this, 'Set the TPS to '+currentTPS)
 	},
 	radius(r=-1){
-		if(!this?.sock) throw 'Not a player'
+		if(!this.sock.entity) throw 'Not a player'
 		if(r < 0) return 'Loading radius is at r='+(this.radius-1)
 		r = min(257, max(2, +r + 1 | 0))
 		if(r == this.radius) return 'Loading radius unchanged (r='+(r-1)+')'
@@ -511,9 +511,9 @@ Object.assign(commands, {
 		try{ return await executeCommand(c, a, this, this?.sock?.perms??4) }
 		catch(e){ return 'Command did not succeed: \\+9'+e }
 	},
-	async defer(c='', ...a){
+	defer(c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
-		executeCommand(c, a, this, this?.sock?.perms??4)
+		setImmediate(() => executeCommand(c, a, this, this?.sock?.perms??4))
 	},
 	async fail(c='', ...a){
 		if(!c) throw 'No command specified! (Do not include the / in the command name)'
@@ -645,43 +645,70 @@ export const anyone_help = {
 }, mod_help = {
 	...anyone_help,
 	give: '[player] [item] (count=1) -- Give item(s) to a player',
-	kick: '[player] -- Kick a player from the server',
+	kick: '[player] (...reason) -- Kick a player from the server',
 	say: '[...msg] -- Send a message in chat',
 	tp: '[targets] [x] [y] (dimension=~) -- teleport entities to a dimension',
-	tpe: '[targets] [destEntity] -- Teleport entities to another entity',
-	time: ['+[amount] -- Add to time', '-[amount] -- Substract from time', '[value] -- Set time', '-- Get current time'],
-	summon: '[entity_type] (x) (y) (dimension=~) (snbt_data={}) -- Summon an entity',
-	setblock: '[x] [y] [block_type] (dimension=~) (snbt_data={}) -- Place a block somewhere',
+	tpe: '[targets] [dest_entity] -- Teleport entities to another entity',
+	time: [
+		'+[amount] (dimension=~) -- Add to time',
+		'-[amount] (dimension=~) -- Substract from time',
+		'[value] (dimension=~) -- Set time',
+		'day|noon|afternoon|sunset|night|midnight|dark|sunrise (dimension=~) -- Set the time to a preset',
+		'-- Get current time',
+		'get (dimension=~) -- Get current time for a dimension'
+	],
+	weather: [
+		'[type] (duration=auto) (dimension=~) -- Set the weather',
+		' -- Check what weather it is',
+		'get (dimension=~) -- Check what weather it is for a dimension'
+	],
+	summon: '[entity_type] (x) (y) (dimension=~) (snbt) -- Summon an entity',
+	setblock: '[x] [y] [block_type] (dimension=~) (snbt) -- Place a block somewhere',
 	clear: '[player] (filter_item=none) (max_amount=Infinity) -- Remove items from a player',
 	fill: '[x0] [y0] [x1] [y1] [block_type] (dimension=~) -- Fill an area with a certain block',
 	regen: '(x=~) (y=~) (dimension=~) -- Re-generate this chunk with fresh terrain',
 	kill: '[target] (cause=void) -- Kill a player or entity',
-	mark: '[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position/entity selectors with \'!\'',
-	id: '[block|item|entity] ([name]|[id]) -- Get technical information about a block/item/entity from its name or ID',
+	mark: ['[target] (x_off=0) (y_off=0) -- Set a marker point. Refer to your marker point by replacing position/entity selectors with \'!\'', '(x_off=0) (y_off=0) -- Same but omits entity selector (defaults to @s)'],
+	id: 'block|item|entity [name]|[id] -- Get technical information about a block/item/entity from its name or ID',
 	hide: '[player] -- Put a player in spectator',
 	show: '[player] -- Put a player out of spectator',
+	link: '-- alias for /show', unlink: '-- alias for /hide',
 	where: '[player] -- Where is a specific player?',
 	doxx: ' -- alias for /where',
 	reconn: '[player] (delay) -- Reconnect players',
+	radius: ['-- Check your chunk loading radius', '[r] -- Set your chunk loading radius'],
+	mode: '0|1 (target=@s) -- Set player\'s game mode, 0 = survival, 1 = creative',
 }, help = {
 	...mod_help,
-	mutate: '[entity] [snbt_data] -- Change properties of an entity',
+	mutate: '[entity] [snbt] -- Change properties of an entity',
 	gamerule: ['[gamerule] [value] -- Change a gamerule', '-- List available gamerules'],
 	tick: ['[tps] -- Set TPS', 'freeze|resume|entities|blocks|all|none -- Enable only certain tick phases', '+[amount] -- Step some ticks forward (for tick phases that are disabled)'],
 	spawnpoint: ['(x=~) (y=~) (dimension=~) -- Set the spawn point', 'tp (who=@s) -- Teleport entities to spawn'],
 	perm: '[target] [int]|deny|spectator|normal|mod|op|default -- Set the permission level of a player',
 	ban: '[target] (seconds) -- Ban a player for a specified amount of time (or indefinitely)',
 	unban: '[username] -- Unban a player, they will be able to rejoin with default perms',
+	wipe: '[username] (...reason) - Wipe a player\'s playerdata',
 	op: '[target] -- Alias for /perm [target] op',
 	deop: '[target] -- Alias for /perm [target] normal',
 	as: '[target] [...command] -- Execute a command as a target',
+	try: '[...command] -- Try a command, but will succeed even if the command failed',
+	fail: '[...command] -- Try a command, expecting it to fail. Returns success if command failed, and failure otherwise',
+	defer: '[...command] -- Defer a command to run after other immediate tasks',
+	camera: [
+		'[target] rot [rot] -- Rotate a player\'s camera',
+		'[target] offx|offy [value] -- Add an x/y offset to a player\s camera. Can also be used to reset static camera',
+		'[target] staticx|staticy [pos] -- Set a player\'s camera to be pinned to a specific x/y position',
+		'[target] zoom [offset] -- Add a zoom offset (1 -> 2x zoom, -1 -> 0.5x zoom) to a player\'s camera',
+		'[target] reset -- Completely reset a player\'s camera'
+	],
 	chunk: [
 		'border (x=~) (y=~) (dimension=~) (1|0) -- Toggle or set chunk border flag',
-		'pin (x=~) (y=~) (dimension=~) -- Pin chunk'
+		'pin|unpin (x=~) (y=~) (dimension=~) -- Pin/unpin a chunk. Pinned chunks are always simulated even when there are no players around. Some aspects of simulation only occurs when all surrounding chunks are also pinned'
 	],
 	repeat: '[count] [...command] -- Execute a command multiple times',
 	delay: '[time_seconds] [...command] -- Execute a command after a delay',
 	restart: '(delay_seconds=0) -- Restart the server after delay',
+	stop: '-- Alias for /restart',
 	bell: '-- @here',
 }, cheats = ['give', 'summon', 'setblock', 'fill', 'mutate', 'time']
 Object.setPrototypeOf(anyone_help, null)

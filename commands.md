@@ -1,6 +1,6 @@
-Selectors:
+# Selectors
 - `[player name]` - E.g `/kill pro_gamer123`
-- `@s` - Yourself, e.g `/give @s command_block` (Not available in CLI)
+- `@s` - Yourself, e.g `/give @s command_block` (Not available in the CLI)
 - `@a` - All players, e.g `/tp @a ~ ~`
 - `@x` - All players except yourself
 - `@e` - All entities, e.g `/kill @e`
@@ -11,9 +11,9 @@ Selectors:
 
 Selectors can be followed by specifier(s), e.g `@e[x>20,x<30,type!=player]`.
 
-Most selectors support `=`, `!=`, `>`, `>=`, `<`, `<=`.
+Most specifiers support `=`, `!=`, `>`, `>=`, `<`, `<=`.
 
-When using specifiers, you can omit `@e`, e.g. `[r<3]` is the same as `@e[r<3]`
+When using specifiers, you can omit `@e`, e.g. `[r<3]` is the same as `@e[r<3]`, however while `@a[world=nether]` will match players in the nether, `[world=nether]` will match all entities in the nether
 
 Non-number types use prefix comparison, e.g
 - `carpet` > `car`
@@ -38,9 +38,9 @@ Position selectors:
 - `[x] [y]` - A position specified by its X and Y, e.g `20 0`
 - `~[dx] ~[dy]` - A position specified relative to you, e.g `~ ~20` is 20 blocks above you
 - `! !` - Marked position (See [marking](#marking))
-- Mix and match above, e.g `0 ~20`, 20 blocks above you but at X=0, `! ~2`, marked X but 2 blocks above your Y
-- `^[theta] ^[r]` - `r` blocks in front of you (based on the direction you are looking). `theta` to offset this direction clockwise in degrees
-Most places that accept coordinates also accept a dimension, which can also be `~` to specify the current dimension
+- Mix and match above, e.g `0 ~20`, 20 blocks above you but at X=0, `! ~2`, X position as marked but Y position 2 blocks above you
+- `^[theta] ^[r]` - `r` blocks in front of you (based on the direction you are facing). `theta` to offset this direction clockwise in degrees
+Most places that accept coordinates also accept a dimension, which can also be `~` to specify the current dimension, or `!` for the marked dimension
 
 # Marking
 
@@ -49,3 +49,16 @@ Set a mark at an entity and position, that can then later be referenced by comma
 `/mark (x_off) (y_off)`
 
 E.g to fill from point A to point B with a stone rectangle, go to point A and run `/mark`, then go to point B and run `/fill ! ! ~ ~ stone`
+
+# Commands
+
+Command formats will describe parameters as such:
+- `keyword` when you must provide this keyword as the parameter
+- `[description]` for required parameters
+- `(description)` or `(description=default_value)` for optional parameters
+- `[...description]` for final parameters that can include spaces
+- `a|b` for choice parameters, e.g `[block_id]|[item_id]|none`
+
+- `/help` List all available commands
+	- `/help [command]` - help for a specific command, basically what you see here
+- More docs coming soon

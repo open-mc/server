@@ -4,7 +4,7 @@ Requirements: [Git](https://git-scm.com/downloads) and [Nodejs](https://nodejs.o
 
 Note: For **windows**, it is recommended to install both via [scoop](https://scoop.sh). Follow the install instructions on their website, then install both by typing `scoop install git` and `scoop install nodejs@20.17.0`
 
-Note 2: The server software currently does not work with bun or deno due to the use of [uWebSockets.js](https://github.com/uNetworking/uWebSockets.js). Make your complaints there.
+Note 2: The server software currently does not work with bun or deno due to the use of [uWebSockets.js](https://github.com/uNetworking/uWebSockets.js) <- Make your complaints there.
 
 Clone this repository and run the start script:
 ```sh
