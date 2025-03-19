@@ -62,11 +62,12 @@ parentPort.onmessage = ({data}) => {
 	}
 	const d = cache.get(data.d)
 	if(!d) return void parentPort.postMessage(emptyChunk)
-	let b = emptyChunk
-	try{
-		d.generate(data.x, data.y)
-		b = toBuf().build().buffer
-	}finally{ parentPort.postMessage(b, [b]) }
+	try{ d.generate(data.x, data.y) }
+	catch(e){ chunk.fill(Blocks.air.id); Promise.reject(e) }
+	finally{
+		const b = toBuf().build().buffer
+		parentPort.postMessage(b, [b])
+	}
 }
 parentPort.postMessage(null)
 for(const m of q) parentPort.onmessage(m)

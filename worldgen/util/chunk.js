@@ -15,6 +15,10 @@ export const _surfaceFeature = (j,xo=0) => {
 	const n = hash3(bSeed, cx+x|0, cy+y|0), a = peekBiome().features
 	for(let i = 1; i < a.length; i += 2) if(a[i] >= n){ a[i-1](); break }
 }
+export const peekFeature = (dx=0,dy=0) => {
+	const n = hash3(bSeed, cx+x+dx|0, cy+y+dy|0), a = peekBiome().features
+	for(let i = 1; i < a.length; i += 2) if(a[i] >= n) return a[i-1]
+}
 export const up = () => {y++}
 export const save = v => ({x,y,v})
 export const load = o => (x=o.x,y=o.y,o.v)
@@ -82,7 +86,28 @@ export const placeatAir = (dx=0, dy=0, b) => {
 export const placeatGround = (dx=0, dy=0, b) => {
 	if(!(((dx+=x)|(dy+=y))>>6) && (_noiseChunks[4][dx>>3&7|(dy&63)<<3]>>(dx&7)&1)) chunk[dy<<6|dx]=b.id
 }
-export const cmpxchg = (ob,b) => {const i=y<<6|x|(x&-64)<<6;if(chunk[i]==ob.id)chunk[i]=b.id}
+export const cmpxchg = (ob,b) => { const i=y<<6|x|(x&-64)<<6; if(chunk[i]===ob.id) return chunk[i]=b.id, true; return false }
+export const cmpxchgat = (dx=0,dy=0,ob,b) => { const i=y+dy<<6|(dx+=x)|(dx&-64)<<6; if(chunk[i]===ob.id) return chunk[i]=b.id, true; return false }
+export const cmpxchgAir = (ob, b) => {
+	if(!((x|y)>>6) && !(_noiseChunks[4][x>>3&7|(y&63)<<3]>>(x&7)&1))
+		if(chunk[y<<6|x]===ob.id) return chunk[y<<6|x] = b.id, true
+	return false
+}
+export const cmpxchgGround = (ob, b) => {
+	if(!((x|y)>>6) && (_noiseChunks[4][x>>3&7|(y&63)<<3]>>(x&7)&1))
+		if(chunk[y<<6|x]===ob.id) return chunk[y<<6|x] = b.id, true
+	return false
+}
+export const cmpxchgatAir = (dx=0, dy=0, ob, b) => {
+	if(!(((dx+=x)|(dy+=y))>>6) && !(_noiseChunks[4][dx>>3&7|(dy&63)<<3]>>(dx&7)&1))
+		if(chunk[dy<<6|dx]===ob.id) return chunk[dy<<6|dx] = b.id, true
+	return false
+}
+export const cmpxchgatGround = (dx=0, dy=0, ob, b) => {
+	if(!(((dx+=x)|(dy+=y))>>6) && (_noiseChunks[4][dx>>3&7|(dy&63)<<3]>>(dx&7)&1))
+		if(chunk[dy<<6|dx]===ob.id) return chunk[dy<<6|dx] = b.id, true
+	return false
+}
 export const placeat = (dx=0,dy=0,b) => {chunk[y+dy<<6|x+dx|(x+dx&-64)<<6]=b.id}
 export const placeup = b => {chunk[y+1<<6|x|(x&-64)<<6]=b.id}
 export const placedown = b => {chunk[y-1<<6|x|(x&-64)<<6]=b.id}
