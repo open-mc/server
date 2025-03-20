@@ -6,8 +6,9 @@ export const Items = {}
 export const ItemIDs = []
 export const Entities = {}
 export const EntityIDs = []
-export const Shapers = {}
-export const Biomes = {}
+export const Shapers = {__proto__: null}
+export const Biomes = {__proto__: null}
+export const Features = {__proto__: null}
 
 export const voidShaper = (x, y, o) => { o.offset = -2000; o.temperature = o.humidity = 0.5 }
 

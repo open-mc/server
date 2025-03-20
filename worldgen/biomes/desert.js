@@ -1,5 +1,5 @@
 import { Biomes, Blocks } from '../globals.js'
-import { down, getX, load, peekNoise, peekNoiseLeft, peekNoiseRight, place, placeup, save, up } from '../util/chunk.js'
+import { down, getX, load, peekNoise, place, placeup, save, up } from '../util/chunk.js'
 import { overworld, depthNoise, foliageRng } from './overworld.js'
 
 Biomes.desert = overworld.add({
@@ -9,7 +9,7 @@ Biomes.desert = overworld.add({
 		const f = foliageRng(getX()); let f1 = f>>2&63
 		a: if(f1<3){
 			const a = save()
-			if(peekNoiseRight() || peekNoiseLeft()) break a
+			if(peekNoise(1,0) || peekNoise(-1,0)) break a
 			do place(Blocks.cactus), up(); while(f1--)
 			load(a)
 		}else if(f1==3) place(Blocks.dead_bush)

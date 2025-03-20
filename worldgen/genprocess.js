@@ -1,14 +1,14 @@
-import { Blocks, Items, Entities, ItemIDs, BlockIDs, EntityIDs, Biomes, Biome } from './globals.js'
+import { Blocks, Items, Entities, ItemIDs, BlockIDs, EntityIDs, Biomes, Biome, Features } from './globals.js'
 import { setSeed, chunk } from './util/outer-noise.js'
 import { jsonToType } from '../modules/dataproto.js'
 import { cache, setGenerators } from './core.js'
 import { _setPm, toBuf } from './util/chunk.js'
+import { hashCode } from './util/random.js'
 
 const {data: {indices, seed, generators}} = await new Promise(r => {
 	parentPort.addEventListener('message', r, {once: true})
 	parentPort.postMessage(null)
 })
-
 
 setSeed(seed)
 
@@ -45,9 +45,12 @@ for(let a of indices[2].split('\n')){
 let q = []
 parentPort.onmessage = e => q.push(e)
 
-const p = import('./shapers.js')
+const p = import('./shapers.js'), p2 = import('./features/index.js')
 await import('./biomes.js')
-await p
+await p, await p2
+
+
+for(const k in Features) Features[k].hash = hashCode(k)
 
 for(const b of Object.values(Biomes)) if(b.id == -1) Biome.register([b])
 

@@ -1,7 +1,7 @@
 import { DataWriter } from '../../modules/dataproto.js'
 import { chunk, findBiome } from './outer-noise.js'
 import { _biomeArr, Biomes, BlockIDs, Blocks } from '../globals.js'
-import { hash3 } from './random.js'
+import { hash3, sdB, sdC } from './random.js'
 
 export { chunk }
 let x = 0, y = 0
@@ -9,7 +9,7 @@ let cx=0,cy=0,bSeed=0,rootBiome=0
 export const airBlockArrays = [null,null,null,null,null,null,null,null,null]
 export const groundBlockArrays = [null,null,null,null,null,null,null,null,null]
 export const _setChunkPos = (x,y,bs,b) => {cx=x;cy=y;bSeed=bs;rootBiome=b}
-export const goto = j => {x=j&63;y=j>>6}
+export const goto = (x1=0,y1=0) => {x=x1;y=y1}, gotopos = j => {x=j&63;y=j>>6}
 export const _surfaceFeature = (j,xo=0) => {
 	x=(j&63)|xo;y=j>>6;
 	const n = hash3(bSeed, cx+x|0, cy+y|0), a = peekBiome().features
@@ -28,25 +28,17 @@ export const left = () => {x--}
 export const jump = (dx,dy)=>{x+=dx;y+=dy}
 export const getX = () => cx+x|0
 export const getY = () => cy+y|0
-export const peekNoise = () => {
-	const x1=x+64>>>0,y1=y+64>>>0
-	if(x1>191||y1>191) return false
-	return (_noiseChunks[(x1>>6)+(y1>>6)*3][x1>>3&7|(y1&63)<<3]>>(x1&7)&1)!=0
-}
-export const peekNoiseAt = (dx=0,dy=0) => {
+export const jitterNoise = () => hash3(sdB^sdC, cx+x|0,cy+y|0)
+export const peekNoise = (dx=0,dy=0) => {
 	const x1=x+dx+64>>>0,y1=y+dy+64>>>0
 	if(x1>191||y1>191) return false
 	return (_noiseChunks[(x1>>6)+(y1>>6)*3][x1>>3&7|(y1&63)<<3]>>(x1&7)&1)!=0
 }
-export const peekNoiseRight = () => peekNoiseAt(1,0)
-export const peekNoiseLeft = () => peekNoiseAt(-1,0)
-export const peekNoiseUp = () => peekNoiseAt(0,1)
-export const peekNoiseDown = () => peekNoiseAt(0,-1)
-export const peekAirType = () => {
-	const i = y+256>>>6, i1 = (y&63)*3
+export const peekAirType = (dx=0,dy=0) => {
+	const i = (dy+=y)+256>>>6, i1 = (dy&63)*3
 	if(i > 8) return Blocks.air
 	const aba = airBlockArrays[i], r = aba[i1]
-	return BlockIDs[aba[(r?i1+((hash3(bSeed, cx+x|0, cy+y|0)&0xff) < r):i1)+1]]
+	return BlockIDs[aba[(r?i1+((hash3(bSeed, cx+dx+x|0, cy+dy|0)&0xff) < r):i1)+1]]
 }
 export const peekGroundType = () => {
 	const i = y+256>>>6, i1 = (y&63)*3

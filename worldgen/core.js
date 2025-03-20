@@ -1,7 +1,7 @@
-import { Shapers, voidShaper, Blocks, Biomes } from './globals.js'
-import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, airBlockArrays, peekBiome, biomeData, groundBlockArrays, _surfaceFeature } from './util/chunk.js'
-import { expand, genNoisev, seed, chunk } from './util/outer-noise.js'
-import { hash2, hash3, hashCode, setPartialSeed } from './util/random.js'
+import { Shapers, voidShaper, Blocks, Biomes, Features } from './globals.js'
+import { BiomeChunk, _biomeChunks, _noiseChunks, NoiseChunk, _setChunkPos, goto, gotopos, airBlockArrays, peekBiome, biomeData, groundBlockArrays, _surfaceFeature } from './util/chunk.js'
+import { expand, genNoisev, seed } from './util/outer-noise.js'
+import { hash2, hash3, hashCode, setPartialSeed, sdA, sdB, sdC, sdD } from './util/random.js'
 
 // b b b b b b b b b
 // b b b b b b b b b
@@ -30,6 +30,7 @@ export class WorldCache{
 	period = 7
 	roughness = 0.5
 	maxScale = 1
+	features = []
 	constructor(k){ this.localSeed = hashCode(k); this.bSeed = hash2(seed[3]^seed[2]^seed[1], this.localSeed) }
 	// TTL: 60mins
 	biomeCache = new Map()
@@ -92,35 +93,43 @@ export class WorldCache{
 			if(!this.groundMod) gy = gy+64|0
 			else if((gy += 64) == this.groundMod) gy = 0
 		}
-		const ix=x,iy=y
 		_setChunkPos(x, y, this.bSeed, this.biome)
 		expand(x, y, this.localSeed, airBlockArrays[4], groundBlockArrays[4], new Uint8Array(_noiseChunks[4].buffer, 0, 512))
 		let c = _noiseChunks[1]; i = c.length-2
 		for(; i >= 512; i -= 2) if((c[i]|c[i+1]<<8) < 3072) break
 		for(let e = c.length; i < e; i += 2)
-			goto((c[i]|c[i+1]<<8)-4096), peekBiome().surface?.()
+			gotopos((c[i]|c[i+1]<<8)-4096), peekBiome().surface?.()
 		{
 			const c2 = _noiseChunks[4]; let i0 = 0, l = 0
 			i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
-			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l); peekBiome().surface?.() }
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); gotopos(l); peekBiome().surface?.() }
 			i0 = (c[508]|c[509]<<8|c[510]<<16|c[511]<<24)&~(c2[4]|c2[5]<<8|c2[6]<<16|c2[7]<<24)
-			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+32); peekBiome().surface?.() }
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); gotopos(l+32); peekBiome().surface?.() }
 			c = c2
 		}
 		for(let e = c.length, i = 512; i < e; i += 2)
-			goto((c[i]|c[i+1]<<8)), peekBiome().surface?.()
+			gotopos((c[i]|c[i+1]<<8)), peekBiome().surface?.()
 		{
 			const c2 = _noiseChunks[7]; let i0 = 0, l = 0
 			i0 = (c[504]|c[505]<<8|c[506]<<16|c[507]<<24)&~(c2[0]|c2[1]<<8|c2[2]<<16|c2[3]<<24)
-			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+4096); peekBiome().surface?.() }
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); gotopos(l+4096); peekBiome().surface?.() }
 			i0 = (c[508]|c[509]<<8|c[510]<<16|c[511]<<24)&~(c2[4]|c2[5]<<8|c2[6]<<16|c2[7]<<24)
-			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); goto(l+4128); peekBiome().surface?.() }
+			while((l = 31-clz32(i0)) >= 0){ i0 &= ~(1<<l); gotopos(l+4128); peekBiome().surface?.() }
 			c = c2
 		}
 		for(let e = c.length, i = 512; i < e; i += 2){
 			const k = c[i]|c[i+1]<<8
 			if(k >= 1024) break
-			goto(k+4096); peekBiome().surface?.()
+			gotopos(k+4096); peekBiome().surface?.()
+		}
+		for(const f of this.features) for(let dx=-64;dx<128;dx+=64) for(let dy=-64;dy<128;dy+=64){
+			let i = hash3(sdC^sdD^f.hash, x+dx, y+dy)
+			const n = sdC^sdD^(x+dx)^(y+dy), ni = i
+			for(;;){
+				goto(i&63|dx,i>>6&63|dy)
+				if(!(f((hash2(n^sdA^sdC, i)*.23283064365386963e-9+(i>>>12))*.95367431640625e-6)??true)) break
+				if((i = hash2(n, i)) == ni) break
+			}
 		}
 		for(let x=0;x<3;x++){
 			const xo = (x<<6)-64
@@ -217,7 +226,7 @@ export function setGenerators(g){
 			temperature = .5, humidity = .5,
 			air_layers_repeat = 0, ground_layers_repeat = 0,
 			period = 128, roughness = 0.5,
-			biome
+			biome, features = []
 		} = g[k]
 		let w = cache.get(k)
 		if(!w) cache.set(k, w = new WorldCache(k))
@@ -232,6 +241,7 @@ export function setGenerators(g){
 		w.groundMod = ground_layers_repeat & -64
 		w.period = min(31, max(2, log2(period)))
 		w.roughness = max(0, min(1, roughness)) || 0
+		w.features = features.map(a => Features[a] ?? (console.warn('No such feature: %s', a),[])).flat(Infinity)
 		let p = ceil(w.period), m = 0, s = 1
 		while(p-- > 1) m += s, s *= w.roughness
 		w.maxScale = m

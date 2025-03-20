@@ -1,4 +1,5 @@
 let a = 0, b = 0, c = 0, d = 0
+export { a as sdA, b as sdB, c as sdC, d as sdD }
 export const setPartialSeed = (a1, b1, c1, d1) => { a = a1; b = b1; c = c1; d = d1 }
 
 // If you know the original name of these functions please edit this comment!

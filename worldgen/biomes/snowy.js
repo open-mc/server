@@ -1,5 +1,5 @@
 import { Biomes, Blocks } from '../globals.js'
-import { down, getX, load, peekNoise, peekNoiseLeft, peekNoiseRight, place, placeup, save, up } from '../util/chunk.js'
+import { down, getX, load, peekNoise, place, placeup, save, up } from '../util/chunk.js'
 import { overworld, depthNoise, foliageRng } from './overworld.js'
 
 Biomes.snowy = overworld.add({
