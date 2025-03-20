@@ -59,7 +59,7 @@ Object.assign(commands, {
 		}
 		return log(this, `Kicked ${kicked} player(s)`)
 	},
-	reconn(a, t=0){
+	reconn(a='@s', t=0){
 		t = max(0, min(999, t*100 || 0))
 		const targets = selector(a, this)
 		let count = 0
@@ -675,7 +675,7 @@ export const anyone_help = {
 	link: '-- alias for /show', unlink: '-- alias for /hide',
 	where: '[player] -- Where is a specific player?',
 	doxx: ' -- alias for /where',
-	reconn: '[player] (delay) -- Reconnect players',
+	reconn: '(player=@s) (delay) -- Reconnect players',
 	radius: ['-- Check your chunk loading radius', '[r] -- Set your chunk loading radius'],
 	mode: '0|1 (target=@s) -- Set player\'s game mode, 0 = survival, 1 = creative',
 }, help = {

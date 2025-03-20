@@ -1,5 +1,5 @@
-import { cmpxchg, cmpxchgat } from "../util/chunk.js"
 import { Blocks, Features } from "../globals.js"
+import { getY } from "../util/chunk.js"
 import { Vein } from "../util/vein.js"
 
 export const CoalVein = Features.coal_ore = v => {
@@ -10,8 +10,9 @@ export const CoalVein = Features.coal_ore = v => {
 }
 
 export const IronVein = Features.iron_ore = v => {
-	if(v > .6666) return false
-	Vein(v*2+1, Blocks.iron_ore, Blocks.stone)
+	const prob = .45+max(0, 128-abs((getY()+192&511)-128))*.004
+	if(v > prob) return false
+	Vein(v+1.4, Blocks.iron_ore, Blocks.stone)
 }
 
 Features.ores = [Features.coal_ore, Features.iron_ore]
