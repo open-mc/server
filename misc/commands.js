@@ -70,7 +70,7 @@ Object.assign(commands, {
 		}
 		return log(this, `Reconnnecting ${count} player(s)`)
 	},
-	give(sel, item = '', amount = '1', dat = ''){
+	give(sel, item = '', amount = '1', data = '{}'){
 		let itm = Items[item], c = max(amount | 0, 1)
 		if(!itm) throw 'No such item: '+item
 		let count = ''
@@ -79,12 +79,12 @@ Object.assign(commands, {
 			else if(typeof count == 'string') count = 2-!count
 			else count++
 			const stack = new itm(c)
-			if(dat) snbt(dat, stack, stack.savedata, ITEMCOMMONDATA)
+			if(data) snbt(data, stack, stack.savedata, ITEMCOMMONDATA)
 			player.giveAndDrop(stack)
 		}
 		return log(this, 'Gave '+(typeof count=='number'?count+' players':count)+' '+item+'*'+c)
 	},
-	summon(type, _x = '~', _y = '~', _d = '~', data = ''){
+	summon(type, _x = '~', _y = '~', _d = '~', data = '{}'){
 		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		if(!(type in Entities)) throw 'No such entity: ' + type
 		const e = new Entities[type]()
@@ -101,7 +101,7 @@ Object.assign(commands, {
 		}
 		return log(this, 'Successfully mutated '+i+' entities')
 	},
-	setblock(_x = '~', _y = '~', type = '', _d = '~', data = ''){
+	setblock(_x = '~', _y = '~', type = '', _d = '~', data = '{}'){
 		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		let b
 		let id = type & 65535

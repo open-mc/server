@@ -24,7 +24,7 @@ Features.gold_ore = v => {
 Features.diamond_ore = v => {
 	const y = getY()
 	if(y > -64) return false
-	const prob = y > -320 ? (-64-y)*.0009765625 : y > -1600 ? .25 : y > -3200 ? y*-.00015625 : .5
+	const prob = y > -320 ? (-64-y)*.001171875 : y > -1600 ? .3 : y > -3200 ? y*-.0001875 : .6
 	if(v > prob) return false
 	Vein(v+1, Blocks.diamond_ore, Blocks.stone)
 }
