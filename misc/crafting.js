@@ -52,7 +52,7 @@ export const createShaped2x1Recipe = csrf
 export const createShaped3x1Recipe = csrf
 export const createShaped3x2Recipe = csrf
 
-export function getOutput({0:a,1:b,2:c,3:d,4:e,5:f,6:g,7:h,8:i}){
+export function getOutput9({0:a,1:b,2:c,3:d,4:e,5:f,6:g,7:h,8:i}){
 	let size = 9
 	if(!a&&!b&&!c){
 		if(!d&&!e&&!f){ a=g;b=h;c=i; size -= 6 }

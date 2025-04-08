@@ -4,7 +4,7 @@ import '../natural/stone.js'
 import { Planks } from '../building/planks.js'
 import { Entities } from '../../entities/entity.js'
 import { EphemeralInterface } from '../../misc/ephemeralinterface.js'
-import { getOutput, smeltMap } from '../../misc/crafting.js'
+import { getOutput9, smeltMap } from '../../misc/crafting.js'
 import { blockevent, update } from '../../misc/ant.js'
 
 class CraftingInterface extends EphemeralInterface{
@@ -18,13 +18,14 @@ class CraftingInterface extends EphemeralInterface{
 		this.calculateOutput()
 	}
 	calculateOutput(){
-		const match = getOutput(this.slots)
+		const match = getOutput9(this.slots)
 		if(match){
 			const {output, count, leftovers} = match
 			this.output = new output(count)
 			this.leftovers = leftovers
-			this.canProduce = 0
-			for(const i of this.slots) if(i&&i.count>this.canProduce) this.canProduce = i.count
+			this.canProduce = Infinity
+			for(const i of this.slots) if(i&&i.count<this.canProduce) this.canProduce = i.count
+			if(this.canProduce == Infinity) this.canProduce = 0
 		}else this.output = null, this.canProduce = 0, this.leftovers = null
 		this.itemChanged(0, 9, this.output)
 	}
