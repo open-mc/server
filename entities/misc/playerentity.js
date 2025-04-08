@@ -84,8 +84,9 @@ Entities.player = class Player extends ChunkLoader(LivingEntity){
 			const {output, count, leftovers} = match
 			this.output = new output(count)
 			this.leftovers = leftovers
-			this.canProduce = 0
-			for(const i of this.craftingSlots) if(i&&i.count>this.canProduce) this.canProduce = i.count
+			this.canProduce = Infinity
+			for(const i of this.craftingSlots) if(i&&i.count<this.canProduce) this.canProduce = i.count
+			if(this.canProduce == Infinity) this.canProduce = 0
 		}else this.output = null, this.canProduce = 0, this.leftovers = null
 		this.itemChanged(1, 10, this.output)
 	}
