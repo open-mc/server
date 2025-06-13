@@ -3,7 +3,6 @@ export const encoder = new TextEncoder()
 
 globalThis.TypedArray ??= Object.getPrototypeOf(Uint8Array)
 export class BufReader extends DataView{
-	/**  */
 	constructor(arr){
 		if(arr instanceof ArrayBuffer) super(arr)
 		else super(arr.buffer, arr.byteOffset, arr.byteLength)

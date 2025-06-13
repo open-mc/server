@@ -59,7 +59,7 @@ export async function open(){
 	const now = Date.now() * .001
 	if(perms > now){
 		this.end(1000, perms >= 2147483647 ? '\\19You are permanently banned from this server':'\\19You are banned from this server for '
-			+ Date.formatTime((perms-now)*1000)+(CONFIG.ban_appeal_info?'\nBan appeal: '+CONFIG.ban_appeal_info:''))
+			+ Date.formatTime((perms-now)*1000)+(CONFIG.ban_info?'\n'+CONFIG.ban_info:''))
 		return
 	}else if(perms == 0)
 		return this.end(1000, '\\1fYou are not invited to play on this server')

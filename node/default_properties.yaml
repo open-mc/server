@@ -171,7 +171,7 @@ webhook_profiles: true
 magic_word: hi
 
 # info displayed on the banned notice screen
-ban_appeal_info: Ban appeals are not accepted at this time
+ban_info: Ban appeals are not accepted at this time
 
 # Do not touch this section for multiplayer servers unless you ABSOLUTELY know what you're doing!
 # You have been warned!

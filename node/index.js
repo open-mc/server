@@ -37,7 +37,8 @@ async function loadConfigs(){
 		const p = argv[i]
 		const f = p.slice(0, p.lastIndexOf('/')+1)
 		promises.push(fs.readFile(p).catch(e=>fs.readFile(PATH+'node/default_properties.yaml').then(buf=>(fs.writeFile(p,buf).catch(e=>null),buf))).then(a => {
-			const v = parse(a.toString())
+			let v
+			try{ v = parse(a.toString()) }catch(e){ throw e.message }
 			if(!v) throw 'Failed to parse config'
 			if('path' in v) v.path = resolve(f, v.path)
 			if('key' in v) v.key = resolve(f, v.key)
@@ -53,7 +54,10 @@ async function loadConfigs(){
 }
 for(let i = 0; i < argv.length; i++){
 	const w2 = fs.watch(argv[i])[Symbol.asyncIterator]()
-	w2.next().then(function S(){ loadConfigs(); w2.next().then(S) }).catch(e=>null)
+	w2.next().then(function S(){
+		loadConfigs().catch(e=>console.error(e))
+		w2.next().then(S)
+	})
 }
 class VolatileLevel{
 	constructor(m=new Map,p=''){this._map=m;this._prefix=p}
@@ -72,11 +76,16 @@ class VolatileLevel{
 	del(a,cb){this._map.delete(this._prefix+a);return cb?void cb():Promise.resolve()}
 	close(cb){console.warn('Temporary map, deleting all '+this._map.size+' saved entries');return cb?void cb():Promise.resolve()}
 }
-await loadConfigs().then(() => {
-	globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()
-	if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
-	return DB.open?.()
-})
+try{
+	await loadConfigs().then(() => {
+		globalThis.DB = CONFIG.path ? new ClassicLevel(CONFIG.path) : new VolatileLevel()
+		if(!CONFIG.path) console.warn('No world path! (Running on temporary map, will not save to disk)')
+		return DB.open?.()
+	})
+}catch(e){
+	console.error(e)
+	process.exit()
+}
 
 const {default: openServer} = await import('./server.js')
 await ready
