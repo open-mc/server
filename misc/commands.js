@@ -3,7 +3,7 @@ import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat } from './chat.js'
 import { DXDY, Entities, EntityIDs } from '../entities/entity.js'
 import { ItemIDs, Items } from '../items/item.js'
-import { goto, jump, peek, place, right, up } from './ant.js'
+import { goto, jump, peek, place, placeblock, right, up } from './ant.js'
 import { BlockFlags, BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, setTickFlags, tickFlags } from '../world/tick.js'
 import { generator } from '../world/gendelegator.js'
@@ -13,6 +13,7 @@ import { damageTypes } from '../entities/deathmessages.js'
 import { playersConnecting, playersLevel } from './sock.js'
 import { executeCommand, PERMS, commands, stack, selector, serializeTypePretty, log, parseCoords, snbt, marks, ITEMCOMMONDATA, ENTITYCOMMONDATA, publicCommands, modCommands } from './_commands.js'
 import { VERSION } from '../version.js'
+import { placesilent } from '../../core/ant.js'
 
 Object.assign(commands, {
 	list(){
@@ -101,7 +102,7 @@ Object.assign(commands, {
 		}
 		return log(this, 'Successfully mutated '+i+' entities')
 	},
-	setblock(_x = '~', _y = '~', type = '', _d = '~', data = '{}'){
+	setblock(_x = '~', _y = '~', type = '', _d = '~', data = '{}', how = '0'){
 		const {x, y, w} = parseCoords(_x, _y, _d, this)
 		let b
 		let id = type & 65535
@@ -116,10 +117,16 @@ Object.assign(commands, {
 		if(b.adminOnly && this?.sock?.perms < OP) throw 'You do not have permission to place '+b.className
 		if(b.savedata && data) snbt(data, b = new b, b.savedata)
 		goto(w, floor(x), floor(y))
-		place(b)
-		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data?' (+data)':''))
+		switch(+how){
+			case 1: placeblock(b); break
+			case 2: place(b, true); break
+			case 3: placesilent(b); break
+			default: place(b)
+		}
+		
+		return log(this, 'Set block at (x='+(floor(x)|0)+', y='+(floor(y)|0)+') to '+type+(data!='{}'?' (+data)':''))
 	},
-	fill(_x, _y, _x2, _y2, type, d = '~'){
+	fill(_x, _y, _x2, _y2, type, d = '~', how = '0'){
 		let n = performance.now()
 		let {x, y, w} = parseCoords(_x, _y, d, this)
 		let {x: x2, y: y2} = parseCoords(_x2, _y2, d, this)
@@ -139,10 +146,12 @@ Object.assign(commands, {
 		if(b.adminOnly && this?.sock?.perms < OP) throw 'You do not have permission to place '+b.className
 		let count = x2*y2+x2+y2+1
 		if(count > CONFIG.permissions.max_fill) throw 'Cannot /fill more than '+CONFIG.permissions.max_fill+' blocks'
+		how -= 0
+		const fn = how == 1 ? placeblock : how == 2 ? b=>place(b,true) : how == 3 ? placesilent : place
 		for(y = 0; y != y2+1; y=(y+1)|0){
 			for(x = 0; x != x2+1; x=(x+1)|0){
 				if(peek()==b) count--
-				place(b)
+				fn(b)
 				right()
 			}
 			jump(-x2-1,1)
