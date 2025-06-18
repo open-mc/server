@@ -134,6 +134,51 @@ export function place(bl, safe = false){
 	}
 	return bl
 }
+
+export function placesilent(bl){
+	const _chunk = chunk, _pos = pos
+	bl = bl === bl.constructor && bl.savedata ? new bl : bl
+	if(!_chunk) return bl
+	const _id = _chunk[_pos], _b = _id === 65535 ? _chunk.tileData.get(_pos) : BlockIDs[_id]
+	if(_b.unset){
+		_b.unset()
+		chunk = _chunk; pos = _pos
+	}
+	if(bl.savedata){
+		_chunk[_pos] = 65535
+		_chunk.tileData.set(_pos, bl)
+	}else{
+		if(_chunk[_pos] == 65535) _chunk.tileData.delete(_pos)
+		_chunk[_pos] = bl.id
+	}
+	if(bl.set){
+		bl.set()
+		chunk = _chunk; pos = _pos
+	}
+	const tx = _chunk.x<<6|_pos&63, ty = _chunk.y<<6|pos>>6
+	const {exposure} = _chunk, x = pos&63; let y = ty+1|0
+	for(const {tbuf} of _chunk.sockets){
+		tbuf.byte(0)
+		tbuf.int(tx)
+		tbuf.int(ty)
+		tbuf.short(bl.id)
+		if(bl.savedata) tbuf.write(bl.savedata, bl)
+	}
+	if(bl.flags&128){if(!(_b.flags&128)){
+		if((exposure[x]-y|0)<0) exposure[x] = y
+	}}else if((_b.flags&128)&&exposure[x]==y){
+		y-=2; while(chunk){
+			const i=x|y<<6&4032,b=chunk[i]
+			if((b==65535?chunk.tileData.get(i):BlockIDs[b]).flags&128) break
+			if(!(--y&63)) chunk = chunk.down
+		}
+		exposure[x] = y+1|0
+		chunk = _chunk
+	}
+	return bl
+}
+
+
 export const placeblock = (b, e = 1) => void(place(b), gridevent(e))
 
 let gridEventId = 0

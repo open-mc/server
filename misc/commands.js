@@ -3,7 +3,7 @@ import { Dimensions, GAMERULES, stat } from '../world/index.js'
 import { chat } from './chat.js'
 import { DXDY, Entities, EntityIDs } from '../entities/entity.js'
 import { ItemIDs, Items } from '../items/item.js'
-import { goto, jump, peek, place, placeblock, right, up } from './ant.js'
+import { goto, jump, peek, place, placeblock, right, up, placesilent } from './ant.js'
 import { BlockFlags, BlockIDs, Blocks } from '../blocks/block.js'
 import { currentTPS, setTPS, setTickFlags, tickFlags } from '../world/tick.js'
 import { generator } from '../world/gendelegator.js'
@@ -13,7 +13,6 @@ import { damageTypes } from '../entities/deathmessages.js'
 import { playersConnecting, playersLevel } from './sock.js'
 import { executeCommand, PERMS, commands, stack, selector, serializeTypePretty, log, parseCoords, snbt, marks, ITEMCOMMONDATA, ENTITYCOMMONDATA, publicCommands, modCommands } from './_commands.js'
 import { VERSION } from '../version.js'
-import { placesilent } from '../../core/ant.js'
 
 Object.assign(commands, {
 	list(){
